@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minijuego: Teclea a la Velocidad</title>
+    <!-- Fuentes opcionales para la tienda (si no hay internet se usa la fuente de reserva) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pacifico&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #10141c;
+            color: #e8ecf4;
+            text-align: center;
+        }
+        /* Fondo alternativo: retrato de Francisco Franco (1930) */
+        body.bg-franco {
+            background-image:
+                linear-gradient(rgba(16, 20, 28, 0.85), rgba(16, 20, 28, 0.85)),
+                url("Francisco_Franco_1930.jpg");
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        /* Fondos desbloqueables en la tienda */
+        body.bg-elprico {
+            background-image:
+                linear-gradient(rgba(16, 20, 28, 0.8), rgba(16, 20, 28, 0.8)),
+                url("Elprico.jfif");
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        body.bg-esteso {
+            background-image:
+                linear-gradient(rgba(16, 20, 28, 0.78), rgba(16, 20, 28, 0.78)),
+                url("esteso.jfif");
+            /* imagen pequeña (100x100): se usa como patrón en vez de estirarla */
+            background-size: auto, 170px 170px;
+            background-position: center, center;
+            background-repeat: no-repeat, repeat;
+            background-attachment: fixed, fixed;
+            background-color: #10141c;
+        }
+        header {
+            background-color: #1b2333;
+            border: 2px solid #2e3a54;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        header h1 {
+            margin: 0;
+            letter-spacing: 2px;
+        }
+        header p {
+            margin: 8px 0 0;
+            color: #8b97ad;
+        }
+
+        /* ---------- Selectores (idioma y modo) ---------- */
+        .selectors {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            margin-top: 18px;
+        }
+        .sel-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .sel-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b97ad;
+        }
+        .chip-btn {
+            background-color: #1b2333;
+            color: #8b97ad;
+            border: 2px solid #2e3a54;
+            padding: 8px 16px;
+            font-size: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip-btn:hover:not(:disabled) {
+            border-color: #5eead4;
+            color: #e8ecf4;
+        }
+        .chip-btn.active {
+            background-color: #14b8a6;
+            border-color: #14b8a6;
+            color: #062019;
+            font-weight: bold;
+        }
+        .chip-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ---------- Marcador ---------- */
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 22px 0;
+        }
+        .stat {
+            background-color: #1b2333;
+            border: 2px solid #2e3a54;
+            border-radius: 10px;
+            padding: 8px 16px;
+            min-width: 115px;
+        }
+        .stat span {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b97ad;
+        }
+        .stat strong {
+            font-size: 24px;
+            color: #5eead4;
+        }
+        .stat.low strong {
+            color: #f87171;
+            animation: blink 0.5s infinite alternate;
+        }
+        @keyframes blink {
+            to { opacity: 0.4; }
+        }
+
+        /* ---------- Tablero ---------- */
+        .stage {
+            position: relative;
+        }
+        .board {
+            background-color: #0b0e14;
+            border: 2px dashed #2e3a54;
+            border-radius: 14px;
+            padding: 30px 15px;
+            min-height: 110px;
+            margin: 20px auto 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 32px;
+        }
+        .board.shake {
+            animation: shake 0.25s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .board .hint {
+            font-size: 18px;
+            color: #8b97ad;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+        .board span {
+            display: inline-block;
+            min-width: 36px;
+            padding: 6px 8px;
+            background-color: #232c40;
+            border-radius: 8px;
+            border-bottom: 3px solid #384564;
+            color: #e8ecf4;
+            text-transform: uppercase;
+        }
+        .board span.ok {
+            background-color: #14532d;
+            border-bottom-color: #22c55e;
+            color: #bbf7d0;
+        }
+        .board span.bad {
+            background-color: #7f1d1d;
+            border-bottom-color: #ef4444;
+            color: #fecaca;
+        }
+        .board span.blank {
+            background-color: #10141c;
+            border-bottom-color: #5eead4;
+            color: #5eead4;
+        }
+        .board span.cursor {
+            outline: 2px solid #5eead4;
+            animation: pulse 0.9s infinite;
+        }
+        @keyframes pulse {
+            50% { background-color: #2e3a54; }
+        }
+        .points {
+            position: absolute;
+            top: 6px;
+            right: 14px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #5eead4;
+            animation: floatUp 0.9s ease forwards;
+            pointer-events: none;
+        }
+        @keyframes floatUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-35px); }
+        }
+
+        /* ---------- Vidas y letras erróneas (modo adivinar) ---------- */
+        .misses {
+            min-height: 30px;
+            margin-top: 12px;
+            font-size: 20px;
+            color: #f87171;
+        }
+        .misses.is-off {
+            display: none;
+        }
+        .misses .wrong {
+            display: inline-block;
+            margin-left: 12px;
+            font-size: 15px;
+            color: #8b97ad;
+            font-family: Consolas, "Courier New", monospace;
+            background-color: #1b2333;
+            border: 1px solid #2e3a54;
+            border-radius: 6px;
+            padding: 2px 10px;
+        }
+
+        /* ---------- Entrada y botones ---------- */
+        #typing {
+            width: 100%;
+            max-width: 420px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 22px;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 10px;
+            border: 2px solid #2e3a54;
+            background-color: #151b28;
+            color: #e8ecf4;
+            text-align: center;
+            outline: none;
+        }
+        #typing:focus {
+            border-color: #5eead4;
+        }
+        #status {
+            min-height: 28px;
+            color: #8b97ad;
+            font-size: 17px;
+        }
+        .main-btn {
+            background-color: #14b8a6;
+            color: #062019;
+            border: none;
+            padding: 14px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .main-btn:hover {
+            background-color: #5eead4;
+        }
+        .main-btn:active {
+            transform: scale(0.96);
+        }
+        .main-btn:disabled {
+            background-color: #384564;
+            color: #8b97ad;
+            cursor: not-allowed;
+        }
+
+        /* ---------- Resultados ---------- */
+        .results {
+            background-color: #1b2333;
+            border: 2px solid #2e3a54;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .results.hidden {
+            display: none;
+        }
+        .results h2 {
+            margin-top: 0;
+            color: #5eead4;
+        }
+        .results ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .results li {
+            background-color: #10141c;
+            border: 1px solid #2e3a54;
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
+        .results p.record {
+            color: #ffd76a;
+            font-weight: bold;
+        }
+        /* ---------- Monedas ---------- */
+        .stat.coins strong {
+            color: #ffd76a;
+        }
+        .stat.words strong {
+            color: #f0abfc;
+        }
+        .points.coin {
+            right: 120px;
+            color: #ffd76a;
+            font-size: 17px;
+        }
+
+        /* ---------- Tienda de estilos de letra ---------- */
+        .shop {
+            background-color: #1b2333;
+            border: 2px solid #2e3a54;
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 18px;
+        }
+        .shop.hidden {
+            display: none;
+        }
+        .shop-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .shop-head h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #5eead4;
+        }
+        .shop-coins {
+            background-color: #10141c;
+            border: 2px solid #2e3a54;
+            border-radius: 20px;
+            padding: 6px 16px;
+            color: #ffd76a;
+            font-weight: bold;
+        }
+        .shop-hint {
+            color: #8b97ad;
+            font-size: 14px;
+            margin: 8px 0 14px;
+        }
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        .shop-sub {
+            margin: 20px 0 10px;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b97ad;
+            border-bottom: 1px solid #2e3a54;
+            padding-bottom: 6px;
+        }
+        .shop-card {
+            background-color: #10141c;
+            border: 2px solid #2e3a54;
+            border-radius: 10px;
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .shop-card:hover {
+            border-color: #5eead4;
+            transform: translateY(-3px);
+        }
+        .shop-card.equipped {
+            border-color: #14b8a6;
+            background-color: #0e2723;
+        }
+        .shop-preview {
+            font-size: 30px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        .shop-thumb {
+            width: 100%;
+            height: 78px;
+            border-radius: 8px;
+            border: 1px solid #2e3a54;
+            background-color: #10141c;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+        }
+        .shop-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #e8ecf4;
+        }
+        .shop-price {
+            font-size: 13px;
+            color: #ffd76a;
+        }
+        .shop-btn {
+            font-size: 13px;
+            padding: 6px 12px;
+            margin-top: 4px;
+        }
+        .shop-btn.cant {
+            background-color: #384564;
+            color: #8b97ad;
+            border: 2px solid #2e3a54;
+        }
+        .shop-btn.cant:hover {
+            border-color: #f87171;
+            color: #f87171;
+        }
+        .shop-msg {
+            min-height: 22px;
+            margin: 12px 0 0;
+            font-size: 14px;
+            color: #5eead4;
+        }
+
+        /* ---------- Estilos de letra comprados ---------- */
+        body {
+            --game-font: Consolas, "Courier New", monospace;
+            --game-weight: normal;
+            --game-style: normal;
+            --game-spacing: normal;
+            --game-color: #e8ecf4;
+            --game-shadow: none;
+        }
+        .ff-clasico    { --game-font: Consolas, "Courier New", monospace; }
+        .ff-moderno    { --game-font: "Poppins", "Segoe UI", Arial, sans-serif;
+                         --game-weight: 600; --game-spacing: 2px; --game-color: #dbeafe; }
+        .ff-elegante   { --game-font: Georgia, "Times New Roman", serif;
+                         --game-style: italic; --game-color: #f3e9d2; }
+        .ff-pixel      { --game-font: "Press Start 2P", Consolas, "Courier New", monospace;
+                         --game-color: #a7f3d0; --game-shadow: 0 0 8px rgba(94, 234, 212, 0.45); }
+        .ff-manuscrito { --game-font: "Pacifico", "Brush Script MT", cursive;
+                         --game-color: #ffd6e0; }
+        .ff-comic      { --game-font: "Comic Sans MS", "Comic Sans", cursive;
+                         --game-color: #fde68a; }
+        .ff-neon       { --game-font: "Segoe UI", Arial, sans-serif;
+                         --game-weight: bold; --game-spacing: 3px;
+                         --game-color: #5eead4;
+                         --game-shadow: 0 0 6px #5eead4, 0 0 18px #14b8a6; }
+        .ff-oro        { --game-font: Georgia, "Times New Roman", serif;
+                         --game-weight: bold; --game-color: #ffd76a;
+                         --game-shadow: 0 0 10px rgba(255, 190, 60, 0.65); }
+
+        body[class*="ff-"] .board {
+            font-family: var(--game-font);
+            font-weight: var(--game-weight);
+            font-style: var(--game-style);
+            letter-spacing: var(--game-spacing);
+        }
+        body[class*="ff-"] .board span {
+            font-family: var(--game-font);
+            font-weight: var(--game-weight);
+            font-style: var(--game-style);
+            letter-spacing: var(--game-spacing);
+            text-shadow: var(--game-shadow);
+        }
+        body[class*="ff-"] .board span:not(.ok):not(.bad):not(.blank) {
+            color: var(--game-color);
+        }
+        body[class*="ff-"] #typing {
+            font-family: var(--game-font);
+            font-weight: var(--game-weight);
+            font-style: var(--game-style);
+            letter-spacing: var(--game-spacing);
+            color: var(--game-color);
+            text-shadow: var(--game-shadow);
+        }
+        .font-preview {
+            font-family: var(--game-font);
+            font-weight: var(--game-weight);
+            font-style: var(--game-style);
+            letter-spacing: var(--game-spacing);
+            color: var(--game-color);
+            text-shadow: var(--game-shadow);
+        }
+        /* Tamaños adaptados a fuentes anchas */
+        body.ff-pixel .board { font-size: 16px; }
+        body.ff-pixel #typing { font-size: 15px; }
+        body.ff-moderno .board { font-size: 28px; }
+        body.ff-manuscrito .board { font-size: 28px; }
+        body.ff-comic .board { font-size: 28px; }
+
+        footer {
+            background-color: #1b2333;
+            border: 2px solid #2e3a54;
+            border-radius: 12px;
+            text-align: center;
+            padding: 10px;
+            margin-top: 30px;
+            color: #8b97ad;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="title">⌨️ Teclea a la Velocidad</h1>
+        <p id="subtitle">Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!</p>
+    </header>
+
+    <div class="selectors">
+        <div class="sel-row">
+            <span class="sel-label" id="langLabel">Idioma / Language</span>
+            <button class="chip-btn active" id="btnEs">🇪🇸 Español</button>
+            <button class="chip-btn" id="btnEn">🇬🇧 English</button>
+        </div>
+        <div class="sel-row">
+            <span class="sel-label" id="modeLabel">Modo de juego</span>
+            <button class="chip-btn active" id="btnType">⌨️ Tecleo</button>
+            <button class="chip-btn" id="btnGuess">🧩 Adivinar</button>
+            <button class="chip-btn" id="btnMurciano">🗣️ Murciano</button>
+        </div>
+        <div class="sel-row">
+            <span class="sel-label" id="bgLabel">Fondo de pantalla</span>
+            <button class="chip-btn active" id="btnBgDark">🌙 Oscuro</button>
+            <button class="chip-btn" id="btnBgFranco">🖼️ Francisco Franco</button>
+            <span id="bgExtra"></span>
+        </div>
+        <div class="sel-row">
+            <button class="chip-btn" id="btnShop">🛒 Tienda</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><span id="kScore">Puntos</span><strong id="score">0</strong></div>
+        <div class="stat coins"><span id="kCoins">Monedas</span><strong id="coins">0</strong></div>
+        <div class="stat" id="timeBox"><span id="kTime">Tiempo</span><strong id="time">60</strong></div>
+        <div class="stat"><span id="kStreak">Racha</span><strong id="streak">0</strong></div>
+        <div class="stat"><span id="kLevel">Nivel</span><strong id="level">1</strong></div>
+        <div class="stat"><span id="kBest">Récord</span><strong id="best">0</strong></div>
+        <div class="stat words"><span id="kBestWords">Récord palabras</span><strong id="bestWords">0</strong></div>
+    </div>
+
+    <section class="shop hidden" id="shop">
+        <div class="shop-head">
+            <h2 id="shopTitle">🛒 Tienda de estilos</h2>
+            <span class="shop-coins">🪙 <span id="shopCoins">0</span></span>
+        </div>
+        <p class="shop-hint" id="shopHint">Gana 1 moneda por cada palabra que completes. ¡Cómpralas para desbloquear estilos de letra!</p>
+
+        <h3 class="shop-sub" id="shopFontsTitle">🔤 Estilos de letra</h3>
+        <div class="shop-grid" id="shopGrid"></div>
+
+        <h3 class="shop-sub" id="shopBgsTitle">🖼️ Fondos de pantalla</h3>
+        <div class="shop-grid" id="shopBgGrid"></div>
+
+        <p class="shop-msg" id="shopMsg"></p>
+    </section>
+
+    <div class="stage" id="stage">
+        <div class="board" id="board">
+            <em class="hint">Pulsa "Jugar" o la barra espaciadora para empezar</em>
+        </div>
+    </div>
+
+    <div class="misses is-off" id="misses"></div>
+
+    <input id="typing" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+           placeholder="Escribe aquí..." disabled>
+
+    <p id="status">Modo relájado: sin presión, teclea a tu ritma… ¡hasta que empiezas!</p>
+
+    <button class="main-btn" id="startBtn">Jugar</button>
+
+    <div class="results hidden" id="results">
+        <h2 id="rTitle">¡Tiempo agotado! ⏱️</h2>
+        <ul>
+            <li><span id="rkScore">Puntos</span>: <strong id="rScore">0</strong></li>
+            <li><span id="rkWords">Palabras</span>: <strong id="rWords">0</strong></li>
+            <li><span id="rkAcc">Precisión</span>: <strong id="rAcc">0%</strong></li>
+            <li><span id="rkPpm">Palabras/min</span>: <strong id="rPpm">0</strong></li>
+            <li><span id="rkCoins">Monedas</span>: <strong id="rCoins">0</strong></li>
+            <li><span id="rkBestWords">Récord palabras</span>: <strong id="rBestWords">0</strong></li>
+        </ul>
+        <p id="rMsg"></p>
+    </div>
+
+    <footer>
+        <p id="footer">&copy; 2026 Minijuegos Web · Archivo: teclear.html</p>
+    </footer>
+
+    <script>
+        // ---------- Configuración ----------
+        const GAME_TIME = 60;  // segundos
+        const MAX_MISSES = 5;  // fallos permitidos por palabra (modo adivinar)
+
+        const WORDS = {
+            es: [
+                "casa", "perro", "gato", "árbol", "mar", "sol", "luna", "flor",
+                "pan", "rápido", "teclado", "juego", "escribir", "velocidad",
+                "programa", "javascript", "ratón", "pantalla", "ventana",
+                "ciudad", "playa", "montaña", "fuego", "agua", "viento",
+                "estrella", "viaje", "música", "libro", "escuela", "amigo",
+                "familia", "comida", "ciencia", "naturaleza", "aventura",
+                "memoria", "cursor", "archivo", "carpeta", "sistema", "código",
+                "página", "número", "tecla", "pulso", "reto", "nivel",
+                "puntuación", "increíble", "desafío", "concentración",
+                "tecnología", "creatividad", "inteligencia", "experimento"
+            ],
+            en: [
+                "cat", "dog", "sun", "run", "key", "box", "day", "map",
+                "sky", "tree", "book", "game", "type", "fast", "code",
+                "word", "time", "home", "name", "hand", "mouse", "screen",
+                "window", "city", "beach", "fire", "water", "wind", "star",
+                "travel", "music", "school", "friend", "family", "food",
+                "science", "nature", "adventure", "memory", "cursor",
+                "file", "folder", "system", "page", "number", "level",
+                "challenge", "incredible", "focus", "keyboard", "speed",
+                "typing", "program", "javascript", "technology", "creative",
+                "intelligence", "experiment", "mountain", "evening"
+            ]
+        };
+
+        // ---------- Palabras del modo Murciano ----------
+        // Se escriben tal y como aparecen en pantalla (giros y voz de la Huerta)
+        const MURCIANO_WORDS = [
+            // Giros del habla murciana
+            "muxo", "mu", "na", "to", "ta", "amo", "jarta", "ejtar",
+            "hotro", "pueta", "lexos", "tene", "queré", "usté", "ñana",
+            "gracius", "arreglau", "ganes", "debé", "talega", "agermiao",
+            "germear", "amostazá", "parecé", "manoja", "altramuces",
+            "pataca", "albérchigo", "huertano",
+            // Sabores y paisaje de la Huerta
+            "zarangollo", "caldero", "marinera", "escabeche", "atún",
+            "melón", "sandía", "pimentón", "azafrán", "azahar", "segura",
+            "huerta", "torta", "migas", "almejas", "arroz", "azúcar",
+            "cencerro", "vendimia", "esparto", "tapas"
+        ];
+
+        // ---------- Estilos de letra de la tienda ----------
+        // font: pila de fuentes (la última siempre existe como reserva)
+        // cls: clase CSS que aplica el estilo (definida en el bloque de estilos)
+        const FONT_STYLES = [
+            { id: "clasico",  price: 0,   cls: "ff-clasico",  es: "Clásico",  en: "Classic",  font: 'Consolas, "Courier New", monospace' },
+            { id: "moderno",  price: 25,  cls: "ff-moderno",  es: "Moderno",  en: "Modern",   font: '"Poppins", "Segoe UI", Arial, sans-serif' },
+            { id: "elegante", price: 50,  cls: "ff-elegante", es: "Elegante", en: "Elegant",  font: 'Georgia, "Times New Roman", serif' },
+            { id: "pixel",    price: 80,  cls: "ff-pixel",    es: "Pixel",    en: "Pixel",    font: '"Press Start 2P", Consolas, monospace' },
+            { id: "comic",    price: 120, cls: "ff-comic",    es: "Cómic",    en: "Comic",    font: '"Comic Sans MS", "Comic Sans", cursive' },
+            { id: "script",   price: 160, cls: "ff-manuscrito", es: "Manuscrito", en: "Script", font: '"Pacifico", "Brush Script MT", cursive' },
+            { id: "neon",     price: 220, cls: "ff-neon",     es: "Neón",     en: "Neon",     font: '"Segoe UI", Arial, sans-serif' },
+            { id: "oro",      price: 300, cls: "ff-oro",      es: "Oro",      en: "Gold",     font: 'Georgia, "Times New Roman", serif' }
+        ];
+
+        // ---------- Fondos de pantalla de la tienda ----------
+        // price 0 = siempre disponible; Franco se compra en la tienda (120 monedas)
+        const BACKGROUNDS = [
+            { id: "dark",    price: 0,   es: "Oscuro",            en: "Dark",             img: "" },
+            { id: "franco",  price: 120, es: "Francisco Franco",  en: "Francisco Franco", img: "Francisco_Franco_1930.jpg" },
+            { id: "elprico", price: 60, es: "Elprico",           en: "Elprico",          img: "Elprico.jfif" },
+            { id: "esteso",  price: 90, es: "Esteso",            en: "Esteso",           img: "esteso.jfif" }
+        ];
+
+        // ---------- Textos de la interfaz por idioma ----------
+        const I18N = {
+            es: {
+                docTitle: "Minijuego: Teclea a la Velocidad",
+                title: "⌨️ Teclea a la Velocidad",
+                subtitleT: "Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!",
+                subtitleG: "Adivina la palabra con letras ocultas: escribe solo una letra cada vez. ¡Los fallos quitan vidas!",
+                subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
+                modeLabel: "Modo de juego",
+                btnType: "⌨️ Tecleo",
+                btnGuess: "🧩 Adivinar",
+                btnMurciano: "🗣️ Murciano",
+                bgLabel: "Fondo de pantalla",
+                bgDark: "🌙 Oscuro",
+                bgFranco: "🖼️ Francisco Franco",
+                kScore: "Puntos", kTime: "Tiempo", kStreak: "Racha", kLevel: "Nivel", kBest: "Récord",
+                kCoins: "Monedas",
+                kBestWords: "Récord palabras",
+                btnShop: "🛒 Tienda",
+                shopTitle: "🛒 Tienda de estilos",
+                shopHint: "Gana 1 moneda por cada palabra que completes. ¡Cómpralas para desbloquear letras y fondos de pantalla!",
+                shopFontsTitle: "🔤 Estilos de letra",
+                shopBgsTitle: "🖼️ Fondos de pantalla",
+                shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
+                shopNoMoney: "¡No tienes suficientes monedas! 🪙",
+                shopBought: "¡Estilo desbloqueado! Ya puedes usarlo. ✨",
+                shopBoughtBg: "¡Fondo desbloqueado! Ya puedes usarlo. ✨",
+                shopEquippedMsg: "Estilo aplicado al tablero. 🔤",
+                shopEquippedBgMsg: "Fondo de pantalla aplicado. 🖼️",
+                boardIdle: 'Pulsa "Jugar" o la barra espaciadora para empezar',
+                boardEnd: 'Fin de la partida — pulsa "Jugar otra vez" para repetir',
+                placeholder: "Escribe aquí...",
+                statusIdle: "Modo relájado: sin presión, teclea a tu ritma… ¡hasta que empiezas!",
+                statusPlay: "Escribe la palabra completa para sumar puntos. ¡Mantén la racha!",
+                statusPlayG: "Adivina las letras que faltan, una por vez. ¡" + MAX_MISSES + " fallos y se acabó la palabra!",
+                statusPlayM: "Teclea la palabra murciana tal y como aparece, sin cambiarle nada. ¡Vamoh a ve!",
+                statusEnd: "Pulsa la barra espaciadora o el botón para volver a jugar.",
+                statusError: "¡Tecla incorrecta! -5 puntos y pierdes la racha 😵",
+                statusOk: "¡Sigue así! La racha multiplica tus puntos. 🚀",
+                wordFailed: "¡Se te resistió! La palabra era: ",
+                btnStart: "Jugar", btnRestart: "Reiniciar", btnAgain: "Jugar otra vez",
+                rTitle: "¡Tiempo agotado! ⏱️",
+                rkScore: "Puntos", rkWords: "Palabras", rkWordsG: "Palabras adivinadas",
+                rkAcc: "Precisión", rkPpm: "Palabras/min", rkCoins: "Monedas ganadas",
+                rkBestWords: "Récord palabras",
+                msgRecord: "🏆 ¡Nuevo récord! Se ha guardado tu mejor puntuación.",
+                msgWordsRecord: "🏆 ¡Nuevo récord personal de palabras escritas! Se ha guardado tu marca. 📝",
+                msgRecordBoth: "🏆 ¡Doble récord! Mejor puntuación y más palabras escritas guardadas. 📝",
+                msgAcc: "Impresionante precisión, casi no fallaste ni una tecla. 🎯",
+                msgRhythm: "¡Muy buen ritmo! Sigue practicando para subir de nivel. 🔥",
+                msgRetry: "Buena partida, prueba a superar tu récord en la siguiente. 💪",
+                footer: "&copy; 2026 Minijuegos Web · Archivo: teclear.html"
+            },
+            en: {
+                docTitle: "Typing Game: Speed Typing",
+                title: "⌨️ Speed Typing Challenge",
+                subtitleT: "Type every word before time runs out. Wrong keys break your streak!",
+                subtitleG: "Guess the word with hidden letters: type only one letter at a time. Misses cost lives!",
+                subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
+                modeLabel: "Game mode",
+                btnType: "⌨️ Typing",
+                btnGuess: "🧩 Guess word",
+                btnMurciano: "🗣️ Murcia dialect",
+                bgLabel: "Background",
+                bgDark: "🌙 Dark",
+                bgFranco: "🖼️ Francisco Franco",
+                kScore: "Points", kTime: "Time", kStreak: "Streak", kLevel: "Level", kBest: "Best",
+                kCoins: "Coins",
+                kBestWords: "Words record",
+                btnShop: "🛒 Shop",
+                shopTitle: "🛒 Style Shop",
+                shopHint: "Earn 1 coin for every word you complete. Spend them to unlock fonts and wallpapers!",
+                shopFontsTitle: "🔤 Font styles",
+                shopBgsTitle: "🖼️ Wallpapers",
+                shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
+                shopNoMoney: "Not enough coins! 🪙",
+                shopBought: "Style unlocked! You can equip it now. ✨",
+                shopBoughtBg: "Wallpaper unlocked! You can use it now. ✨",
+                shopEquippedMsg: "Style applied to the board. 🔤",
+                shopEquippedBgMsg: "Wallpaper applied. 🖼️",
+                boardIdle: 'Press "Play" or the space bar to start',
+                boardEnd: 'Game over — press "Play again" to retry',
+                placeholder: "Type here...",
+                statusIdle: "Relaxed mode: no pressure, type at your own pace… until you start!",
+                statusPlay: "Type the whole word to score. Keep your streak alive!",
+                statusPlayG: "Guess the missing letters, one at a time. " + MAX_MISSES + " misses and the word is over!",
+                statusPlayM: "Type the Murcian word exactly as shown, letter for letter. Let's go!",
+                statusEnd: "Press the space bar or the button to play again.",
+                statusError: "Wrong key! -5 points and you lose your streak 😵",
+                statusOk: "Keep it up! Your streak multiplies your points. 🚀",
+                wordFailed: "It got away! The word was: ",
+                btnStart: "Play", btnRestart: "Restart", btnAgain: "Play again",
+                rTitle: "Time's up! ⏱️",
+                rkScore: "Points", rkWords: "Words", rkWordsG: "Words guessed",
+                rkAcc: "Accuracy", rkPpm: "Words/min", rkCoins: "Coins earned",
+                rkBestWords: "Words record",
+                msgRecord: "🏆 New record! Your best score has been saved.",
+                msgWordsRecord: "🏆 New personal record for words typed! Your mark has been saved. 📝",
+                msgRecordBoth: "🏆 Double record! Best score and most words typed, both saved. 📝",
+                msgAcc: "Amazing accuracy, you barely missed a key. 🎯",
+                msgRhythm: "Great pace! Keep practicing to level up. 🔥",
+                msgRetry: "Good game, try to beat your record next time. 💪",
+                footer: "&copy; 2026 Web Mini-Games · File: teclear.html"
+            }
+        };
+
+        // ---------- Estado ----------
+        let lang = "es";
+        let mode = "type";      // type | guess | murciano
+        let bg = "dark";        // dark | franco | elprico | esteso
+        let state = "idle";     // idle | playing | over
+        let word = "";
+        let mask = [];          // modo adivinar: "start" | "hidden" | "found"
+        let wrongLetters = [];  // modo adivinar
+        let misses = 0;         // modo adivinar
+        let score = 0;
+        let streak = 0;
+        let hits = 0;           // teclas / letras acertadas
+        let errors = 0;         // fallos
+        let completed = 0;
+        let prevLen = 0;        // longitud aceptada en el modo tecleo
+        let timeLeft = GAME_TIME;
+        let lastTick = 0;
+        let timerId = null;
+        let best = 0;
+        let bestWords = 0;         // récord personal de palabras escritas
+        let coins = 0;             // monedas acumuladas
+        let coinsRun = 0;          // monedas ganadas en la partida actual
+        let owned = ["clasico"];   // estilos comprados
+        let equipped = "clasico";  // estilo activo
+        let ownedBgs = ["dark"];   // fondos desbloqueados (Franco se compra)
+        let shopOpen = false;
+
+        const t = k => I18N[lang][k];
+
+        // ---------- Elementos ----------
+        const stage = document.getElementById("stage");
+        const board = document.getElementById("board");
+        const missesEl = document.getElementById("misses");
+        const typing = document.getElementById("typing");
+        const startBtn = document.getElementById("startBtn");
+        const status = document.getElementById("status");
+        const scoreEl = document.getElementById("score");
+        const timeEl = document.getElementById("time");
+        const timeBox = document.getElementById("timeBox");
+        const streakEl = document.getElementById("streak");
+        const levelEl = document.getElementById("level");
+        const bestEl = document.getElementById("best");
+        const bestWordsEl = document.getElementById("bestWords");
+        const coinsEl = document.getElementById("coins");
+        const shop = document.getElementById("shop");
+        const shopGrid = document.getElementById("shopGrid");
+        const shopBgGrid = document.getElementById("shopBgGrid");
+        const bgExtra = document.getElementById("bgExtra");
+        const shopMsg = document.getElementById("shopMsg");
+        const shopCoins = document.getElementById("shopCoins");
+        const btnShop = document.getElementById("btnShop");
+        const results = document.getElementById("results");
+        const btnEs = document.getElementById("btnEs");
+        const btnEn = document.getElementById("btnEn");
+        const btnType = document.getElementById("btnType");
+        const btnGuess = document.getElementById("btnGuess");
+        const btnMurciano = document.getElementById("btnMurciano");
+        const btnBgDark = document.getElementById("btnBgDark");
+        const btnBgFranco = document.getElementById("btnBgFranco");
+        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnShop];
+
+        // ---------- Récord por idioma ----------
+        function loadBest() {
+            try {
+                let v = localStorage.getItem("mejorTecleo." + lang);
+                if (v === null && lang === "es") {
+                    v = localStorage.getItem("mejorTecleo"); // récord antiguo
+                }
+                return parseInt(v || "0", 10) || 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function saveBest() {
+            try {
+                localStorage.setItem("mejorTecleo." + lang, String(best));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // ---------- Récord personal de palabras escritas ----------
+        function loadBestWords() {
+            try {
+                const v = localStorage.getItem("mejorPalabras." + lang);
+                return parseInt(v || "0", 10) || 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function saveBestWords() {
+            try {
+                localStorage.setItem("mejorPalabras." + lang, String(bestWords));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // ---------- Monedas y tienda: persistencia ----------
+        function loadShop() {
+            try {
+                coins = parseInt(localStorage.getItem("teclear.monedas") || "0", 10) || 0;
+                const o = JSON.parse(localStorage.getItem("teclear.estilos") || "null");
+                if (Array.isArray(o) && o.length) owned = o;
+                const eq = localStorage.getItem("teclear.estilo");
+                if (eq && owned.includes(eq)) equipped = eq;
+                const ob = JSON.parse(localStorage.getItem("teclear.fondos") || "null");
+                if (Array.isArray(ob) && ob.length) {
+                    ownedBgs = ob;
+                } else if (localStorage.getItem("teclear.fondos") === null &&
+                           localStorage.getItem("teclear.fondo") === "franco") {
+                    // Migración: quien ya usaba el fondo de Franco antes de la tienda lo conserva
+                    ownedBgs = ["dark", "franco"];
+                }
+            } catch (e) {
+                coins = 0;
+                owned = ["clasico"];
+                equipped = "clasico";
+                ownedBgs = ["dark"];
+            }
+            if (!owned.includes("clasico")) owned.push("clasico");
+            if (!ownedBgs.includes("dark")) ownedBgs.push("dark");
+        }
+
+        function saveShop() {
+            try {
+                localStorage.setItem("teclear.monedas", String(coins));
+                localStorage.setItem("teclear.estilos", JSON.stringify(owned));
+                localStorage.setItem("teclear.estilo", equipped);
+                localStorage.setItem("teclear.fondos", JSON.stringify(ownedBgs));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        function updateCoins() {
+            coinsEl.textContent = coins;
+            shopCoins.textContent = coins;
+            if (shopOpen) renderShop();
+        }
+
+        // Otorga monedas por cada palabra completada (1 por palabra)
+        function giveCoins(n) {
+            coins += n;
+            coinsRun += n;
+            saveShop();
+            updateCoins();
+        }
+
+        function styleById(id) {
+            return FONT_STYLES.find(s => s.id === id) || FONT_STYLES[0];
+        }
+
+        // Aplica el estilo equipado al tablero y a la entrada
+        function applyStyle() {
+            const st = styleById(equipped);
+            FONT_STYLES.forEach(s => document.body.classList.remove(s.cls));
+            document.body.classList.add(st.cls);
+        }
+
+        function setEquipped(id) {
+            if (!owned.includes(id)) return;
+            equipped = id;
+            saveShop();
+            applyStyle();
+            renderShop();
+            shopMsg.textContent = t("shopEquippedMsg");
+        }
+
+        function buyStyle(st) {
+            if (owned.includes(st.id)) {
+                setEquipped(st.id);
+                return;
+            }
+            if (coins < st.price) {
+                shopMsg.textContent = t("shopNoMoney");
+                return;
+            }
+            coins -= st.price;
+            owned.push(st.id);
+            equipped = st.id;
+            saveShop();
+            applyStyle();
+            updateCoins();
+            shopMsg.textContent = t("shopBought");
+        }
+
+        function renderShop() {
+            if (!shopGrid) return;
+            shopGrid.innerHTML = "";
+            FONT_STYLES.forEach(st => {
+                const card = document.createElement("div");
+                card.className = "shop-card " + st.cls;
+                if (st.id === equipped) card.classList.add("equipped");
+
+                const prev = document.createElement("div");
+                prev.className = "shop-preview font-preview";
+                prev.style.fontFamily = st.font;
+                prev.textContent = "Aa";
+                card.appendChild(prev);
+
+                const name = document.createElement("div");
+                name.className = "shop-name";
+                name.textContent = lang === "es" ? st.es : st.en;
+                card.appendChild(name);
+
+                const price = document.createElement("div");
+                price.className = "shop-price";
+                price.textContent = owned.includes(st.id) ? "✓ " + t("shopOwned") : "🪙 " + st.price;
+                card.appendChild(price);
+
+                const btn = document.createElement("button");
+                btn.className = "chip-btn shop-btn";
+                if (st.id === equipped) {
+                    btn.textContent = t("shopEquipped");
+                    btn.disabled = true;
+                } else if (owned.includes(st.id)) {
+                    btn.textContent = t("shopEquip");
+                    btn.addEventListener("click", () => setEquipped(st.id));
+                } else {
+                    btn.textContent = t("shopBuy");
+                    if (coins < st.price) btn.classList.add("cant");
+                    btn.addEventListener("click", () => buyStyle(st));
+                }
+                card.appendChild(btn);
+                shopGrid.appendChild(card);
+            });
+            renderBgShop();
+        }
+
+        function renderBgShop() {
+            if (!shopBgGrid) return;
+            shopBgGrid.innerHTML = "";
+            BACKGROUNDS.forEach(b => {
+                const card = document.createElement("div");
+                card.className = "shop-card";
+                if (b.id === bg) card.classList.add("equipped");
+
+                const thumb = document.createElement("div");
+                thumb.className = "shop-thumb";
+                if (b.img) thumb.style.backgroundImage = 'url("' + b.img + '")';
+                else thumb.textContent = "🌙";
+                card.appendChild(thumb);
+
+                const name = document.createElement("div");
+                name.className = "shop-name";
+                name.textContent = lang === "es" ? b.es : b.en;
+                card.appendChild(name);
+
+                const price = document.createElement("div");
+                price.className = "shop-price";
+                price.textContent = ownedBgs.includes(b.id) ? "✓ " + t("shopOwned") : "🪙 " + b.price;
+                card.appendChild(price);
+
+                const btn = document.createElement("button");
+                btn.className = "chip-btn shop-btn";
+                if (b.id === bg) {
+                    btn.textContent = t("shopEquipped");
+                    btn.disabled = true;
+                } else if (ownedBgs.includes(b.id)) {
+                    btn.textContent = t("shopEquip");
+                    btn.addEventListener("click", () => setBgEquipped(b.id));
+                } else {
+                    btn.textContent = t("shopBuy");
+                    if (coins < b.price) btn.classList.add("cant");
+                    btn.addEventListener("click", () => buyBg(b));
+                }
+                card.appendChild(btn);
+                shopBgGrid.appendChild(card);
+            });
+        }
+
+        function toggleShop() {
+            if (state === "playing") return;
+            shopOpen = !shopOpen;
+            shop.classList.toggle("hidden", !shopOpen);
+            btnShop.classList.toggle("active", shopOpen);
+            if (shopOpen) {
+                shopMsg.textContent = "";
+                renderShop();
+            }
+        }
+
+        btnShop.addEventListener("click", toggleShop);
+
+        // ---------- Idioma y modo ----------
+        function applyLang() {
+            document.documentElement.lang = lang;
+            document.title = t("docTitle");
+
+            document.getElementById("title").textContent = t("title");
+            document.getElementById("subtitle").textContent =
+                mode === "guess" ? t("subtitleG") :
+                mode === "murciano" ? t("subtitleM") : t("subtitleT");
+            document.getElementById("modeLabel").textContent = t("modeLabel");
+            btnType.textContent = t("btnType");
+            btnGuess.textContent = t("btnGuess");
+            btnMurciano.textContent = t("btnMurciano");
+            document.getElementById("bgLabel").textContent = t("bgLabel");
+            btnBgDark.textContent = t("bgDark");
+            btnBgFranco.textContent = t("bgFranco");
+            document.getElementById("kScore").textContent = t("kScore");
+            document.getElementById("kTime").textContent = t("kTime");
+            document.getElementById("kStreak").textContent = t("kStreak");
+            document.getElementById("kLevel").textContent = t("kLevel");
+            document.getElementById("kBest").textContent = t("kBest");
+            document.getElementById("kCoins").textContent = t("kCoins");
+            document.getElementById("kBestWords").textContent = t("kBestWords");
+            btnShop.textContent = t("btnShop");
+            document.getElementById("shopTitle").textContent = t("shopTitle");
+            document.getElementById("shopHint").textContent = t("shopHint");
+            document.getElementById("shopFontsTitle").textContent = t("shopFontsTitle");
+            document.getElementById("shopBgsTitle").textContent = t("shopBgsTitle");
+            document.getElementById("rTitle").textContent = t("rTitle");
+            document.getElementById("rkScore").textContent = t("rkScore");
+            document.getElementById("rkWords").textContent =
+                mode === "guess" ? t("rkWordsG") : t("rkWords");
+            document.getElementById("rkAcc").textContent = t("rkAcc");
+            document.getElementById("rkPpm").textContent = t("rkPpm");
+            document.getElementById("rkCoins").textContent = t("rkCoins");
+            document.getElementById("rkBestWords").textContent = t("rkBestWords");
+            document.getElementById("footer").innerHTML = t("footer");
+
+            typing.placeholder = t("placeholder");
+            btnEs.classList.toggle("active", lang === "es");
+            btnEn.classList.toggle("active", lang === "en");
+            btnType.classList.toggle("active", mode === "type");
+            btnGuess.classList.toggle("active", mode === "guess");
+            btnMurciano.classList.toggle("active", mode === "murciano");
+            btnBgDark.classList.toggle("active", bg === "dark");
+            // El fondo de Franco solo aparece en el selector si está desbloqueado
+            const hasFranco = ownedBgs.includes("franco");
+            btnBgFranco.style.display = hasFranco ? "" : "none";
+            btnBgFranco.classList.toggle("active", bg === "franco");
+            BACKGROUNDS.forEach(b => {
+                document.body.classList.toggle("bg-" + b.id, bg === b.id);
+            });
+            renderBgChips();
+
+            best = loadBest();
+            bestEl.textContent = best;
+            bestWords = loadBestWords();
+            bestWordsEl.textContent = bestWords;
+
+            renderMisses();
+
+            // Textos según el estado actual de la partida
+            if (state === "idle") {
+                board.innerHTML = '<em class="hint">' + t("boardIdle") + "</em>";
+                status.textContent = t("statusIdle");
+                startBtn.textContent = t("btnStart");
+            } else if (state === "over") {
+                board.innerHTML = '<em class="hint">' + t("boardEnd") + "</em>";
+                status.textContent = t("statusEnd");
+                startBtn.textContent = t("btnAgain");
+            }
+
+            if (shopOpen) renderShop();
+            // Durante la partida no se cambia nada: los botones están bloqueados
+        }
+
+        function setLang(next) {
+            if (lang === next || state === "playing") return;
+            lang = next;
+            applyLang();
+        }
+
+        function setMode(next) {
+            if (mode === next || state === "playing") return;
+            mode = next;
+            applyLang();
+        }
+
+        btnEs.addEventListener("click", () => setLang("es"));
+        btnEn.addEventListener("click", () => setLang("en"));
+        btnType.addEventListener("click", () => setMode("type"));
+        btnGuess.addEventListener("click", () => setMode("guess"));
+        btnMurciano.addEventListener("click", () => setMode("murciano"));
+
+        // ---------- Fondo de pantalla ----------
+        function setBg(next) {
+            if (bg === next || !ownedBgs.includes(next)) return;
+            bg = next;
+            try {
+                localStorage.setItem("teclear.fondo", bg);
+            } catch (e) { /* sin almacenamiento disponible */ }
+            applyLang();
+        }
+
+        btnBgDark.addEventListener("click", () => setBg("dark"));
+        btnBgFranco.addEventListener("click", () => setBg("franco"));
+
+        // Añade al selector los fondos comprados en la tienda
+        function renderBgChips() {
+            bgExtra.innerHTML = "";
+            BACKGROUNDS.forEach(b => {
+                if (b.id === "dark" || b.id === "franco") return;
+                if (!ownedBgs.includes(b.id)) return;
+                const btn = document.createElement("button");
+                btn.className = "chip-btn";
+                btn.textContent = (b.id === "elprico" ? "😎 " : "🎨 ") + (lang === "es" ? b.es : b.en);
+                btn.classList.toggle("active", bg === b.id);
+                btn.addEventListener("click", () => setBg(b.id));
+                bgExtra.appendChild(btn);
+            });
+        }
+
+        function setBgEquipped(id) {
+            if (!ownedBgs.includes(id)) return;
+            bg = id;
+            try {
+                localStorage.setItem("teclear.fondo", bg);
+            } catch (e) { /* sin almacenamiento disponible */ }
+            applyLang();
+            renderBgShop();
+            shopMsg.textContent = t("shopEquippedBgMsg");
+        }
+
+        function buyBg(b) {
+            if (ownedBgs.includes(b.id)) {
+                setBgEquipped(b.id);
+                return;
+            }
+            if (coins < b.price) {
+                shopMsg.textContent = t("shopNoMoney");
+                return;
+            }
+            coins -= b.price;
+            ownedBgs.push(b.id);
+            bg = b.id;
+            saveShop();
+            try {
+                localStorage.setItem("teclear.fondo", bg);
+            } catch (e) { /* sin almacenamiento disponible */ }
+            applyLang();
+            updateCoins();
+            renderBgShop();
+            shopMsg.textContent = t("shopBoughtBg");
+        }
+
+        // ---------- Utilidades ----------
+        function level() {
+            return 1 + Math.floor(completed / 5);
+        }
+
+        function nextWord() {
+            const list = mode === "murciano" ? MURCIANO_WORDS : WORDS[lang];
+            const lvl = level();
+            let pool;
+            if (lvl <= 1) pool = list.filter(w => w.length <= 5);
+            else if (lvl <= 3) pool = list.filter(w => w.length <= 7);
+            else if (lvl <= 6) pool = list.filter(w => w.length >= 5);
+            else pool = list.filter(w => w.length >= 6);
+
+            if (pool.length === 0) pool = list;
+
+            let w;
+            do {
+                w = pool[Math.floor(Math.random() * pool.length)];
+            } while (w === word && pool.length > 1);
+            return w;
+        }
+
+        function multiplier() {
+            return Math.min(1 + Math.floor(streak / 4), 5);
+        }
+
+        // Oculta letras de la palabra según el nivel:
+        // nivel 1-2 → la mitad, nivel 3-5 → casi todas, nivel 6+ → todas
+        function makeMask(w) {
+            const unique = [...new Set(w.split(""))];
+            for (let i = unique.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = unique[i];
+                unique[i] = unique[j];
+                unique[j] = tmp;
+            }
+            const lvl = level();
+            let ratio = 0.5;
+            if (lvl >= 6) ratio = 1;
+            else if (lvl >= 3) ratio = 0.7;
+            const hideCount = Math.max(1, Math.ceil(unique.length * ratio));
+            const hidden = new Set(unique.slice(0, hideCount));
+            return w.split("").map(ch => (hidden.has(ch) ? "hidden" : "start"));
+        }
+
+        function updateHud() {
+            scoreEl.textContent = score;
+            streakEl.textContent = streak + " (x" + multiplier() + ")";
+            levelEl.textContent = level();
+            timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
+            timeBox.classList.toggle("low", timeLeft <= 10 && state === "playing");
+        }
+
+        function renderWord(typed) {
+            board.innerHTML = "";
+            for (let i = 0; i < word.length; i++) {
+                const s = document.createElement("span");
+                s.textContent = word[i];
+                if (i < typed.length) {
+                    s.className = typed[i] === word[i] ? "ok" : "bad";
+                } else if (i === typed.length) {
+                    s.className = "cursor";
+                }
+                board.appendChild(s);
+            }
+        }
+
+        function renderGuess() {
+            board.innerHTML = "";
+            const firstHidden = mask.indexOf("hidden");
+            for (let i = 0; i < word.length; i++) {
+                const s = document.createElement("span");
+                if (mask[i] === "hidden") {
+                    s.textContent = "_";
+                    s.className = "blank" + (i === firstHidden ? " cursor" : "");
+                } else {
+                    s.textContent = word[i];
+                    s.className = mask[i] === "found" ? "ok" : "";
+                }
+                board.appendChild(s);
+            }
+        }
+
+        function renderCurrent() {
+            if (mode === "guess") renderGuess();
+            else renderWord(typing.value);
+        }
+
+        function renderMisses() {
+            if (mode !== "guess") {
+                missesEl.classList.add("is-off");
+                return;
+            }
+            missesEl.classList.remove("is-off");
+            let html = "";
+            for (let i = 0; i < MAX_MISSES; i++) {
+                html += i < misses ? "🖤" : "❤️";
+            }
+            if (wrongLetters.length > 0) {
+                html += '<span class="wrong">✕ ' + wrongLetters.join(" · ") + "</span>";
+            }
+            missesEl.innerHTML = html;
+        }
+
+        function showPoints(points) {
+            const p = document.createElement("div");
+            p.className = "points";
+            p.textContent = "+" + points;
+            stage.appendChild(p);
+            setTimeout(() => p.remove(), 900);
+        }
+
+        function showCoin() {
+            const c = document.createElement("div");
+            c.className = "points coin";
+            c.textContent = "🪙 +1";
+            stage.appendChild(c);
+            setTimeout(() => c.remove(), 900);
+        }
+
+        function shake() {
+            board.classList.remove("shake");
+            void board.offsetWidth; // reinicia la animación
+            board.classList.add("shake");
+        }
+
+        // ---------- Ciclo de juego ----------
+        function newWord() {
+            typing.value = "";
+            prevLen = 0;
+            word = nextWord();
+            if (mode === "guess") {
+                mask = makeMask(word);
+                misses = 0;
+                wrongLetters = [];
+                renderMisses();
+            }
+            renderCurrent();
+            updateHud();
+        }
+
+        function completeWord() {
+            completed++;
+            streak++;
+            const points = word.length * 10 * multiplier();
+            score += points;
+            showPoints(points);
+            giveCoins(1);        // 1 moneda por cada palabra escrita
+            showCoin();
+            newWord();
+        }
+
+        function startGame() {
+            if (state === "playing") return;
+
+            state = "playing";
+            score = 0;
+            streak = 0;
+            hits = 0;
+            errors = 0;
+            completed = 0;
+            prevLen = 0;
+            misses = 0;
+            wrongLetters = [];
+            timeLeft = GAME_TIME;
+            coinsRun = 0;
+
+            if (shopOpen) { // la tienda se cierra al empezar
+                shopOpen = false;
+                shop.classList.add("hidden");
+                btnShop.classList.remove("active");
+            }
+
+            results.classList.add("hidden");
+            startBtn.textContent = t("btnRestart");
+            selBtns.forEach(b => { b.disabled = true; });
+            typing.disabled = false;
+            typing.value = "";
+            typing.focus();
+            status.textContent =
+                mode === "guess" ? t("statusPlayG") :
+                mode === "murciano" ? t("statusPlayM") : t("statusPlay");
+            lastTick = performance.now();
+
+            newWord();
+            renderMisses();
+            updateHud();
+
+            clearInterval(timerId);
+            timerId = setInterval(tick, 100);
+        }
+
+        function tick() {
+            const now = performance.now();
+            timeLeft -= (now - lastTick) / 1000;
+            lastTick = now;
+
+            if (timeLeft <= 0) {
+                timeLeft = 0;
+                updateHud();
+                endGame();
+                return;
+            }
+            updateHud();
+        }
+
+        function endGame() {
+            clearInterval(timerId);
+            state = "over";
+            typing.disabled = true;
+            selBtns.forEach(b => { b.disabled = false; });
+            startBtn.textContent = t("btnAgain");
+
+            const total = hits + errors;
+            const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
+            const ppm = completed / (GAME_TIME / 60);
+
+            document.getElementById("rScore").textContent = score;
+            document.getElementById("rWords").textContent = completed;
+            document.getElementById("rAcc").textContent = acc + "%";
+            document.getElementById("rPpm").textContent = Math.round(ppm);
+            document.getElementById("rCoins").textContent = coinsRun;
+
+            const newScoreRecord = score > best;
+            const newWordsRecord = completed > bestWords;
+
+            if (newScoreRecord) {
+                best = score;
+                saveBest();
+                bestEl.textContent = best;
+            }
+            if (newWordsRecord) {
+                bestWords = completed;
+                saveBestWords();
+                bestWordsEl.textContent = bestWords;
+            }
+            document.getElementById("rBestWords").textContent = bestWords;
+
+            let msg;
+            if (newScoreRecord && newWordsRecord) {
+                msg = t("msgRecordBoth");
+            } else if (newScoreRecord) {
+                msg = t("msgRecord");
+            } else if (newWordsRecord) {
+                msg = t("msgWordsRecord");
+            } else if (acc >= 95) {
+                msg = t("msgAcc");
+            } else if (completed >= 20) {
+                msg = t("msgRhythm");
+            } else {
+                msg = t("msgRetry");
+            }
+            const rMsgEl = document.getElementById("rMsg");
+            rMsgEl.textContent = msg;
+            rMsgEl.classList.toggle("record", newScoreRecord || newWordsRecord);
+
+            board.innerHTML = '<em class="hint">' + t("boardEnd") + "</em>";
+            status.textContent = t("statusEnd");
+            results.classList.remove("hidden");
+        }
+
+        // ---------- Modo tecleo: escribir la palabra completa ----------
+        function typeInput() {
+            let val = typing.value.toLowerCase();
+            if (typing.value !== val) typing.value = val;
+
+            if (val.length > word.length) {
+                val = val.slice(0, word.length);
+                typing.value = val;
+            }
+
+            // Detecta la primera tecla mal escrita: la rechaza y penaliza
+            let bad = -1;
+            for (let i = 0; i < val.length; i++) {
+                if (val[i] !== word[i]) {
+                    bad = i;
+                    break;
+                }
+            }
+
+            if (bad !== -1) {
+                errors++;
+                streak = 0;
+                score = Math.max(0, score - 5);
+                val = val.slice(0, bad);
+                typing.value = val;
+                shake();
+                status.textContent = t("statusError");
+            } else {
+                if (val.length > prevLen) hits += val.length - prevLen;
+                status.textContent = t("statusOk");
+            }
+
+            prevLen = val.length;
+            renderWord(val);
+            updateHud();
+
+            if (val === word) {
+                completeWord();
+            }
+        }
+
+        // ---------- Modo adivinar: descubrir letras ocultas ----------
+        function guessChar(raw) {
+            const ch = raw.toLowerCase();
+            if (!/^[a-záéíóúüñ]$/.test(ch)) return;       // ignorar espacios y símbolos
+            if (wrongLetters.includes(ch)) return;         // letra ya fallada
+            if (!word.includes(ch)) {                      // fallo
+                errors++;
+                streak = 0;
+                misses++;
+                score = Math.max(0, score - 5);
+                wrongLetters.push(ch);
+                shake();
+
+                if (misses >= MAX_MISSES) {
+                    status.textContent = t("wordFailed") + word;
+                    newWord();
+                } else {
+                    status.textContent = t("statusError");
+                }
+                updateHud();
+                return;
+            }
+
+            // Acierto: revela todas las instancias que seguían ocultas
+            let revealed = 0;
+            for (let i = 0; i < word.length; i++) {
+                if (word[i] === ch && mask[i] === "hidden") {
+                    mask[i] = "found";
+                    revealed++;
+                }
+            }
+            if (revealed === 0) return; // la letra ya se veía: no cuenta
+
+            hits += revealed;
+            streak++;
+            const points = 10 * multiplier() * revealed;
+            score += points;
+            showPoints(points);
+            status.textContent = t("statusOk");
+
+            renderGuess();
+            renderMisses();
+            updateHud();
+
+            if (!mask.includes("hidden")) {
+                completeWord();
+            }
+        }
+
+        // ---------- Entrada del teclado ----------
+        typing.addEventListener("input", function () {
+            if (state !== "playing") {
+                typing.value = "";
+                return;
+            }
+
+            if (mode === "guess") {
+                const raw = typing.value;
+                typing.value = "";
+                for (const ch of raw) {
+                    if (state !== "playing") break;
+                    guessChar(ch);
+                }
+            } else {
+                typeInput();
+            }
+        });
+
+        // Barra espaciadora para empezar / reiniciar
+        document.addEventListener("keydown", function (e) {
+            if (state === "playing") {
+                if (e.code === "Space") e.preventDefault(); // no hacer scroll
+                return;
+            }
+            if (e.code === "Space" && e.target.tagName !== "BUTTON") {
+                e.preventDefault();
+                startGame();
+            }
+        });
+
+        startBtn.addEventListener("click", startGame);
+
+        // ---------- Inicio ----------
+        loadShop();
+        try {
+            const savedBg = localStorage.getItem("teclear.fondo");
+            if (savedBg && BACKGROUNDS.some(b => b.id === savedBg) && ownedBgs.includes(savedBg)) {
+                bg = savedBg;
+            }
+        } catch (e) {
+            bg = "dark";
+        }
+        applyStyle();
+        updateCoins();
+        applyLang();
+    </script>
+</body>
+</html>

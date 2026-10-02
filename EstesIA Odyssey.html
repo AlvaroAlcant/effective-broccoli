@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstesIA Odyssey</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(ellipse at center, #10143a 0%, #05060f 70%, #000 100%);
+            color: #e8ecff;
+            font-family: "Courier New", monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 34px;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #6ef0ff, #a77bff, #ff6ef0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 18px rgba(120, 160, 255, 0.35);
+        }
+
+        .subtitle {
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: #7f8ac0;
+            margin-top: 4px;
+        }
+
+        #wrap {
+            position: relative;
+            border: 2px solid #2b3a7a;
+            border-radius: 8px;
+            box-shadow: 0 0 35px rgba(70, 110, 255, 0.35), inset 0 0 30px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background: #04060f;
+            /* se amplía al máximo sin salirse de la ventana (mantiene la relación 1100x700) */
+            width: min(1100px, 96vw, (100vh - 170px) * 1.5714);
+            height: auto;
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 14px;
+            font-size: 15px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 6px #000;
+            pointer-events: none;
+        }
+
+        #hud span b { color: #6ef0ff; }
+
+        #hud span b#abName { color: #a77bff; }
+
+        #hud span b#turbo.active { color: #7dff9b; }
+        #hud span b#turbo.cooling { color: #ffd166; }
+
+        @media (max-width: 900px) {
+            #hud { font-size: 12px; letter-spacing: 1px; padding: 6px 8px; flex-wrap: wrap; gap: 2px 10px; }
+        }
+
+        #overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 5, 15, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 10px;
+            padding: 16px 20px;
+            overflow-y: auto;
+        }
+
+        #overlay.hidden { display: none; }
+
+        #overlay h2 {
+            margin: 0;
+            font-size: 30px;
+            letter-spacing: 5px;
+            color: #6ef0ff;
+            text-transform: uppercase;
+        }
+
+        #overlay p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #aab4e6;
+            max-width: 460px;
+        }
+
+        #overlay .keys {
+            color: #ffd166;
+            font-size: 13px;
+            line-height: 1.9;
+        }
+
+        button {
+            margin-top: 6px;
+            background: linear-gradient(180deg, #2a3c8f, #16205a);
+            color: #eaf2ff;
+            border: 1px solid #5a72d8;
+            padding: 12px 30px;
+            font-family: inherit;
+            font-size: 16px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 18px rgba(110, 240, 255, 0.5);
+        }
+
+        .diff-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .diff-block.hidden { display: none; }
+
+        .diff-label {
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: #7f8ac0;
+            text-transform: uppercase;
+        }
+
+        .diff-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .diffBtn, .shipBtn {
+            margin-top: 0;
+            padding: 9px 18px;
+            font-size: 14px;
+            background: linear-gradient(180deg, #1a2248, #101536);
+            border: 1px solid #3d4a8f;
+            box-shadow: none;
+        }
+
+        .diffBtn:hover, .shipBtn:hover { transform: translateY(-2px); }
+
+        .diffBtn.active, .shipBtn.active {
+            background: linear-gradient(180deg, #2a3c8f, #16205a);
+            border-color: #6ef0ff;
+            color: #6ef0ff;
+            box-shadow: 0 0 16px rgba(110, 240, 255, 0.45);
+        }
+
+        .ship-desc {
+            max-width: 540px;
+            min-height: 56px;
+            font-size: 12.5px;
+            line-height: 1.65;
+            color: #9aa6dd;
+        }
+
+        .ship-desc b { color: #6ef0ff; letter-spacing: 1px; }
+        .ship-desc .abl { color: #ffd166; }
+
+        footer {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #5e6896;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>EstesIA Odyssey</h1>
+        <div class="subtitle">--- ODISEA GALÁCTICA EN 2D ---</div>
+    </header>
+
+    <div id="wrap">
+        <canvas id="game" width="1100" height="700"></canvas>
+
+        <div id="hud">
+            <span>PUNTOS: <b id="score">0</b></span>
+            <span>OLEADA: <b id="wave">1</b></span>
+            <span>DIFICULTAD: <b id="diff">NORMAL</b></span>
+            <span>VIDAS: <b id="lives">♥♥♥</b></span>
+            <span><b id="abName">TURBO</b>: <b id="turbo">LISTO</b></span>
+        </div>
+
+        <div id="overlay">
+            <h2 id="ovTitle">EstesIA Odyssey</h2>
+            <p id="ovText">Pilota tu nave por el sector EstesIA y despacha a todas las naves enemigas que se interpongan en tu ruta. ¡Cuidado: cada 5 oleadas aparece un jefe con mucha vida, y cada uno es más duro que el anterior!</p>
+
+            <div class="diff-block" id="diffBlock">
+                <div class="diff-label">Dificultad</div>
+                <div class="diff-btns" id="diffBtns">
+                    <button class="diffBtn" data-diff="facil">Fácil</button>
+                    <button class="diffBtn active" data-diff="normal">Normal</button>
+                    <button class="diffBtn" data-diff="dificil">Difícil</button>
+                </div>
+            </div>
+
+            <div class="diff-block" id="shipBlock">
+                <div class="diff-label">Nave</div>
+                <div class="diff-btns" id="shipBtns">
+                    <button class="shipBtn active" data-ship="caza">Cazador</button>
+                    <button class="shipBtn" data-ship="rayo">Haz</button>
+                    <button class="shipBtn" data-ship="campo">Defensor</button>
+                </div>
+                <div class="ship-desc" id="shipDesc"></div>
+            </div>
+
+            <div class="keys" id="ovKeys">
+                ← → &nbsp;o&nbsp; A / D — mover lateralmente<br>
+                ↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>
+                CLICK IZQUIERDO — disparar un proyectil por clic<br>
+                MAYÚS (SHIFT) — turbo con 3 s de recarga<br>
+                P — pausar
+            </div>
+            <button id="startBtn">Jugar</button>
+        </div>
+    </div>
+
+    <footer>&copy; 2026 EstesIA Odyssey — un shooter arcade 2D</footer>
+
+    <script>
+    (function () {
+        "use strict";
+
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width;
+        const H = canvas.height;
+
+        const scoreEl = document.getElementById("score");
+        const waveEl = document.getElementById("wave");
+        const livesEl = document.getElementById("lives");
+        const diffEl = document.getElementById("diff");
+        const turboEl = document.getElementById("turbo");
+        const overlay = document.getElementById("overlay");
+        const ovTitle = document.getElementById("ovTitle");
+        const ovText = document.getElementById("ovText");
+        const ovKeys = document.getElementById("ovKeys");
+        const startBtn = document.getElementById("startBtn");
+        const diffBtns = document.querySelectorAll(".diffBtn");
+        const diffBlock = document.getElementById("diffBlock");
+        const shipBtns = document.querySelectorAll(".shipBtn");
+        const shipBlock = document.getElementById("shipBlock");
+        const shipDesc = document.getElementById("shipDesc");
+        const abNameEl = document.getElementById("abName");
+
+        // ---------- Dificultad ----------
+        const DIFF = {
+            facil:   { lives: 5, speed: 0.7,  spawn: 1.4,  enemyFire: 1.7,  bullet: 0.75, bossHp: 0.55, label: "Fácil" },
+            normal:  { lives: 3, speed: 1,    spawn: 1,    enemyFire: 1,    bullet: 1,    bossHp: 1,    label: "Normal" },
+            dificil: { lives: 1, speed: 1.3,  spawn: 0.65, enemyFire: 0.6,  bullet: 1.4,  bossHp: 1.5,  label: "Difícil" }
+        };
+        let difficulty = "normal";
+
+        // ---------- Naves ----------
+        const SHIPS = {
+            caza: {
+                key: "caza", name: "Cazador", ability: "TURBO",
+                w: 46, h: 34, color: "#3ad1ff", accent: "#8ff4ff",
+                duration: 1,     // segundos de turbo
+                cooldown: 3,     // recarga del turbo
+                desc: "<b>CAZADOR</b> — la nave estándar: un proyectil por cada clic.<br>" +
+                      "<span class='abl'>MAYÚS</span>: turbo (3 s de impulso, 3 s de recarga).",
+                keys: "← → &nbsp;o&nbsp; A / D — mover lateralmente<br>" +
+                      "↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>" +
+                      "CLIC IZQUIERDO — disparar un proyectil por clic<br>" +
+                      "<span class='abl'>MAYÚS (SHIFT)</span> — turbo: 3 s de impulso, 3 s de recarga<br>" +
+                      "P — pausar"
+            },
+            rayo: {
+                key: "rayo", name: "Haz", ability: "ONDA",
+                w: 54, h: 28, color: "#7dff9b", accent: "#b6ffcb",
+                duration: 0,      // el haz no tiene duración: depende del clic
+                cooldown: 10,     // recarga de la onda de choque
+                beamWidth: 30,    // grosor del haz
+                beamDps: 16,      // daño por segundo del haz
+                shockDmg: 30,     // daño de la onda de choque
+                shockSpeed: 1150, // velocidad de propagación (px/s)
+                desc: "<b>HAZ</b> — dispara un láser continuo mientras mantienes pulsado el ratón " +
+                      "(te mueves más despacio mientras está activo).<br>" +
+                      "<span class='abl'>MAYÚS</span>: onda de choque que barre toda la pantalla (10 s de recarga).",
+                keys: "← → &nbsp;o&nbsp; A / D — mover lateralmente<br>" +
+                      "↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>" +
+                      "<span class='abl'>MANTENER CLIC IZQUIERDO</span> — haz láser (reduce tu velocidad)<br>" +
+                      "<span class='abl'>MAYÚS (SHIFT)</span> — onda de choque: 10 s de recarga<br>" +
+                      "P — pausar"
+            },
+            campo: {
+                key: "campo", name: "Defensor", ability: "CAMPO",
+                w: 44, h: 38, color: "#a77bff", accent: "#d5c3ff",
+                duration: 10,     // segundos de campo de energía
+                cooldown: 20,     // recarga del campo
+                desc: "<b>DEFENSOR</b> — lanza proyectiles autodirigidos que buscan al enemigo más cercano.<br>" +
+                      "<span class='abl'>MAYÚS</span>: campo de energía que protege la nave durante 10 s (20 s de recarga).",
+                keys: "← → &nbsp;o&nbsp; A / D — mover lateralmente<br>" +
+                      "↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>" +
+                      "CLIC IZQUIERDO — proyectil autodirigido al enemigo más cercano<br>" +
+                      "<span class='abl'>MAYÚS (SHIFT)</span> — campo de energía 10 s, 20 s de recarga<br>" +
+                      "P — pausar"
+            }
+        };
+        let shipId = "caza";                     // la primera (Cazador) es la por defecto
+        function currentShip() { return SHIPS[shipId]; }
+
+        // ---------- Estado ----------
+        let state = "menu"; // menu | playing | paused | gameover
+        let score = 0;
+        let wave = 1;
+        let lives = 3;
+        let highScore = 0;
+        let lastTime = 0;
+
+        const keys = {};
+
+        // ---------- Estrellas de fondo ----------
+        const stars = [];
+        for (let i = 0; i < 180; i++) {
+            stars.push({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: Math.random() * 1.6 + 0.3,
+                s: Math.random() * 40 + 15
+            });
+        }
+
+        // ---------- Jugador ----------
+        const player = {
+            x: W / 2,
+            y: H - 70,
+            w: 46,
+            h: 34,
+            speed: 340,
+            invincible: 0,
+            alive: true,
+            beamOn: false,        // haz láser manteniendo pulsado el ratón (nave Haz)
+            abilityActive: 0,     // segundos de efecto de la habilidad (turbo / campo)
+            abilityCooldown: 0,   // segundos de recarga de la habilidad
+            shock: null           // onda de choque en expansión (nave Haz)
+        };
+
+        let bullets = [];       // balas del jugador
+        let enemies = [];       // naves enemigas
+        let enemyBullets = [];  // disparos enemigos
+        let particles = [];     // explosiones
+        let spawnTimer = 0;
+        let spawnInterval = 1.6;
+
+        // ---------- Jefe de oleada ----------
+        const BOSS_EVERY = 5;    // aparece un jefe cada 5 oleadas
+        let boss = null;         // jefe activo (null si no hay)
+        let bannerText = "";     // aviso grande en pantalla
+        let bannerTimer = 0;
+        let bannerMax = 1;
+
+        function showBanner(text, time) {
+            bannerText = text;
+            bannerTimer = time;
+            bannerMax = time;
+        }
+
+        // ¿hay alguna oleada de jefe entre "from+1" y "to"? (devuelve esa oleada o -1)
+        function nextBossWave(from, to) {
+            const candidate = (Math.floor(from / BOSS_EVERY) + 1) * BOSS_EVERY;
+            return candidate <= to ? candidate : -1;
+        }
+
+        // ---------- Entrada ----------
+        window.addEventListener("keydown", (e) => {
+            keys[e.code] = true;
+            if (["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.code)) {
+                e.preventDefault();
+            }
+            if (e.code === "KeyP" && (state === "playing" || state === "paused")) {
+                togglePause();
+            }
+            if (!e.repeat && (e.code === "ShiftLeft" || e.code === "ShiftRight")) {
+                activateAbility();
+            }
+        });
+        window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+
+        // Disparo con el ratón:
+        //  - Cazador / Defensor: un proyectil por cada clic
+        //  - Haz: el haz dura mientras se mantiene pulsado el clic
+        canvas.addEventListener("mousedown", (e) => {
+            if (e.button !== 0) return;
+            if (state !== "playing") return;
+            if (shipId === "rayo") player.beamOn = true;
+            else shoot();
+        });
+        window.addEventListener("mouseup", (e) => {
+            if (e.button !== 0) return;
+            player.beamOn = false;
+        });
+        canvas.addEventListener("mouseleave", () => { player.beamOn = false; });
+        window.addEventListener("blur", () => { player.beamOn = false; });
+        canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+        // Selector de dificultad
+        diffBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                diffBtns.forEach((b) => b.classList.remove("active"));
+                btn.classList.add("active");
+                difficulty = btn.dataset.diff;
+                updateHUD();
+            });
+        });
+
+        // Selector de nave
+        shipBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                shipBtns.forEach((b) => b.classList.remove("active"));
+                btn.classList.add("active");
+                shipId = btn.dataset.ship;
+                applyShipInfo();
+            });
+        });
+
+        function applyShipInfo() {
+            const s = currentShip();
+            if (shipDesc) shipDesc.innerHTML = s.desc;
+            if (abNameEl) abNameEl.textContent = s.ability;
+            // solo se tocan las teclas si el overlay está en su pantalla inicial
+            if (state === "menu") ovKeys.innerHTML = s.keys;
+            player.w = s.w;
+            player.h = s.h;
+            updateHUD();
+        }
+
+        function showOptions(show) {
+            if (show) {
+                diffBlock.classList.remove("hidden");
+                shipBlock.classList.remove("hidden");
+            } else {
+                diffBlock.classList.add("hidden");
+                shipBlock.classList.add("hidden");
+            }
+        }
+
+        startBtn.addEventListener("click", () => {
+            if (state === "paused") {
+                state = "playing";
+                showOptions(false);
+                overlay.classList.add("hidden");
+                return;
+            }
+            startGame();
+        });
+
+        function startGame() {
+            const d = DIFF[difficulty];
+            score = 0;
+            wave = 1;
+            lives = d.lives;
+            bullets = [];
+            enemies = [];
+            enemyBullets = [];
+            particles = [];
+            spawnTimer = 0;
+            spawnInterval = 1.6 * d.spawn;
+            boss = null;
+            bannerText = "";
+            bannerTimer = 0;
+            const s = currentShip();
+            player.x = W / 2;
+            player.y = H - 70;
+            player.w = s.w;
+            player.h = s.h;
+            player.invincible = 1.5;
+            player.alive = true;
+            player.beamOn = false;
+            player.abilityActive = 0;
+            player.abilityCooldown = 0;
+            player.shock = null;
+            abilityStatus = "";
+            updateAbilityHUD();
+            state = "playing";
+            showOptions(false);
+            overlay.classList.add("hidden");
+            updateHUD();
+            lastTime = performance.now();
+        }
+
+        function togglePause() {
+            if (state === "playing") {
+                state = "paused";
+                player.beamOn = false;
+                ovTitle.textContent = "Pausa";
+                ovText.textContent = "La odisea queda detenida un momento.";
+                ovKeys.innerHTML = "Pulsa JUGAR para continuar";
+                startBtn.textContent = "Continuar";
+                showOptions(false);
+                overlay.classList.remove("hidden");
+            } else if (state === "paused") {
+                state = "playing";
+                showOptions(true);
+                overlay.classList.add("hidden");
+                lastTime = performance.now();
+            }
+        }
+
+        function gameOver() {
+            state = "gameover";
+            player.beamOn = false;
+            highScore = Math.max(highScore, score);
+            ovTitle.textContent = "Fin de la odisea";
+            ovText.innerHTML = "Puntuación: <b style='color:#6ef0ff'>" + score + "</b><br>" +
+                               "Oleada alcanzada: <b style='color:#ffd166'>" + wave + "</b><br>" +
+                               "Nave: <b style='color:#7dff9b'>" + currentShip().name + "</b><br>" +
+                               "Dificultad: <b style='color:#a77bff'>" + DIFF[difficulty].label + "</b><br>" +
+                               "Récord: <b style='color:#ff6ef0'>" + highScore + "</b>";
+            ovKeys.textContent = "¿Otra tripulación? Pulsa JUGAR";
+            startBtn.textContent = "Reintentar";
+            showOptions(true);
+            overlay.classList.remove("hidden");
+        }
+
+        function updateHUD() {
+            scoreEl.textContent = score;
+            waveEl.textContent = wave;
+            diffEl.textContent = DIFF[difficulty].label.toUpperCase();
+            livesEl.textContent = lives > 0 ? "♥".repeat(lives) : "—";
+        }
+
+        // ---------- Utilidades ----------
+        function rectsCollide(a, b) {
+            return Math.abs(a.x - b.x) * 2 < (a.w + b.w) &&
+                   Math.abs(a.y - b.y) * 2 < (a.h + b.h);
+        }
+
+        function explode(x, y, color, amount) {
+            for (let i = 0; i < amount; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const spd = Math.random() * 160 + 40;
+                particles.push({
+                    x: x, y: y,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd,
+                    life: Math.random() * 0.5 + 0.3,
+                    max: 0.8,
+                    r: Math.random() * 3 + 1.5,
+                    color: color
+                });
+            }
+        }
+
+        function shoot() {
+            if (shipId === "rayo") return;   // el Haz no dispara proyectiles: usa el haz
+
+            if (shipId === "campo") {
+                // proyectil autodirigido
+                bullets.push({
+                    x: player.x, y: player.y - 20, w: 9, h: 15,
+                    vx: 0, vy: -420,
+                    homing: true, target: null, life: 6
+                });
+                explode(player.x, player.y - 18, "#d5c3ff", 3);
+            } else {
+                // Cazador: un proyectil por clic
+                bullets.push({ x: player.x, y: player.y - 20, w: 6, h: 16, vy: -560 });
+                explode(player.x, player.y - 18, "#9fe8ff", 3);
+            }
+        }
+
+        function nearestEnemy(from) {
+            let best = null;
+            let bestD = Infinity;
+            for (const e of enemies) {
+                const dx = e.x - from.x;
+                const dy = e.y - from.y;
+                const d = dx * dx + dy * dy;
+                if (d < bestD) { bestD = d; best = e; }
+            }
+            return best;
+        }
+
+        // ---------- Habilidad (MAYÚS) ----------
+        function activateAbility() {
+            if (state !== "playing") return;
+            if (player.abilityCooldown > 0) return;
+            const s = currentShip();
+
+            if (shipId === "caza") {
+                // turbo
+                if (player.abilityActive > 0) return;
+                player.abilityActive = s.duration;
+                player.abilityCooldown = s.cooldown;
+                explode(player.x, player.y + player.h / 2, "#6ef0ff", 14);
+            } else if (shipId === "rayo") {
+                // onda de choque: anillo dañino que se propaga por toda la pantalla
+                player.abilityCooldown = s.cooldown;
+                player.shock = {
+                    r: 0,
+                    maxR: Math.hypot(Math.max(player.x, W - player.x),
+                                     Math.max(player.y, H - player.y)) + 80,
+                    speed: s.shockSpeed,
+                    dmg: s.shockDmg,
+                    hit: new Set()
+                };
+                explode(player.x, player.y, "#b6ffcb", 26);
+            } else {
+                // campo de energía
+                if (player.abilityActive > 0) return;
+                player.abilityActive = s.duration;
+                player.abilityCooldown = s.cooldown;
+                explode(player.x, player.y, "#d5c3ff", 24);
+            }
+            updateAbilityHUD();
+        }
+
+        let abilityStatus = "";
+        function updateAbilityHUD() {
+            let text, cls;
+            if (player.abilityActive > 0) {
+                text = shipId === "campo" ? player.abilityActive.toFixed(1) + " s" : "¡ACTIVO!";
+                cls = "active";
+            } else if (player.abilityCooldown > 0) {
+                text = player.abilityCooldown.toFixed(1) + " s";
+                cls = "cooling";
+            } else {
+                text = "LISTO";
+                cls = "";
+            }
+            if (text === abilityStatus) return;
+            abilityStatus = text;
+            turboEl.textContent = text;
+            turboEl.className = cls;
+        }
+
+        // ---------- Daño recibido por el jugador ----------
+        function hitPlayer() {
+            // campo de energía activo: absorbe el impacto
+            if (shipId === "campo" && player.abilityActive > 0) {
+                explode(player.x, player.y, "#d5c3ff", 16);
+                return;
+            }
+            lives--;
+            player.invincible = 2;
+            explode(player.x, player.y, "#6ef0ff", 32);
+            updateHUD();
+            if (lives <= 0) {
+                player.alive = false;
+                gameOver();
+            }
+        }
+
+        function spawnEnemy() {
+            const types = [
+                { w: 44, h: 32, hp: 1, speed: 60,  color: "#ff5d73", fire: 2.6, pts: 100 },
+                { w: 50, h: 38, hp: 2, speed: 45,  color: "#ff9f43", fire: 2.0, pts: 200 },
+                { w: 58, h: 42, hp: 4, speed: 32,  color: "#a77bff", fire: 1.5, pts: 400 }
+            ];
+            // a partir de la oleada 2 aparecen naves resistentes
+            let maxType = 0;
+            if (wave >= 2) maxType = 1;
+            if (wave >= 4) maxType = 2;
+            const t = types[Math.floor(Math.random() * (maxType + 1))];
+            const d = DIFF[difficulty];
+
+            const margin = t.w;
+            const x = margin + Math.random() * (W - margin * 2);
+
+            enemies.push({
+                x: x,
+                y: -t.h,
+                w: t.w,
+                h: t.h,
+                hp: t.hp,
+                maxHp: t.hp,
+                speed: (t.speed + wave * 6) * d.speed,
+                color: t.color,
+                fireRate: t.fire * d.enemyFire,
+                timer: Math.random() * t.fire,
+                pts: t.pts,
+                drift: (Math.random() * 2 - 1) * 40,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        // ---------- Jefe ----------
+        function spawnBoss() {
+            if (boss) return;
+
+            const level = Math.max(1, Math.round(wave / BOSS_EVERY)); // 1, 2, 3...
+            const d = DIFF[difficulty];
+            const w = 150 + level * 16;                       // crece con cada jefe
+            const h = 92 + level * 8;
+            const maxHp = Math.round((60 + 45 * (level - 1)) * d.bossHp); // mucha vida, y más cada vez
+            const colors = ["#ff2d55", "#ff6ef0", "#a77bff", "#ff9f43", "#6ef0ff", "#7dff9b"];
+
+            const e = {
+                x: W / 2,
+                y: -h,
+                w: w,
+                h: h,
+                hp: maxHp,
+                maxHp: maxHp,
+                speed: (55 + level * 14) * d.speed,           // patrulla más rápida
+                color: colors[(level - 1) % colors.length],
+                fireRate: Math.max(0.5, (1.7 - level * 0.13) * d.enemyFire), // dispara más seguido
+                timer: 1.4,
+                volleyTimer: 2.6,                             // abanico de disparos
+                minionTimer: 5,                               // escoltas
+                pts: 1000 + level * 500,
+                drift: 0,
+                phase: 0,
+                isBoss: true,
+                level: level,
+                dir: Math.random() < 0.5 ? -1 : 1,
+                targetY: 110 + h / 2,                         // se queda arriba
+                entered: false                                // ya ha entrado en escena
+            };
+
+            boss = e;
+            enemies.push(e);
+            showBanner("¡JEFE DE LA OLEADA " + wave + "!", 2.4);
+        }
+
+        function bossAimedShot(e) {
+            const speed = (300 + e.level * 22) * DIFF[difficulty].bullet;
+            const dx = player.x - e.x;
+            const dy = player.y - (e.y + e.h / 2);
+            const base = Math.atan2(dy, dx);
+            const extra = Math.min(2, Math.max(0, e.level - 1)); // más niveles = más perdigones
+            const angles = [base];
+            for (let k = 1; k <= extra; k++) {
+                angles.push(base - 0.22 * k, base + 0.22 * k);
+            }
+            for (const a of angles) {
+                enemyBullets.push({
+                    x: e.x, y: e.y + e.h / 2,
+                    w: 9, h: 18,
+                    vx: Math.cos(a) * speed,
+                    vy: Math.sin(a) * speed
+                });
+            }
+        }
+
+        function bossVolley(e) {
+            const n = Math.min(9, 3 + e.level);              // abanico más ancho
+            const speed = (230 + e.level * 15) * DIFF[difficulty].bullet;
+            const spread = Math.min(2.4, 1.2 + e.level * 0.1);
+            const center = Math.PI / 2;
+            for (let k = 0; k < n; k++) {
+                const a = n === 1 ? center : center - spread / 2 + spread * (k / (n - 1));
+                enemyBullets.push({
+                    x: e.x, y: e.y + e.h / 2,
+                    w: 8, h: 16,
+                    vx: Math.cos(a) * speed,
+                    vy: Math.sin(a) * speed
+                });
+            }
+        }
+
+        function updateBoss(e, dt) {
+            const d = DIFF[difficulty];
+
+            // entrada en escena (solo la primera vez)
+            if (!e.entered) {
+                e.y = Math.min(e.targetY, e.y + 130 * dt);
+                if (e.y >= e.targetY) e.entered = true;
+                return;
+            }
+
+            // patrulla lateral + balanceo
+            e.x += e.dir * e.speed * dt;
+            if (e.x > W - e.w / 2 - 12) { e.x = W - e.w / 2 - 12; e.dir = -1; }
+            if (e.x < e.w / 2 + 12)     { e.x = e.w / 2 + 12;     e.dir = 1; }
+            e.y = e.targetY + Math.sin(e.phase * 1.3) * 12;
+
+            // ataque 1: disparo dirigido al jugador
+            e.timer -= dt;
+            if (e.timer <= 0) {
+                e.timer = e.fireRate;
+                bossAimedShot(e);
+            }
+
+            // ataque 2: abanico ancho
+            e.volleyTimer -= dt;
+            if (e.volleyTimer <= 0) {
+                e.volleyTimer = Math.max(2.2, 5.5 - e.level * 0.35) * d.enemyFire;
+                bossVolley(e);
+            }
+
+            // escoltas: cada vez salen más naves pequeñas
+            e.minionTimer -= dt;
+            if (e.minionTimer <= 0) {
+                e.minionTimer = Math.max(2.6, 6.5 - e.level * 0.5);
+                let live = 0;
+                for (const x of enemies) if (!x.isBoss) live++;
+                if (live < Math.min(4, e.level + 1)) spawnEnemy();
+            }
+        }
+
+        function killBoss(index, b) {
+            score += b.pts;
+            enemies.splice(index, 1);
+            boss = null;
+            for (let k = 0; k < 6; k++) {
+                explode(b.x + (Math.random() - 0.5) * b.w,
+                        b.y + (Math.random() - 0.5) * b.h, b.color, 24);
+            }
+            explode(b.x, b.y, "#ffffff", 44);
+            enemyBullets = [];   // el cielo se despeja como recompensa
+            showBanner("¡JEFE DERROTADO!  +" + b.pts, 2.6);
+            updateHUD();
+        }
+
+        // ---------- Actualización ----------
+        function update(dt) {
+            const turboOn = state === "playing" && shipId === "caza" && player.abilityActive > 0;
+
+            // estrellas (aceleran con el turbo)
+            for (const s of stars) {
+                s.y += s.s * dt * (turboOn ? 2.6 : 1);
+                if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+            }
+
+            if (state !== "playing") return;
+
+            // --- habilidad: duración y recarga ---
+            player.abilityActive = Math.max(0, player.abilityActive - dt);
+            player.abilityCooldown = Math.max(0, player.abilityCooldown - dt);
+            const turboMul = turboOn ? 2.6 : 1;
+            // el Haz se mueve más despacio mientras mantiene el haz activo
+            const beamSlow = (shipId === "rayo" && player.beamOn) ? 0.45 : 1;
+            const moveMul = turboMul * beamSlow;
+
+            // --- jugador: lateral (← → / A D) ---
+            let dir = 0;
+            if (keys["ArrowLeft"] || keys["KeyA"]) dir -= 1;
+            if (keys["ArrowRight"] || keys["KeyD"]) dir += 1;
+            player.x += dir * player.speed * moveMul * dt;
+            player.x = Math.max(player.w / 2 + 6, Math.min(W - player.w / 2 - 6, player.x));
+
+            // --- jugador: adelante / atrás (↑ ↓ / W S) ---
+            let dirY = 0;
+            if (keys["ArrowUp"] || keys["KeyW"]) dirY -= 1;
+            if (keys["ArrowDown"] || keys["KeyS"]) dirY += 1;
+            player.y += dirY * player.speed * 0.8 * moveMul * dt;
+            const topLimit = 76;                 // deja libre la barra de HUD
+            const botLimit = H - player.h / 2 - 8;
+            player.y = Math.max(topLimit, Math.min(botLimit, player.y));
+
+            player.invincible = Math.max(0, player.invincible - dt);
+            updateAbilityHUD();
+
+            // --- balas jugador ---
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+
+                if (b.homing) {
+                    // proyectil autodirigido: busca al enemigo más cercano
+                    if (!b.target || enemies.indexOf(b.target) === -1) b.target = nearestEnemy(b);
+                    if (b.target) {
+                        const want = Math.atan2(b.target.y - b.y, b.target.x - b.x);
+                        let cur = Math.atan2(b.vy, b.vx);
+                        let diff = want - cur;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        const turn = 7 * dt;
+                        cur += Math.max(-turn, Math.min(turn, diff));
+                        const spd = 520;
+                        b.vx = Math.cos(cur) * spd;
+                        b.vy = Math.sin(cur) * spd;
+                    }
+                    b.x += b.vx * dt;
+                    b.y += b.vy * dt;
+                    b.life -= dt;
+                    if (b.life <= 0 || b.x < -40 || b.x > W + 40 || b.y < -60 || b.y > H + 60) {
+                        bullets.splice(i, 1);
+                        continue;
+                    }
+                } else {
+                    b.y += b.vy * dt;
+                    if (b.y < -20) { bullets.splice(i, 1); continue; }
+                }
+
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const e = enemies[j];
+                    if (rectsCollide(b, e)) {
+                        bullets.splice(i, 1);
+                        e.hp -= 1;
+                        if (e.isBoss) {
+                            explode(b.x, b.y, "#ffd166", 6);
+                            if (e.hp <= 0) killBoss(j, e);
+                        } else {
+                            explode(b.x, b.y, "#9fe8ff", 5);
+                            if (e.hp <= 0) {
+                                score += e.pts;
+                                explode(e.x, e.y, e.color, 26);
+                                enemies.splice(j, 1);
+                                updateHUD();
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // --- enemigos ---
+            if (boss) {
+                spawnTimer = spawnInterval;   // durante el duelo de jefe solo salen sus escoltas
+            } else {
+                spawnTimer -= dt;
+                if (spawnTimer <= 0) {
+                    spawnEnemy();
+                    spawnInterval = Math.max(0.45, 1.6 - wave * 0.12) * DIFF[difficulty].spawn;
+                    spawnTimer = spawnInterval;
+                }
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.phase += dt;
+
+                if (e.isBoss) {
+                    updateBoss(e, dt);
+                } else {
+                    e.y += e.speed * dt;
+                    e.x += Math.sin(e.phase * 1.6) * e.drift * dt;
+                    e.x = Math.max(e.w / 2, Math.min(W - e.w / 2, e.x));
+
+                    // disparo enemigo
+                    e.timer -= dt;
+                    if (e.timer <= 0 && e.y > 0 && e.y < H - 160) {
+                        e.timer = e.fireRate;
+                        enemyBullets.push({ x: e.x, y: e.y + e.h / 2, w: 6, h: 14, vy: (240 + wave * 10) * DIFF[difficulty].bullet });
+                    }
+
+                    // llegó abajo: castigo
+                    if (e.y > H + e.h) {
+                        enemies.splice(i, 1);
+                        lives--;
+                        updateHUD();
+                        if (lives <= 0) { gameOver(); return; }
+                        continue;
+                    }
+                }
+
+                // colisión con el jugador
+                if (player.invincible <= 0 && rectsCollide(e, player)) {
+                    if (e.isBoss) {
+                        // el jefe no se destruye: empuja al jugador hacia abajo
+                        player.y = Math.min(H - player.h / 2 - 8, e.y + e.h / 2 + player.h / 2 + 6);
+                    } else {
+                        enemies.splice(i, 1);
+                        explode(e.x, e.y, e.color, 22);
+                    }
+                    hitPlayer();
+                    if (state !== "playing") return;
+                }
+            }
+
+            // --- haz láser (nave Haz): daño continuo mientras se mantiene el clic ---
+            if (shipId === "rayo" && player.beamOn) {
+                const halfW = currentShip().beamWidth / 2;
+                const noseY = player.y - player.h / 2;
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const e = enemies[i];
+                    if (e.x + e.w / 2 > player.x - halfW &&
+                        e.x - e.w / 2 < player.x + halfW &&
+                        e.y + e.h / 2 > 0 &&
+                        e.y - e.h / 2 < noseY) {
+                        e.hp -= currentShip().beamDps * dt;
+                        if (e.hp <= 0) {
+                            if (e.isBoss) {
+                                killBoss(i, e);
+                            } else {
+                                score += e.pts;
+                                explode(e.x, e.y, e.color, 26);
+                                enemies.splice(i, 1);
+                                updateHUD();
+                            }
+                        }
+                    }
+                }
+                // el haz pulveriza también los disparos enemigos
+                for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                    const b = enemyBullets[i];
+                    if (Math.abs(b.x - player.x) <= halfW + b.w / 2 && b.y < player.y) {
+                        enemyBullets.splice(i, 1);
+                        explode(b.x, b.y, "#b6ffcb", 3);
+                    }
+                }
+            }
+
+            // --- onda de choque (nave Haz): se propaga por toda la pantalla ---
+            if (player.shock) {
+                const sh = player.shock;
+                sh.r += sh.speed * dt;
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const e = enemies[i];
+                    if (sh.hit.has(e)) continue;
+                    const d = Math.hypot(e.x - player.x, e.y - player.y);
+                    if (d <= sh.r + Math.max(e.w, e.h) / 2) {
+                        sh.hit.add(e);
+                        e.hp -= sh.dmg;
+                        explode(e.x, e.y, "#b6ffcb", 8);
+                        if (e.hp <= 0) {
+                            if (e.isBoss) {
+                                killBoss(i, e);
+                            } else {
+                                score += e.pts;
+                                explode(e.x, e.y, e.color, 26);
+                                enemies.splice(i, 1);
+                                updateHUD();
+                            }
+                        }
+                    }
+                }
+                // barre los proyectiles enemigos a su paso
+                for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                    const b = enemyBullets[i];
+                    if (Math.hypot(b.x - player.x, b.y - player.y) <= sh.r) {
+                        enemyBullets.splice(i, 1);
+                        explode(b.x, b.y, "#b6ffcb", 3);
+                    }
+                }
+                if (sh.r >= sh.maxR) player.shock = null;
+            }
+
+            // --- balas enemigas ---
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const b = enemyBullets[i];
+                b.y += b.vy * dt;
+                b.x += (b.vx || 0) * dt;
+                if (b.y > H + 20 || b.x < -30 || b.x > W + 30) { enemyBullets.splice(i, 1); continue; }
+
+                if (player.invincible <= 0 && rectsCollide(b, player)) {
+                    enemyBullets.splice(i, 1);
+                    hitPlayer();
+                    if (state !== "playing") return;
+                }
+            }
+
+            // --- partículas ---
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.life -= dt;
+                if (p.life <= 0) { particles.splice(i, 1); continue; }
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vx *= 0.96;
+                p.vy *= 0.96;
+            }
+
+            // --- aviso grande en pantalla ---
+            bannerTimer = Math.max(0, bannerTimer - dt);
+
+            // --- control de oleadas ---
+            // mientras el jefe siga vivo no avanza la oleada
+            if (!boss) {
+                const newWave = Math.floor(score / 1000) + 1;
+                if (newWave > wave) {
+                    const bossWave = nextBossWave(wave, newWave);
+                    wave = bossWave > 0 ? bossWave : newWave;
+                    updateHUD();
+                    if (wave % BOSS_EVERY === 0) spawnBoss();
+                }
+            }
+        }
+
+        // ---------- Dibujo ----------
+        function drawShip(x, y, w, h, color, flip) {
+            ctx.save();
+            ctx.translate(x, y);
+            if (flip) ctx.scale(1, -1);
+
+            // cuerpo
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, -h / 2);
+            ctx.lineTo(w / 2, h / 2);
+            ctx.lineTo(w / 4, h / 3);
+            ctx.lineTo(-w / 4, h / 3);
+            ctx.lineTo(-w / 2, h / 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // cabina
+            ctx.fillStyle = "rgba(255,255,255,0.75)";
+            ctx.beginPath();
+            ctx.ellipse(0, -h * 0.05, w * 0.13, h * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // alerones
+            ctx.fillStyle = "rgba(0,0,0,0.35)";
+            ctx.fillRect(-w / 2, h / 4, w / 5, h / 5);
+            ctx.fillRect(w / 2 - w / 5, h / 4, w / 5, h / 5);
+
+            ctx.restore();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+
+            // fondo
+            const g = ctx.createLinearGradient(0, 0, 0, H);
+            g.addColorStop(0, "#080b1e");
+            g.addColorStop(1, "#03040c");
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+
+            // estrellas
+            for (const s of stars) {
+                ctx.globalAlpha = 0.4 + (s.r / 2);
+                ctx.fillStyle = "#cfe0ff";
+                ctx.fillRect(s.x, s.y, s.r, s.r * 2);
+            }
+            ctx.globalAlpha = 1;
+
+            if (state === "menu") return;
+
+            // partículas
+            for (const p of particles) {
+                ctx.globalAlpha = Math.max(0, p.life / p.max);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // balas del jugador (color según la nave)
+            const s = currentShip();
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = s.accent;
+            ctx.fillStyle = shipId === "campo" ? "#e9ddff" : "#c8f6ff";
+            for (const b of bullets) {
+                if (b.homing) {
+                    // proyectil autodirigido: punta brillante
+                    ctx.save();
+                    ctx.translate(b.x, b.y);
+                    ctx.rotate(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(0, -b.h);
+                    ctx.lineTo(b.w / 2, b.h / 2);
+                    ctx.lineTo(-b.w / 2, b.h / 2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                } else {
+                    ctx.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+                }
+            }
+
+            // balas enemigas
+            ctx.shadowColor = "#ff5d73";
+            ctx.fillStyle = "#ffb3c1";
+            for (const b of enemyBullets) ctx.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+            ctx.shadowBlur = 0;
+
+            // enemigos
+            for (const e of enemies) {
+                if (e.isBoss) {
+                    // jefe: mayor, con resplandor y blindaje visible
+                    ctx.save();
+                    ctx.shadowBlur = 36;
+                    ctx.shadowColor = e.color;
+                    drawShip(e.x, e.y, e.w, e.h, e.color, true);
+                    ctx.restore();
+
+                    // núcleo pulsante
+                    const pulse = 0.6 + Math.sin(e.phase * 6) * 0.4;
+                    ctx.fillStyle = "rgba(255,255,255," + (0.55 + pulse * 0.45).toFixed(2) + ")";
+                    ctx.beginPath();
+                    ctx.ellipse(e.x, e.y, e.w * 0.1, e.h * 0.16, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // cañones laterales
+                    ctx.fillStyle = e.color;
+                    ctx.fillRect(e.x - e.w / 2 - 10, e.y + e.h * 0.15, 16, e.h * 0.3);
+                    ctx.fillRect(e.x + e.w / 2 - 6, e.y + e.h * 0.15, 16, e.h * 0.3);
+                } else {
+                    drawShip(e.x, e.y, e.w, e.h, e.color, true);
+                    if (e.maxHp > 1) {
+                        const barW = e.w;
+                        ctx.fillStyle = "rgba(0,0,0,0.6)";
+                        ctx.fillRect(e.x - barW / 2, e.y - e.h / 2 - 9, barW, 4);
+                        ctx.fillStyle = "#7dff9b";
+                        ctx.fillRect(e.x - barW / 2, e.y - e.h / 2 - 9, barW * (e.hp / e.maxHp), 4);
+                    }
+                }
+            }
+
+            // barra de vida del jefe
+            if (boss) {
+                const barW = Math.min(560, W - 240);
+                const barH = 16;
+                const bx = W / 2 - barW / 2;
+                const by = 44;
+                const ratio = Math.max(0, boss.hp / boss.maxHp);
+
+                ctx.font = "bold 14px 'Courier New', monospace";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ffd166";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#ff2d55";
+                ctx.fillText("JEFE · OLEADA " + wave + " · NIVEL " + boss.level, W / 2, by - 9);
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = "rgba(0,0,0,0.75)";
+                ctx.fillRect(bx - 3, by - 3, barW + 6, barH + 6);
+                ctx.fillStyle = "#2a0d16";
+                ctx.fillRect(bx, by, barW, barH);
+                const gbar = ctx.createLinearGradient(bx, 0, bx + barW, 0);
+                gbar.addColorStop(0, "#ff2d55");
+                gbar.addColorStop(1, "#ffd166");
+                ctx.fillStyle = gbar;
+                ctx.fillRect(bx, by, barW * ratio, barH);
+                ctx.strokeStyle = "rgba(255,255,255,0.35)";
+                ctx.strokeRect(bx - 0.5, by - 0.5, barW + 1, barH + 1);
+
+                ctx.fillStyle = "#e8ecff";
+                ctx.font = "bold 12px 'Courier New', monospace";
+                ctx.fillText(Math.max(0, Math.ceil(boss.hp)) + " / " + boss.maxHp, W / 2, by + barH + 15);
+                ctx.textAlign = "left";
+            }
+
+            // aviso grande (jefe que entra / jefe derrotado)
+            if (bannerTimer > 0 && bannerText) {
+                const alpha = Math.max(0, Math.min(1, bannerTimer * 2, (bannerMax - bannerTimer) * 3));
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.textAlign = "center";
+                ctx.font = "bold 46px 'Courier New', monospace";
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = "#ff6ef0";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(bannerText, W / 2, H * 0.42);
+                ctx.restore();
+            }
+
+            // haz láser (nave Haz): mientras se mantiene pulsado el ratón
+            if (state === "playing" && shipId === "rayo" && player.beamOn) {
+                const bw = s.beamWidth;
+                ctx.save();
+                ctx.shadowBlur = 24;
+                ctx.shadowColor = s.accent;
+                const bg = ctx.createLinearGradient(player.x - bw / 2, 0, player.x + bw / 2, 0);
+                bg.addColorStop(0, "rgba(125,255,155,0)");
+                bg.addColorStop(0.5, "rgba(125,255,155,0.92)");
+                bg.addColorStop(1, "rgba(125,255,155,0)");
+                ctx.fillStyle = bg;
+                ctx.fillRect(player.x - bw / 2, 0, bw, player.y);
+                ctx.fillStyle = "rgba(255,255,255,0.9)";
+                ctx.fillRect(player.x - bw / 6, 0, bw / 3, player.y);
+                ctx.restore();
+            }
+
+            // onda de choque (nave Haz): anillo que barre la pantalla
+            if (player.shock) {
+                const sh = player.shock;
+                const fade = Math.max(0, 1 - sh.r / sh.maxR);
+                ctx.save();
+                ctx.globalAlpha = 0.2 + 0.6 * fade;
+                ctx.strokeStyle = "#b6ffcb";
+                ctx.lineWidth = 3 + 12 * fade;
+                ctx.shadowBlur = 26;
+                ctx.shadowColor = "#7dff9b";
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, sh.r, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // jugador
+            if (player.alive && (player.invincible <= 0 || Math.floor(player.invincible * 12) % 2 === 0)) {
+                const turboOn = state === "playing" && shipId === "caza" && player.abilityActive > 0;
+
+                // motor (llama más larga y azul con turbo)
+                if (turboOn) {
+                    ctx.shadowBlur = 24;
+                    ctx.shadowColor = "#6ef0ff";
+                }
+                ctx.fillStyle = turboOn ? "#6ef0ff" : "#ffd166";
+                ctx.beginPath();
+                ctx.moveTo(player.x - 7, player.y + player.h / 2 - 4);
+                ctx.lineTo(player.x, player.y + player.h / 2 + 10 + Math.random() * 8 + (turboOn ? 26 : 0));
+                ctx.lineTo(player.x + 7, player.y + player.h / 2 - 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                if (turboOn) {
+                    ctx.shadowBlur = 26;
+                    ctx.shadowColor = "#6ef0ff";
+                }
+                drawShip(player.x, player.y, player.w, player.h, turboOn ? "#8ff4ff" : s.color, false);
+                ctx.shadowBlur = 0;
+
+                // campo de energía (nave Defensor)
+                if (shipId === "campo" && player.abilityActive > 0) {
+                    const r = Math.max(player.w, player.h) * 0.85 + 14 +
+                              Math.sin(player.abilityActive * 8) * 3;
+                    ctx.save();
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = "#d5c3ff";
+                    ctx.shadowBlur = 24;
+                    ctx.shadowColor = "#a77bff";
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.globalAlpha = 0.16;
+                    ctx.fillStyle = "#a77bff";
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
+        // ---------- Bucle ----------
+        function loop(now) {
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+            update(dt);
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        applyShipInfo();   // descripción, teclas y nombre de la habilidad de la nave elegida
+        updateHUD();
+        requestAnimationFrame((t) => { lastTime = t; requestAnimationFrame(loop); });
+    })();
+    </script>
+</body>
+</html>
