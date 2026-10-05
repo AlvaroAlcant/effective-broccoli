@@ -933,9 +933,17 @@
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
         const RANK_URL = "https://mantledb.sh/v2/teclear-ranking/ranking";
+        const NAMES_URL = "https://mantledb.sh/v2/teclear-ranking/nombres"; // nombres ya reservados
         const RANK_MAX = 10;       // puntuaciones que se guardan/muestran
+        const NAMES_MAX = 500;     // nombres que admite la lista de reservas
         const RANK_TIMEOUT = 8000; // ms de espera antes de dar por perdida una petición
         const NAME_MAX = 20;       // longitud máxima del nombre del jugador
+        // Límites de seguridad: una fila que los supera es imposible de lograr
+        // jugando, así que se descarta (protege el JSON frente a ediciones manuales)
+        const MAX_SCORE = 50000000;   // puntos absolutos admisibles
+        const MAX_WORDS = 50000;      // palabras absolutas admisibles
+        const PTS_PER_WORD = 600;     // puntos máximos alcanzables por palabra
+        const SEAL_SALT = "teclear.v1"; // sal del sello de integridad
 
         const WORDS = {
             es: [
@@ -1069,6 +1077,7 @@
                 statusEnd: "Pulsa la barra espaciadora o el botón para volver a jugar.",
                 statusError: "¡Tecla incorrecta! -5 puntos y pierdes la racha 😵",
                 statusOk: "¡Sigue así! La racha multiplica tus puntos. 🚀",
+                statusNoPaste: "🚫 Pegar no cuenta: teclea las palabras a mano.",
                 wordFailed: "¡Se te resistió! La palabra era: ",
                 btnStart: "Jugar", btnRestart: "Reiniciar", btnAgain: "Jugar otra vez",
                 rTitle: "¡Tiempo agotado! ⏱️",
@@ -1094,6 +1103,10 @@
                 rankSaved: "🏆 ¡Puntuación guardada en el ranking! Ya la ven todos. 🌍",
                 rankSavedLocal: "📱 Puntuación guardada en este dispositivo (ahora mismo no hay conexión).",
                 rankAlready: "✅ Ya habías guardado esta puntuación. ¡A por la siguiente! 💪",
+                rankChecking: "Comprobando que el nombre esté libre…",
+                rankNameTaken: "⚠️ Ese nombre ya lo usa otro jugador: escribe uno distinto para evitar confusiones.",
+                rankNameBad: "⚠️ El nombre solo puede llevar letras, números y espacios (máximo 20).",
+                rankBot: "🚫 Se ha detectado escritura automática o una puntuación manipulada: no se sube al ranking. Juega tecleando con tus manos. 🙌",
                 footer: "&copy; 2026 Minijuegos Web · Archivo: teclear.html"
             },
             en: {
@@ -1134,6 +1147,7 @@
                 statusEnd: "Press the space bar or the button to play again.",
                 statusError: "Wrong key! -5 points and you lose your streak 😵",
                 statusOk: "Keep it up! Your streak multiplies your points. 🚀",
+                statusNoPaste: "🚫 Pasting does not count: type the words by hand.",
                 wordFailed: "It got away! The word was: ",
                 btnStart: "Play", btnRestart: "Restart", btnAgain: "Play again",
                 rTitle: "Time's up! ⏱️",
@@ -1159,6 +1173,10 @@
                 rankSaved: "🏆 Score saved! Everyone can see it now. 🌍",
                 rankSavedLocal: "📱 Score saved on this device (currently offline).",
                 rankAlready: "✅ You had already saved this score. Go for the next one! 💪",
+                rankChecking: "Checking that the name is free…",
+                rankNameTaken: "⚠️ That name is already used by another player: type a different one to avoid confusion.",
+                rankNameBad: "⚠️ The name may only contain letters, numbers and spaces (max 20).",
+                rankBot: "🚫 Automated typing or a tampered score was detected: not uploaded. Play by typing with your own hands. 🙌",
                 footer: "&copy; 2026 Web Mini-Games · File: teclear.html"
             }
         };
@@ -1196,6 +1214,13 @@
         let rankLoaded = false;    // se ha intentado descargar el ranking
         let playerId = "";         // identificador del jugador en este dispositivo
         let savedScore = false;    // la puntuación de esta partida ya se ha guardado
+        // Telemetría de la partida: sirve para detectar escritura automática
+        let keyStamps = [];        // instante de cada tecla real pulsada
+        let inputEvents = 0;       // eventos "input" recibidos durante la partida
+        let trustedInput = 0;      // ... de ellos, llegados del teclado de verdad
+        let trustedKeys = 0;       // teclas reales (isTrusted) durante la partida
+        let pasteTried = 0;        // intentos de pegar texto en plena partida
+        let rankTampered = false;  // el JSON del ranking venía alterado a mano
 
         const t = k => I18N[lang][k];
 
@@ -1337,27 +1362,92 @@
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
+        // ---------- Integridad de los datos ----------
+        // El documento del ranking es público: técnicamente CUALQUIER persona
+        // podría editarlo. Por eso esta página solo acepta lo que supera estos
+        // controles, de modo que una fila manipulada se ignora y desaparece:
+        //   · forma correcta (tipos, longitudes y modo de juego conocido)
+        //   · coherencia (con esas palabras no se pueden lograr esos puntos)
+        //   · huella de integridad (si cambia un dato, la huella no cuadra)
+        function hash(raw) {
+            let h = 5381;
+            for (let i = 0; i < raw.length; i++) {
+                h = (Math.imul(h, 33) ^ raw.charCodeAt(i)) >>> 0;
+            }
+            return h.toString(36);
+        }
+
+        // Huella de una fila: se guarda junto a los datos (campo "c")
+        function sealOf(e) {
+            return hash(SEAL_SALT + "|" + e.id + "|" + e.n + "|" + e.s + "|" + e.w + "|" + e.m + "|" + e.d);
+        }
+
+        function sealList(entries) {
+            return entries.map(e => ({
+                id: e.id, n: e.n, s: e.s, w: e.w, m: e.m, d: e.d, c: sealOf(e)
+            }));
+        }
+
+        // Huella del documento entero: delata que el JSON fue editado a mano
+        function docSeal(entries) {
+            return hash(SEAL_SALT + "|doc|" + JSON.stringify(entries));
+        }
+
+        function cleanName(v) {
+            return String(v == null ? "" : v)
+                .replace(/[\u0000-\u001f\u007f<>]/g, " ")  // controles y etiquetas HTML
+                .replace(/\s+/g, " ")
+                .trim()
+                .slice(0, NAME_MAX);
+        }
+
+        // Nombres que se admiten al escribirlos ahora mismo: letras (con o sin
+        // acento), números, espacios y algunos signos; nada de símbolos raros
+        function nameOk(v) {
+            try {
+                const plano = v.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return /^[\w .'-]+$/.test(plano) && v.length > 0 && v.length <= NAME_MAX;
+            } catch (e) {
+                return /^[0-9A-Za-z .'-]+$/.test(v) && v.length > 0;
+            }
+        }
+
+        // Devuelve la fila si es válida; null si está corrupta o manipulada
+        function validEntry(raw) {
+            if (!raw || typeof raw !== "object") return null;
+            const id = String(raw.id || "");
+            if (!id || id.length > 64 || !/^[A-Za-z0-9._-]+$/.test(id)) return null;
+            const n = cleanName(raw.n) || "Anónimo";
+            const s = Math.floor(Number(raw.s));
+            const w = Math.floor(Number(raw.w));
+            if (!isFinite(s) || !isFinite(w)) return null;
+            if (s <= 0 || w <= 0) return null;
+            if (s > MAX_SCORE || w > MAX_WORDS) return null;
+            const m = String(raw.m || "type");
+            if (["type", "guess", "murciano"].indexOf(m) < 0) return null;
+            const d = String(raw.d || "");
+            if (d && (d.length > 30 || isNaN(new Date(d).getTime()))) return null;
+            // Coherencia puntos ↔ palabras: imposible de lograr jugando
+            if (s > w * PTS_PER_WORD + 2000) return null;
+            // Huella de integridad (las filas antiguas, sin huella, se aceptan)
+            if (raw.c !== undefined && String(raw.c) !== sealOf({ id: id, n: n, s: s, w: w, m: m, d: d })) {
+                return null;
+            }
+            return { id: id, n: n, s: s, w: w, m: m, d: d };
+        }
+
         // Limpia los datos, se queda con la MEJOR marca de cada jugador,
         // ordena de mayor a menor puntuación y recorta a las RANK_MAX primeras
         function normalizeRank(list) {
             const byId = {};
-            (Array.isArray(list) ? list : []).forEach(e => {
-                if (!e) return;
-                const id = String(e.id || "");
-                const s = parseInt(e.s, 10) || 0;
-                const w = parseInt(e.w, 10) || 0;
-                if (!id || s <= 0) return;
-                const entry = {
-                    id: id,
-                    n: String(e.n || "Anónimo").slice(0, NAME_MAX),
-                    s: s,
-                    w: w,
-                    m: String(e.m || "type"),
-                    d: String(e.d || "")
-                };
-                const prev = byId[id];
-                if (!prev || entry.s > prev.s || (entry.s === prev.s && entry.w > prev.w)) {
-                    byId[id] = entry;
+            (Array.isArray(list) ? list : []).forEach(raw => {
+                const e = validEntry(raw);
+                if (!e) return;                    // fila manipulada o corrupta
+                const prev = byId[e.id];
+                if (!prev || e.s > prev.s || (e.s === prev.s && e.d > prev.d)) {
+                    byId[e.id] = e;
+                } else if (e.d > prev.d) {
+                    prev.n = e.n;                  // el nombre más reciente manda
                 }
             });
             return Object.values(byId)
@@ -1374,17 +1464,169 @@
                     throw err;
                 }
                 return res.json();
-            }).then(data => (data && Array.isArray(data.entries)) ? data.entries : []);
+            }).then(data => {
+                const entries = (data && Array.isArray(data.entries)) ? data.entries : [];
+                // Comprueba la huella del documento: si no cuadra, alguien lo editó
+                rankTampered = !!(data && data.c !== undefined &&
+                    String(data.c) !== docSeal(entries));
+                if (data && data.c === undefined) rankTampered = true; // aún sin sellar
+                return entries;
+            });
         }
 
         function pushRanking(entries) {
+            const clean = sealList(entries);        // se sellan las filas al subir
+            const body = { v: 1, entries: clean, c: docSeal(clean) };
             return rankFetch(RANK_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ v: 1, entries: entries })
+                body: JSON.stringify(body)
             }).then(res => {
                 if (!res.ok) throw new Error("HTTP " + res.status);
             });
+        }
+
+        // ---------- Nombres reservados (uno por jugador) ----------
+        // Documento aparte con la lista de nombres ya usados: nadie puede
+        // repetir el nombre de otro jugador.
+        function loadLocalNames() {
+            try {
+                const data = JSON.parse(localStorage.getItem("teclear.nombres") || "null");
+                return (data && Array.isArray(data.used)) ? data.used : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveLocalNames(list) {
+            try {
+                localStorage.setItem("teclear.nombres", JSON.stringify({ v: 1, used: list }));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // Clave de comparación: sin acentos, en minúsculas y con espacios juntos
+        function nameKey(v) {
+            const s = cleanName(v);
+            try {
+                return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            } catch (e) {
+                return s.toLowerCase();
+            }
+        }
+
+        function normalizeNames(list) {
+            const byKey = {};
+            (Array.isArray(list) ? list : []).forEach(raw => {
+                if (!raw || typeof raw !== "object") return;
+                const n = cleanName(raw.n);
+                const id = String(raw.id || "");
+                const d = String(raw.d || "");
+                if (!n || !id || id.length > 64 || !/^[A-Za-z0-9._-]+$/.test(id)) return;
+                const k = nameKey(n);
+                if (!k) return;
+                const prev = byKey[k];
+                // Manda el registro más reciente; a igual fecha, el primero (remoto)
+                if (!prev || d > prev.d) byKey[k] = { n: n, id: id, d: d };
+            });
+            return Object.keys(byKey)
+                .map(k => byKey[k])
+                .sort((a, b) => (a.d < b.d ? 1 : a.d > b.d ? -1 : 0))
+                .slice(0, NAMES_MAX);
+        }
+
+        function nameOwner(list, name) {
+            const k = nameKey(name);
+            for (let i = 0; i < list.length; i++) {
+                if (nameKey(list[i].n) === k) return list[i].id;
+            }
+            return "";
+        }
+
+        function fetchNames() {
+            return rankFetch(NAMES_URL, { method: "GET" }).then(res => {
+                if (!res.ok) {
+                    const err = new Error("HTTP " + res.status);
+                    err.fromServer = true;
+                    throw err;
+                }
+                return res.json();
+            }).then(data => (data && Array.isArray(data.used)) ? data.used : []);
+        }
+
+        function pushNames(list) {
+            return rankFetch(NAMES_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ v: 1, used: list })
+            }).then(res => {
+                if (!res.ok) throw new Error("HTTP " + res.status);
+            });
+        }
+
+        // Reserva el nombre para este jugador: lo comprueba en la lista global,
+        // lo registra y vuelve a comprobar por si otro jugador llegó antes.
+        function reserveName(name, myId) {
+            const record = { n: name, id: myId, d: new Date().toISOString() };
+
+            function finish(remote, localOnly) {
+                const merged = normalizeNames(remote.concat(local));
+                const owner = nameOwner(merged, name);
+                if (owner && owner !== myId) return { taken: true };   // ya usado
+                const next = normalizeNames(merged.concat([record]));
+                saveLocalNames(next);
+                if (localOnly) return { taken: false, local: true };
+                return pushNames(next)
+                    .then(() => fetchNames())                    // se re-comprueba
+                    .then(fresh => ({
+                        taken: nameOwner(normalizeNames(fresh), name) === myId ? false : true
+                    }))
+                    .catch(() => ({ taken: false, local: true }));
+            }
+
+            const local = loadLocalNames();
+            return fetchNames()
+                .catch(err => {
+                    // Sin documento todavía: se recrea con lo local
+                    if (err && err.fromServer) return [];
+                    throw err;
+                })
+                .then(remote => finish(remote, false))
+                .catch(() => finish([], true));   // sin conexión: solo comprobación local
+        }
+
+        // ---------- Control de escritura automática ----------
+        // Se registran las teclas reales de la partida. Un programa que escriba
+        // solo deja pistas: ninguna tecla pulsada, cambios de texto sin teclado,
+        // ritmo imposible o puntuaciones que no corresponden a lo tecleado.
+        function checkAutoPlay() {
+            const why = [];
+            if (score <= 0) return why;
+            if (inputEvents === 0) why.push("sin-teclas");
+            // El texto cambia sin que se pulse ninguna tecla: lo escribe un programa
+            if (inputEvents >= 3 && keyStamps.length === 0 &&
+                trustedInput === 0 && trustedKeys === 0) {
+                why.push("eventos-sinteticos");
+            }
+            if (pasteTried > 0) why.push("pegado");
+            if (completed > GAME_TIME * 4) why.push("ritmo-imposible");
+            if (hits / GAME_TIME > 25) why.push("velocidad-imposible");
+            if (score > completed * PTS_PER_WORD + 2000) why.push("puntuacion-imposible");
+
+            if (keyStamps.length >= 10) {
+                const deltas = [];
+                for (let i = 1; i < keyStamps.length; i++) {
+                    deltas.push(keyStamps[i] - keyStamps[i - 1]);
+                }
+                deltas.sort((a, b) => a - b);
+                const media = deltas.reduce((a, b) => a + b, 0) / deltas.length;
+                const mediana = deltas[Math.floor(deltas.length / 2)];
+                const desv = Math.sqrt(deltas.reduce((a, b) => a + (b - media) * (b - media), 0) / deltas.length);
+                const rapidas = deltas.filter(x => x < 18).length / deltas.length;
+                if (mediana < 45) why.push("teclas-demasiado-rapidas");  // más de 22 teclas/sg
+                if (rapidas > 0.3) why.push("rafagas");
+                if (deltas.length >= 25 && desv < 3) why.push("ritmo-constante");
+            }
+            return why;
         }
 
         // Descarga el ranking de la web y lo mezcla con la copia local
@@ -1489,8 +1731,11 @@
             });
 
             rankEmpty.classList.toggle("hidden", rankEntries.length > 0);
-            rankStatus.textContent = !rankLoaded ? ""
+            let st = !rankLoaded ? ""
                 : rankOnline ? t("rankSync") : t("rankLocal");
+            // 🔒 datos verificados con su huella · ⚠️ el JSON venía alterado
+            if (st && rankOnline) st += rankTampered ? " ⚠️" : " 🔒";
+            rankStatus.textContent = st;
         }
 
         function toggleRanking() {
@@ -2025,6 +2270,12 @@
             wrongLetters = [];
             timeLeft = GAME_TIME;
             coinsRun = 0;
+            // Telemetría anti-automatización: se reinicia en cada partida
+            keyStamps = [];
+            inputEvents = 0;
+            trustedInput = 0;
+            trustedKeys = 0;
+            pasteTried = 0;
 
             if (shopOpen) { // la tienda se cierra al empezar
                 shopOpen = false;
@@ -2220,11 +2471,15 @@
         }
 
         // ---------- Entrada del teclado ----------
-        typing.addEventListener("input", function () {
+        // Se anota cada evento de escritura para comprobar al final de la partida
+        // que ha sido una persona quien ha escrito (ver checkAutoPlay)
+        typing.addEventListener("input", function (e) {
             if (state !== "playing") {
                 typing.value = "";
                 return;
             }
+            inputEvents++;
+            if (e && e.isTrusted) trustedInput++;
 
             if (mode === "guess") {
                 const raw = typing.value;
@@ -2236,6 +2491,26 @@
             } else {
                 typeInput();
             }
+        });
+
+        // Teclas reales de la partida: marca de tiempo entre pulsaciones
+        typing.addEventListener("keydown", function (e) {
+            if (state !== "playing") return;
+            if (e.isTrusted) trustedKeys++;
+            if (!e.repeat) keyStamps.push(performance.now()); // el auto-repetido no cuenta
+        });
+
+        // Pegar o arrastrar texto no vale: hay que teclearlo
+        typing.addEventListener("paste", function (e) {
+            if (state !== "playing") return;
+            e.preventDefault();
+            pasteTried++;
+            status.textContent = t("statusNoPaste");
+        });
+        typing.addEventListener("drop", function (e) {
+            if (state !== "playing") return;
+            e.preventDefault();
+            pasteTried++;
         });
 
         // Barra espaciadora para empezar / reiniciar
@@ -2269,12 +2544,24 @@
             }
             if (score <= 0) return;
 
-            rankBusy = true;
-            saveScoreBtn.disabled = true;
-
-            const name = (playerName.value.trim() || t("rankPlaceholder")).slice(0, NAME_MAX);
+            // 1) El nombre tiene que ser válido y no puede repetir el de nadie
+            const name = cleanName(playerName.value || t("rankPlaceholder"));
+            if (!name || !nameOk(name)) {
+                rankSaved.classList.add("off");
+                rankSaved.textContent = t("rankNameBad");
+                playerName.focus();
+                playerName.select();
+                return;
+            }
             playerName.value = name;
-            savePlayerName(name);
+
+            // 2) Nada de escritura automática ni puntuaciones imposibles
+            const why = checkAutoPlay();
+            if (why.length > 0) {
+                rankSaved.classList.add("off");
+                rankSaved.textContent = t("rankBot");
+                return;
+            }
 
             const entry = {
                 id: loadPlayerId(),   // el mismo jugador solo ocupa un puesto
@@ -2285,16 +2572,37 @@
                 d: new Date().toISOString()
             };
 
+            rankBusy = true;
+            saveScoreBtn.disabled = true;
             rankSaved.classList.remove("off");
-            rankSaved.textContent = t("rankSaving");
+            rankSaved.textContent = t("rankChecking");
 
-            uploadScore(entry).then(() => {
+            reserveName(name, entry.id).then(res => {
+                if (res.taken) {
+                    // El nombre ya es de otro jugador: que escriba otro distinto
+                    rankBusy = false;
+                    saveScoreBtn.disabled = false;
+                    rankSaved.classList.add("off");
+                    rankSaved.textContent = t("rankNameTaken");
+                    playerName.focus();
+                    playerName.select();
+                    return;
+                }
+                savePlayerName(name);
+                rankSaved.textContent = t("rankSaving");
+                return uploadScore(entry).then(() => {
+                    rankBusy = false;
+                    savedScore = true;
+                    saveScoreBtn.disabled = false;
+                    rankSaved.textContent = rankOnline ? t("rankSaved") : t("rankSavedLocal");
+                    rankSaved.classList.toggle("off", !rankOnline);
+                    if (!rankOpen) toggleRanking();  // se abre el ranking para ver la marca
+                });
+            }).catch(() => {
                 rankBusy = false;
-                savedScore = true;
                 saveScoreBtn.disabled = false;
-                rankSaved.textContent = rankOnline ? t("rankSaved") : t("rankSavedLocal");
-                rankSaved.classList.toggle("off", !rankOnline);
-                if (!rankOpen) toggleRanking();  // se abre el ranking para ver la marca
+                rankSaved.classList.add("off");
+                rankSaved.textContent = t("rankSavedLocal");
             });
         });
 
