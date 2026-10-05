@@ -681,6 +681,44 @@
             border-color: var(--accent);
             box-shadow: 0 0 0 4px rgba(94, 234, 212, .14);
         }
+
+        /* Verificación humana: hay que teclear el código con teclas reales */
+        .verify-row {
+            flex: 1 0 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        .verify-code {
+            background: var(--surface-2);
+            border: 1px dashed var(--line);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 17px;
+            letter-spacing: 5px;
+            color: var(--gold);
+            user-select: none;
+        }
+        #verifyInput {
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--text);
+            padding: 7px 14px;
+            font-size: 15px;
+            width: 110px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color .18s, box-shadow .18s;
+        }
+        #verifyInput:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(94, 234, 212, .14);
+        }
         .rank-saved {
             min-height: 20px;
             margin: 10px 0 0;
@@ -908,6 +946,12 @@
             <label for="playerName" id="rkNameLabel">Tu nombre en el ranking</label>
             <input id="playerName" type="text" maxlength="20" autocomplete="nickname"
                    placeholder="Anónimo">
+            <div class="verify-row">
+                <label for="verifyInput" id="verifyLabel">Comprueba que eres una persona: teclea</label>
+                <span class="verify-code" id="verifyCode" aria-hidden="true">----</span>
+                <input id="verifyInput" type="text" maxlength="8" autocomplete="off"
+                       spellcheck="false" autocapitalize="characters" placeholder="código">
+            </div>
             <button class="chip-btn" id="saveScoreBtn">🏆 Guardar puntuación</button>
         </div>
         <p class="rank-saved" id="rankSaved"></p>
@@ -926,6 +970,10 @@
     </footer>
 
     <script>
+        // TODO el juego vive dentro de este closure: las variables internas
+        // (puntuación, palabras, teclas, contadores) no son accesibles desde la
+        // consola del navegador, así que no se pueden manipular con comandos.
+        (() => {
         // ---------- Configuración ----------
         const GAME_TIME = 60;  // segundos
         const MAX_MISSES = 5;  // fallos permitidos por palabra (modo adivinar)
@@ -934,6 +982,7 @@
         // Si no hay internet se usa la copia guardada en este dispositivo.
         const RANK_URL = "https://mantledb.sh/v2/teclear-ranking/ranking";
         const NAMES_URL = "https://mantledb.sh/v2/teclear-ranking/nombres"; // nombres ya reservados
+        const RESETS_URL = "https://mantledb.sh/v2/teclear-ranking/resetos"; // reinicios de puntuación
         const RANK_MAX = 10;       // puntuaciones que se guardan/muestran
         const NAMES_MAX = 500;     // nombres que admite la lista de reservas
         const RANK_TIMEOUT = 8000; // ms de espera antes de dar por perdida una petición
@@ -1106,6 +1155,8 @@
                 rankChecking: "Comprobando que el nombre esté libre…",
                 rankNameTaken: "⚠️ Ese nombre ya lo usa otro jugador: escribe uno distinto para evitar confusiones.",
                 rankNameBad: "⚠️ El nombre solo puede llevar letras, números y espacios (máximo 20).",
+                verifyLabel: "Comprueba que eres una persona: teclea",
+                rankHuman: "🤝 Escribe con tus teclas el código que aparece en pantalla para poder guardar.",
                 rankBot: "🚫 Se ha detectado escritura automática o una puntuación manipulada: no se sube al ranking. Juega tecleando con tus manos. 🙌",
                 footer: "&copy; 2026 Minijuegos Web · Archivo: teclear.html"
             },
@@ -1176,6 +1227,8 @@
                 rankChecking: "Checking that the name is free…",
                 rankNameTaken: "⚠️ That name is already used by another player: type a different one to avoid confusion.",
                 rankNameBad: "⚠️ The name may only contain letters, numbers and spaces (max 20).",
+                verifyLabel: "Prove you are human: type",
+                rankHuman: "🤝 Type the code shown on screen with your own keys to save your score.",
                 rankBot: "🚫 Automated typing or a tampered score was detected: not uploaded. Play by typing with your own hands. 🙌",
                 footer: "&copy; 2026 Web Mini-Games · File: teclear.html"
             }
@@ -1221,6 +1274,11 @@
         let trustedKeys = 0;       // teclas reales (isTrusted) durante la partida
         let pasteTried = 0;        // intentos de pegar texto en plena partida
         let rankTampered = false;  // el JSON del ranking venía alterado a mano
+        let rankResets = null;     // id → fecha: marcas anteriores no cuentan
+        let gameStartAt = 0;       // instante en que empezó la partida
+        let gameDuration = 0;      // duración real de la partida (segundos)
+        let verifyCode = "";       // código aleatorio de verificación humana
+        let verifyTyped = "";      // lo tecleado con teclas REALES (no se puede rellenar a mano)
 
         const t = k => I18N[lang][k];
 
@@ -1255,6 +1313,9 @@
         const rankSaved = document.getElementById("rankSaved");
         const playerName = document.getElementById("playerName");
         const saveScoreBtn = document.getElementById("saveScoreBtn");
+        const verifyInput = document.getElementById("verifyInput");
+        const verifyCodeEl = document.getElementById("verifyCode");
+        const verifyLabel = document.getElementById("verifyLabel");
         const results = document.getElementById("results");
         const btnEs = document.getElementById("btnEs");
         const btnEn = document.getElementById("btnEn");
@@ -1393,6 +1454,11 @@
             return hash(SEAL_SALT + "|doc|" + JSON.stringify(entries));
         }
 
+        // Huella del documento de reinicios (mismo sistema, otro prefijo)
+        function resetsSeal(cuerpo) {
+            return hash(SEAL_SALT + "|resetos|" + JSON.stringify(cuerpo));
+        }
+
         function cleanName(v) {
             return String(v == null ? "" : v)
                 .replace(/[\u0000-\u001f\u007f<>]/g, " ")  // controles y etiquetas HTML
@@ -1415,11 +1481,17 @@
         // Devuelve la fila si es válida; null si está corrupta o manipulada
         function validEntry(raw) {
             if (!raw || typeof raw !== "object") return null;
-            const id = String(raw.id || "");
+            // Tipos estrictos: nada de números ni objetos disfrazados de texto
+            if (typeof raw.id !== "string" || typeof raw.n !== "string") return null;
+            if (typeof raw.s !== "number" || typeof raw.w !== "number") return null;
+            if (raw.m !== undefined && typeof raw.m !== "string") return null;
+            if (raw.d !== undefined && typeof raw.d !== "string") return null;
+            if (raw.c !== undefined && typeof raw.c !== "string") return null;
+            const id = raw.id;
             if (!id || id.length > 64 || !/^[A-Za-z0-9._-]+$/.test(id)) return null;
             const n = cleanName(raw.n) || "Anónimo";
-            const s = Math.floor(Number(raw.s));
-            const w = Math.floor(Number(raw.w));
+            const s = Math.floor(raw.s);
+            const w = Math.floor(raw.w);
             if (!isFinite(s) || !isFinite(w)) return null;
             if (s <= 0 || w <= 0) return null;
             if (s > MAX_SCORE || w > MAX_WORDS) return null;
@@ -1437,12 +1509,21 @@
         }
 
         // Limpia los datos, se queda con la MEJOR marca de cada jugador,
-        // ordena de mayor a menor puntuación y recorta a las RANK_MAX primeras
-        function normalizeRank(list) {
+        // ordena de mayor a menor puntuación y recorta a las RANK_MAX primeras.
+        // "resets" contiene las puntuaciones reiniciadas: cualquier marca de ese
+        // jugador anterior a la fecha del reinicio se ignora (aunque esté guardada
+        // en la copia local de su equipo).
+        function normalizeRank(list, resets) {
+            const cortes = resets || rankResets || {};
             const byId = {};
             (Array.isArray(list) ? list : []).forEach(raw => {
                 const e = validEntry(raw);
                 if (!e) return;                    // fila manipulada o corrupta
+                const lim = cortes[e.id] !== undefined ? cortes[e.id] : cortes["*"];
+                if (lim) {
+                    const dd = e.d ? new Date(e.d).getTime() : NaN;
+                    if (!(dd > new Date(lim).getTime())) return;   // marca antigua
+                }
                 const prev = byId[e.id];
                 if (!prev || e.s > prev.s || (e.s === prev.s && e.d > prev.d)) {
                     byId[e.id] = e;
@@ -1458,9 +1539,12 @@
         function fetchRanking() {
             return rankFetch(RANK_URL, { method: "GET" }).then(res => {
                 if (!res.ok) {
-                    // Se marca el error como "de servidor" para poder recrear el documento
                     const err = new Error("HTTP " + res.status);
-                    err.fromServer = true;
+                    // 404 → el documento aún no existe: se puede recrear.
+                    // Cualquier otro fallo (429, 500, 503…) NO significa "vacío":
+                    // tratarlo como vacío borraría el ranking de todos, así que
+                    // simplemente se propaga y se reintenta sin subir nada.
+                    err.notFound = (res.status === 404);
                     throw err;
                 }
                 return res.json();
@@ -1484,6 +1568,47 @@
             }).then(res => {
                 if (!res.ok) throw new Error("HTTP " + res.status);
             });
+        }
+
+        // ---------- Puntuaciones reiniciadas ----------
+        // Documento aparte y de SOLO LECTURA para la página: contiene los
+        // jugadores cuya marca se ha reiniciado. Como ningún juego escribe aquí,
+        // no hay forma de que se borre desde la propia página.
+        function sanitizeResets(data) {
+            const src = (data && typeof data === "object" && data.r && typeof data.r === "object")
+                ? data.r : {};
+            const out = {};
+            let n = 0;
+            Object.keys(src).forEach(id => {
+                if (n >= 200) return;
+                // "*" = reinicio GLOBAL: ninguna marca anterior a esa fecha cuenta
+                if (id !== "*" && !/^[A-Za-z0-9._-]{1,64}$/.test(id)) return;
+                const iso = String(src[id] || "");
+                if (!iso || iso.length > 30 || isNaN(new Date(iso).getTime())) return;
+                out[id] = iso;
+                n++;
+            });
+            return out;
+        }
+
+        function fetchResets(force) {
+            if (force) rankResets = null;
+            if (rankResets) return Promise.resolve(rankResets);
+            return rankFetch(RESETS_URL, { method: "GET" })
+                .then(res => {
+                    if (!res.ok) { rankResets = {}; return {}; }  // sin documento
+                    return res.json();
+                })
+                .then(data => {
+                    const cuerpo = (data && data.r && typeof data.r === "object") ? data.r : {};
+                    // Sello del documento: si alguien lo editó a mano, no aplica
+                    if (data && data.c !== undefined && String(data.c) !== resetsSeal(cuerpo)) {
+                        return rankResets || {};
+                    }
+                    if (!rankResets) rankResets = sanitizeResets(data);
+                    return rankResets;
+                })
+                .catch(() => (rankResets || {}));  // sin conexión: se vuelve a probar
         }
 
         // ---------- Nombres reservados (uno por jugador) ----------
@@ -1546,7 +1671,9 @@
             return rankFetch(NAMES_URL, { method: "GET" }).then(res => {
                 if (!res.ok) {
                     const err = new Error("HTTP " + res.status);
-                    err.fromServer = true;
+                    // Solo el 404 permite recrear el documento; un error de red
+                    // o del servidor nunca debe interpretarse como lista vacía.
+                    err.notFound = (res.status === 404);
                     throw err;
                 }
                 return res.json();
@@ -1587,35 +1714,128 @@
             return fetchNames()
                 .catch(err => {
                     // Sin documento todavía: se recrea con lo local
-                    if (err && err.fromServer) return [];
+                    if (err && err.notFound) return [];
                     throw err;
                 })
                 .then(remote => finish(remote, false))
                 .catch(() => finish([], true));   // sin conexión: solo comprobación local
         }
 
-        // ---------- Control de escritura automática ----------
-        // Se registran las teclas reales de la partida. Un programa que escriba
-        // solo deja pistas: ninguna tecla pulsada, cambios de texto sin teclado,
-        // ritmo imposible o puntuaciones que no corresponden a lo tecleado.
-        function checkAutoPlay() {
-            const why = [];
-            if (score <= 0) return why;
-            if (inputEvents === 0) why.push("sin-teclas");
-            // El texto cambia sin que se pulse ninguna tecla: lo escribe un programa
-            if (inputEvents >= 3 && keyStamps.length === 0 &&
-                trustedInput === 0 && trustedKeys === 0) {
-                why.push("eventos-sinteticos");
-            }
-            if (pasteTried > 0) why.push("pegado");
-            if (completed > GAME_TIME * 4) why.push("ritmo-imposible");
-            if (hits / GAME_TIME > 25) why.push("velocidad-imposible");
-            if (score > completed * PTS_PER_WORD + 2000) why.push("puntuacion-imposible");
+        // ---------- Verificación humana antes de guardar ----------
+        // Código aleatorio de 4 caracteres que hay que escribir con teclas REALES.
+        // La comprobación no mira el texto del campo (eso lo rellena un script en
+        // un pistoletazo), sino las pulsaciones que han ido quedando registradas:
+        // pegar el texto o rellenarlo con eventos sintéticos no sirve de nada.
+        const VERIFY_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-            if (keyStamps.length >= 10) {
+        function newVerifyCode() {
+            let s = "";
+            try {
+                const buf = new Uint32Array(4);
+                if (window.crypto && window.crypto.getRandomValues) {
+                    window.crypto.getRandomValues(buf);
+                } else {
+                    for (let i = 0; i < 4; i++) buf[i] = Math.floor(Math.random() * 0xffffffff);
+                }
+                for (let i = 0; i < 4; i++) s += VERIFY_CHARS[buf[i] % VERIFY_CHARS.length];
+            } catch (e) {
+                for (let i = 0; i < 4; i++) s += VERIFY_CHARS[Math.floor(Math.random() * VERIFY_CHARS.length)];
+            }
+            verifyCode = s;
+            verifyTyped = "";
+            if (verifyCodeEl) verifyCodeEl.textContent = s;
+            if (verifyInput) verifyInput.value = "";
+        }
+
+        function verifyHuman() {
+            if (!verifyCode) return false;
+            return verifyTyped.trim().toLowerCase() === verifyCode.toLowerCase();
+        }
+
+        if (verifyInput) {
+            verifyInput.addEventListener("keydown", function (e) {
+                if (e.isTrusted && typeof e.key === "string") {
+                    if (e.key === "Backspace") verifyTyped = verifyTyped.slice(0, -1);
+                    else if (e.key.length === 1 && verifyTyped.length < 8) verifyTyped += e.key;
+                }
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    saveScoreBtn.click();
+                }
+            });
+            // Pegar el código tampoco vale: hay que teclearlo
+            verifyInput.addEventListener("paste", function (e) {
+                e.preventDefault();
+                rankSaved.classList.add("off");
+                rankSaved.textContent = t("rankHuman");
+            });
+        }
+
+        // ---------- Control de escritura automática ----------
+        // ¿Se está ejecutando en un navegador automatizado (Selenium, Puppeteer,
+        // Playwright, headless, PhantomJS…)? Si es así, no se sube nada.
+        function automationSpotted() {
+            try {
+                if (navigator.webdriver === true) return true;
+                if (/HeadlessChrome/.test(navigator.userAgent || "")) return true;
+                const marcas = [
+                    "__webdriver_evaluate", "__driver_evaluate", "__selenium_evaluate",
+                    "__webdriver_unwrapped", "__driver_unwrapped", "__selenium_unwrapped",
+                    "__driver_func", "_phantom", "__nightmare", "callPhantom",
+                    "__playwright", "__pw_manual", "__lastWatir",
+                    "$cdc_asdjflasutopfhvcZLmcfl_", "domAutomation", "domAutomationController"
+                ];
+                for (let i = 0; i < marcas.length; i++) {
+                    if (window[marcas[i]] !== undefined) return true;
+                }
+                if (document["$cdc_asdjflasutopfhvcZLmcfl_"] !== undefined) return true;
+                return false;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Se registran las teclas reales de la partida. Un programa que escriba
+        // solo deja pistas: ninguna tecla pulsada, eventos sintéticos (isTrusted),
+        // ritmo imposible o puntuaciones que no corresponden a lo tecleado.
+        // Acepta un estado alternativo para poder comprobar la lógica en los tests.
+        function checkAutoPlay(estado) {
+            const val = (v, def) => (typeof v === "number" && isFinite(v)) ? v : def;
+            const es = estado || {};
+            const sc = val(es.score, score);
+            const cp = val(es.completed, completed);
+            const ht = val(es.hits, hits);
+            const ie = val(es.inputEvents, inputEvents);
+            const ti = val(es.trustedInput, trustedInput);
+            const tk = val(es.trustedKeys, trustedKeys);
+            const pt = val(es.pasteTried, pasteTried);
+            const du = val(es.duracion, gameDuration);
+            const ks = Array.isArray(es.keyStamps) ? es.keyStamps : keyStamps;
+            const auto = (typeof es.automatizado === "boolean")
+                ? es.automatizado : automationSpotted();
+
+            const why = [];
+            if (sc <= 0) return why;
+            if (auto) why.push("entorno-automatizado");
+            if (ie === 0) why.push("sin-teclas");
+            // Escritura con eventos sintéticos: el teclado real marca isTrusted
+            if (ie >= 3 && ti / ie < 0.8) why.push("eventos-sinteticos");
+            if (ks.length >= 10 && tk / ks.length < 0.8) why.push("teclas-sinteticas");
+            // El texto cambia sin que lleguen teclas: lo escribe un programa
+            if (ie >= 3 && ks.length + 2 < ie) why.push("sin-teclado");
+            if (pt > 0) why.push("pegado");
+            // La partida debería durar GAME_TIME: si dura mucho más, se congeló
+            if (du > GAME_TIME + 15) why.push("partida-alargada");
+            if (cp > GAME_TIME * 4) why.push("ritmo-imposible");
+            if (ht / GAME_TIME > 25) why.push("velocidad-imposible");
+            if (sc > cp * PTS_PER_WORD + 2000) why.push("puntuacion-imposible");
+            // Techo absoluto: 4 palabras/sg máximo durante toda la partida
+            if (sc > GAME_TIME * 4 * PTS_PER_WORD + 2000) why.push("puntuacion-demasiada-alta");
+
+            if (ks.length >= 10) {
                 const deltas = [];
-                for (let i = 1; i < keyStamps.length; i++) {
-                    deltas.push(keyStamps[i] - keyStamps[i - 1]);
+                for (let i = 1; i < ks.length; i++) {
+                    deltas.push(ks[i] - ks[i - 1]);
                 }
                 deltas.sort((a, b) => a - b);
                 const media = deltas.reduce((a, b) => a + b, 0) / deltas.length;
@@ -1632,15 +1852,16 @@
         // Descarga el ranking de la web y lo mezcla con la copia local
         function refreshRanking() {
             const local = loadLocalRanking();
-            return fetchRanking()
+            return fetchResets().then(() => fetchRanking())
                 .then(remote => {
                     rankOnline = true;
                     rankEntries = normalizeRank(remote.concat(local));
-                    saveLocalRanking(rankEntries);
+                    saveLocalRanking(rankEntries);  // purga marcas reiniciadas
                 })
                 .catch(() => {
                     rankOnline = false;
                     rankEntries = normalizeRank(local);
+                    saveLocalRanking(rankEntries);
                 })
                 .then(() => {
                     rankLoaded = true;
@@ -1651,27 +1872,45 @@
         // Sube la puntuación al ranking de todos los jugadores.
         // Primero se guarda en local (nunca se pierde) y luego se reintenta la subida.
         function uploadScore(entry) {
-            rankEntries = normalizeRank(loadLocalRanking().concat([entry]));
-            saveLocalRanking(rankEntries);
             rankOnline = false;
             rankLoaded = true;
-            renderRanking();
 
-            function attempt(triesLeft) {
+            function attempt(triesLeft, fusiones) {
+                const rep = fusiones || 0;
                 return fetchRanking()
                     .catch(err => {
-                        // El servidor respondió pero no hay documento: se recrea con la
-                        // copia local. Si es falta de conexión, se reintenta más tarde.
-                        if (err && err.fromServer) return [];
+                        // Solo el 404 ("todavía no hay documento") permite
+                        // recrearlo con lo local. Un error de red o del servidor
+                        // NO: en ese caso se propaga y no se sube nada todavía,
+                        // para no borrar las marcas de los demás jugadores.
+                        if (err && err.notFound) return [];
                         throw err;
                     })
                     .then(remote => {
+                        const base = normalizeRank(remote);
                         const merged = normalizeRank(remote.concat(loadLocalRanking(), [entry]));
+                        // Red de seguridad: la subida nunca puede perder marcas
+                        // que sí estaban en el servidor (si no caben en el top
+                        // 10, merged.length ya es RANK_MAX y no se cumple esto).
+                        if (base.length > merged.length && merged.length < RANK_MAX) {
+                            throw new Error("merge-unsafe");
+                        }
                         return pushRanking(merged).then(() => {
                             rankEntries = merged;
                             saveLocalRanking(merged);
                             rankOnline = true;
                             renderRanking();
+                            // Si alguien subió a la vez y alguna marca del
+                            // servidor ha desaparecido, se vuelve a fusionar.
+                            if (rep >= 2) return undefined;
+                            return fetchRanking()
+                                .then(r2 => {
+                                    const aqui = normalizeRank(Array.isArray(r2) ? r2 : []);
+                                    const perdidas = base.filter(b =>
+                                        !aqui.some(x => x.id === b.id));
+                                    if (perdidas.length) return attempt(2, rep + 1);
+                                })
+                                .catch(() => undefined);
                         });
                     })
                     .catch(() => {
@@ -1684,7 +1923,12 @@
                     });
             }
 
-            return attempt(2);
+            return fetchResets().then(() => {
+                rankEntries = normalizeRank(loadLocalRanking().concat([entry]));
+                saveLocalRanking(rankEntries);   // purga las marcas reiniciadas
+                renderRanking();
+                return attempt(2);
+            });
         }
 
         function rankDate(iso) {
@@ -1969,6 +2213,7 @@
             document.getElementById("rankHint").textContent = t("rankHint");
             document.getElementById("rankEmpty").textContent = t("rankEmpty");
             document.getElementById("rkNameLabel").textContent = t("rkNameLabel");
+            if (verifyLabel) verifyLabel.textContent = t("verifyLabel");
             saveScoreBtn.textContent = t("rankSave");
             playerName.placeholder = t("rankPlaceholder");
             renderRanking();
@@ -2276,6 +2521,8 @@
             trustedInput = 0;
             trustedKeys = 0;
             pasteTried = 0;
+            gameStartAt = Date.now();
+            gameDuration = 0;
 
             if (shopOpen) { // la tienda se cierra al empezar
                 shopOpen = false;
@@ -2318,6 +2565,9 @@
 
         function endGame() {
             clearInterval(timerId);
+            // Duración real de la partida: si alguien congeló el cronómetro
+            // para alargarla y sumar puntos, esto lo delata.
+            gameDuration = gameStartAt > 0 ? (Date.now() - gameStartAt) / 1000 : GAME_TIME;
             state = "over";
             typing.disabled = true;
             selBtns.forEach(b => { b.disabled = false; });
@@ -2373,6 +2623,7 @@
             rankSaved.classList.remove("off");
             saveScoreBtn.disabled = false;
             rankForm.classList.toggle("hidden", score <= 0);
+            if (score > 0) newVerifyCode();   // código nuevo para cada puntuación
             if (score > 0 && !playerName.value.trim()) playerName.value = loadPlayerName();
 
             board.innerHTML = '<em class="hint">' + t("boardEnd") + "</em>";
@@ -2563,6 +2814,15 @@
                 return;
             }
 
+            // 3) Comprobación humana: el código se teclea con las teclas reales
+            if (!verifyHuman()) {
+                rankSaved.classList.add("off");
+                rankSaved.textContent = t("rankHuman");
+                newVerifyCode();       // código nuevo: no se puede probar a ciegas
+                if (verifyInput) verifyInput.focus();
+                return;
+            }
+
             const entry = {
                 id: loadPlayerId(),   // el mismo jugador solo ocupa un puesto
                 n: name,
@@ -2586,6 +2846,7 @@
                     rankSaved.textContent = t("rankNameTaken");
                     playerName.focus();
                     playerName.select();
+                    newVerifyCode();
                     return;
                 }
                 savePlayerName(name);
@@ -2596,6 +2857,7 @@
                     saveScoreBtn.disabled = false;
                     rankSaved.textContent = rankOnline ? t("rankSaved") : t("rankSavedLocal");
                     rankSaved.classList.toggle("off", !rankOnline);
+                    newVerifyCode();   // el código ya no se puede reutilizar
                     if (!rankOpen) toggleRanking();  // se abre el ranking para ver la marca
                 });
             }).catch(() => {
@@ -2603,6 +2865,7 @@
                 saveScoreBtn.disabled = false;
                 rankSaved.classList.add("off");
                 rankSaved.textContent = t("rankSavedLocal");
+                newVerifyCode();
             });
         });
 
@@ -2621,6 +2884,42 @@
         applyLang();
         playerName.value = loadPlayerName();
         refreshRanking();   // descarga el ranking compartido (si hay internet)
+
+        // ---------- Superficie de sólo lectura ----------
+        // Ni la consola ni ningún script pueden modificar la partida desde aquí:
+        // solo hay getters (no existe ningún setter de puntuación, palabras o id).
+        Object.defineProperty(window, "Teclea", {
+            value: Object.freeze({
+                get state() { return state; },
+                get score() { return score; },
+                get completed() { return completed; },
+                get hits() { return hits; },
+                get errors() { return errors; },
+                get word() { return word; },
+                get mode() { return mode; },
+                get lang() { return lang; },
+                get savedScore() { return savedScore; },
+                get rankResets() { return rankResets; },
+                // Diccionarios (solo lectura): útiles para comprobar las palabras
+                dicts: Object.freeze({
+                    es: Object.freeze(WORDS.es.slice()),
+                    en: Object.freeze(WORDS.en.slice()),
+                    mur: Object.freeze(MURCIANO_WORDS.slice())
+                }),
+                start: function () { startGame(); },
+                finish: function () { endGame(); },
+                checkAutoPlay: function (est) { return checkAutoPlay(est); },
+                normalizeRank: function (lista, cortes) { return normalizeRank(lista, cortes); },
+                validEntry: function (fila) { return validEntry(fila); },
+                sealOf: function (fila) { return sealOf(fila); },
+                reserveName: function (n, id) { return reserveName(n, id); },
+                fetchResets: function (force) { return fetchResets(force); },
+                refreshRanking: function () { return refreshRanking(); }
+            }),
+            writable: false,
+            configurable: false
+        });
+        })();
     </script>
 </body>
 </html>
