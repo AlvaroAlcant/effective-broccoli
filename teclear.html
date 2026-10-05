@@ -793,7 +793,17 @@
                 "memoria", "cursor", "archivo", "carpeta", "sistema", "código",
                 "página", "número", "tecla", "pulso", "reto", "nivel",
                 "puntuación", "increíble", "desafío", "concentración",
-                "tecnología", "creatividad", "inteligencia", "experimento"
+                "tecnología", "creatividad", "inteligencia", "experimento",
+                // Añadidas: día a día, escuela, campo y naturaleza
+                "ola", "nube", "cine", "mesa", "silla", "cama", "vino",
+                "queso", "taza", "reloj", "sopa", "barco", "tren", "metro",
+                "isla", "nieve", "lluvia", "rayo", "niebla", "bosque",
+                "valle", "cielo", "planeta", "cometa", "monitor", "usuario",
+                "servidor", "algoritmo", "proyecto", "examen", "libreta",
+                "pizarra", "profesor", "colegio", "deberes", "mercado",
+                "tienda", "trabajo", "bicicleta", "caminar", "correr",
+                "nadar", "volar", "saltar", "pastel", "cerveza", "jirafa",
+                "tiburón", "ballena", "ciempiés", "mandarina", "chocolate"
             ],
             en: [
                 "cat", "dog", "sun", "run", "key", "box", "day", "map",
@@ -805,7 +815,18 @@
                 "file", "folder", "system", "page", "number", "level",
                 "challenge", "incredible", "focus", "keyboard", "speed",
                 "typing", "program", "javascript", "technology", "creative",
-                "intelligence", "experiment", "mountain", "evening"
+                "intelligence", "experiment", "mountain", "evening",
+                // Added: everyday life, school, animals and nature
+                "rain", "snow", "leaf", "bird", "fish", "frog", "bear",
+                "wolf", "lion", "milk", "bread", "cake", "rice", "soup",
+                "desk", "chair", "floor", "house", "paper", "pencil",
+                "teacher", "student", "garden", "river", "ocean", "island",
+                "cloud", "storm", "winter", "summer", "spring", "autumn",
+                "monkey", "tiger", "horse", "sheep", "orange", "yellow",
+                "purple", "guitar", "doctor", "market", "ticket", "jacket",
+                "pocket", "rocket", "planet", "robot", "laptop", "server",
+                "browser", "project", "homework", "weekend", "holiday",
+                "dolphin", "volcano", "blanket", "kitchen", "birthday"
             ]
         };
 
@@ -822,7 +843,12 @@
             "zarangollo", "caldero", "marinera", "escabeche", "atún",
             "melón", "sandía", "pimentón", "azafrán", "azahar", "segura",
             "huerta", "torta", "migas", "almejas", "arroz", "azúcar",
-            "cencerro", "vendimia", "esparto", "tapas"
+            "cencerro", "vendimia", "esparto", "tapas",
+            // Más del Huerto, del Malecón y de la mesa murciana
+            "ná", "vamoh", "empaná", "paparote", "quesada",
+            "bienmesabe", "marfagón", "bondosita", "pargo", "gamba",
+            "cazón", "atunero", "lebrillo", "almirez", "almazara",
+            "potaje", "puchero", "garbanzos", "morcilla", "ferrás"
         ];
 
         // ---------- Estilos de letra de la tienda ----------
@@ -2050,11 +2076,19 @@
 
         // Barra espaciadora para empezar / reiniciar
         document.addEventListener("keydown", function (e) {
+            const destino = e.target || {};
+            // Si el foco está en un campo de texto (el nombre del ranking, por
+            // ejemplo) la barra escribe un espacio y NO arranca la partida
+            const enCampo = !destino.disabled &&
+                (destino.tagName === "INPUT" || destino.tagName === "TEXTAREA" ||
+                 destino.tagName === "SELECT" || destino.isContentEditable === true);
+
             if (state === "playing") {
-                if (e.code === "Space") e.preventDefault(); // no hacer scroll
+                // En plena partida la barra nunca se introduce: las palabras no llevan espacios
+                if (e.code === "Space") e.preventDefault();
                 return;
             }
-            if (e.code === "Space" && e.target.tagName !== "BUTTON") {
+            if (e.code === "Space" && !enCampo && destino.tagName !== "BUTTON") {
                 e.preventDefault();
                 startGame();
             }
