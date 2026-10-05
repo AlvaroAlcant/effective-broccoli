@@ -460,6 +460,133 @@
             color: #5eead4;
         }
 
+        /* ---------- Ranking global ---------- */
+        .ranking {
+            background-color: #1b2333;
+            border: 2px solid #2e3a54;
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 20px;
+        }
+        .ranking.hidden {
+            display: none;
+        }
+        .ranking h2 {
+            margin: 0 0 6px;
+            color: #5eead4;
+            font-size: 20px;
+        }
+        .rank-hint {
+            color: #8b97ad;
+            font-size: 14px;
+            margin: 0 0 12px;
+        }
+        .rank-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .rank-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #10141c;
+            border: 1px solid #2e3a54;
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .rank-list li.me {
+            border-color: #14b8a6;
+            background-color: #0e2723;
+        }
+        .rank-pos {
+            min-width: 30px;
+            font-weight: bold;
+            color: #ffd76a;
+        }
+        .rank-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .rank-score {
+            color: #5eead4;
+            font-weight: bold;
+            min-width: 55px;
+            text-align: right;
+        }
+        .rank-words {
+            color: #f0abfc;
+            font-size: 13px;
+            min-width: 52px;
+            text-align: right;
+        }
+        .rank-date {
+            color: #8b97ad;
+            font-size: 12px;
+            min-width: 74px;
+            text-align: right;
+        }
+        .rank-empty {
+            color: #8b97ad;
+            font-size: 15px;
+            margin: 6px 0 0;
+        }
+        .rank-empty.hidden {
+            display: none;
+        }
+        .rank-status {
+            min-height: 20px;
+            margin: 12px 0 0;
+            font-size: 13px;
+            color: #8b97ad;
+        }
+        /* Formulario de nombre para guardar la puntuación */
+        .rank-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 14px;
+        }
+        .rank-form.hidden {
+            display: none;
+        }
+        .rank-form label {
+            font-size: 13px;
+            color: #8b97ad;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #playerName {
+            background-color: #10141c;
+            border: 2px solid #2e3a54;
+            border-radius: 8px;
+            color: #e8ecf4;
+            padding: 8px 12px;
+            font-size: 15px;
+            width: 190px;
+        }
+        #playerName:focus {
+            outline: none;
+            border-color: #14b8a6;
+        }
+        .rank-saved {
+            min-height: 20px;
+            margin: 10px 0 0;
+            font-size: 14px;
+            color: #5eead4;
+        }
+        .rank-saved.off {
+            color: #ffd76a;
+        }
+
         /* ---------- Estilos de letra comprados ---------- */
         body {
             --game-font: Consolas, "Courier New", monospace;
@@ -565,6 +692,7 @@
         </div>
         <div class="sel-row">
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
+            <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
         </div>
     </div>
 
@@ -620,7 +748,23 @@
             <li><span id="rkBestWords">Récord palabras</span>: <strong id="rBestWords">0</strong></li>
         </ul>
         <p id="rMsg"></p>
+
+        <div class="rank-form hidden" id="rankForm">
+            <label for="playerName" id="rkNameLabel">Tu nombre en el ranking</label>
+            <input id="playerName" type="text" maxlength="20" autocomplete="nickname"
+                   placeholder="Anónimo">
+            <button class="chip-btn" id="saveScoreBtn">🏆 Guardar puntuación</button>
+        </div>
+        <p class="rank-saved" id="rankSaved"></p>
     </div>
+
+    <section class="ranking hidden" id="ranking">
+        <h2 id="rankTitle">🏆 Ranking global</h2>
+        <p class="rank-hint" id="rankHint">Las mejores puntuaciones de todos los jugadores (Top 10).</p>
+        <ol class="rank-list" id="rankList"></ol>
+        <p class="rank-empty" id="rankEmpty">Todavía no hay puntuaciones en el ranking. ¡Sé el primero! 🚀</p>
+        <p class="rank-status" id="rankStatus"></p>
+    </section>
 
     <footer>
         <p id="footer">&copy; 2026 Minijuegos Web · Archivo: teclear.html</p>
@@ -630,6 +774,13 @@
         // ---------- Configuración ----------
         const GAME_TIME = 60;  // segundos
         const MAX_MISSES = 5;  // fallos permitidos por palabra (modo adivinar)
+
+        // Ranking global: JSON público compartido por todos los visitantes.
+        // Si no hay internet se usa la copia guardada en este dispositivo.
+        const RANK_URL = "https://mantledb.sh/v2/teclear-ranking/ranking";
+        const RANK_MAX = 10;       // puntuaciones que se guardan/muestran
+        const RANK_TIMEOUT = 8000; // ms de espera antes de dar por perdida una petición
+        const NAME_MAX = 20;       // longitud máxima del nombre del jugador
 
         const WORDS = {
             es: [
@@ -748,6 +899,19 @@
                 msgAcc: "Impresionante precisión, casi no fallaste ni una tecla. 🎯",
                 msgRhythm: "¡Muy buen ritmo! Sigue practicando para subir de nivel. 🔥",
                 msgRetry: "Buena partida, prueba a superar tu récord en la siguiente. 💪",
+                btnRanking: "🏆 Ranking",
+                rankTitle: "🏆 Ranking global",
+                rankHint: "Las mejores puntuaciones de todos los jugadores (Top 10).",
+                rankEmpty: "Todavía no hay puntuaciones en el ranking. ¡Sé el primero! 🚀",
+                rankSync: "🌍 En línea: tu puntuación se comparte con todos los jugadores.",
+                rankLocal: "⚠️ Sin conexión: se muestran las puntuaciones guardadas en este dispositivo.",
+                rkNameLabel: "Tu nombre en el ranking",
+                rankPlaceholder: "Anónimo",
+                rankSave: "🏆 Guardar puntuación",
+                rankSaving: "Guardando tu puntuación…",
+                rankSaved: "🏆 ¡Puntuación guardada en el ranking! Ya la ven todos. 🌍",
+                rankSavedLocal: "📱 Puntuación guardada en este dispositivo (ahora mismo no hay conexión).",
+                rankAlready: "✅ Ya habías guardado esta puntuación. ¡A por la siguiente! 💪",
                 footer: "&copy; 2026 Minijuegos Web · Archivo: teclear.html"
             },
             en: {
@@ -799,6 +963,19 @@
                 msgAcc: "Amazing accuracy, you barely missed a key. 🎯",
                 msgRhythm: "Great pace! Keep practicing to level up. 🔥",
                 msgRetry: "Good game, try to beat your record next time. 💪",
+                btnRanking: "🏆 Leaderboard",
+                rankTitle: "🏆 Global leaderboard",
+                rankHint: "The best scores from every player (Top 10).",
+                rankEmpty: "No scores on the leaderboard yet. Be the first one! 🚀",
+                rankSync: "🌍 Online: your score is shared with every player.",
+                rankLocal: "⚠️ Offline: showing the scores saved on this device.",
+                rkNameLabel: "Your name on the leaderboard",
+                rankPlaceholder: "Anonymous",
+                rankSave: "🏆 Save score",
+                rankSaving: "Saving your score…",
+                rankSaved: "🏆 Score saved! Everyone can see it now. 🌍",
+                rankSavedLocal: "📱 Score saved on this device (currently offline).",
+                rankAlready: "✅ You had already saved this score. Go for the next one! 💪",
                 footer: "&copy; 2026 Web Mini-Games · File: teclear.html"
             }
         };
@@ -829,6 +1006,13 @@
         let equipped = "clasico";  // estilo activo
         let ownedBgs = ["dark"];   // fondos desbloqueados (Franco se compra)
         let shopOpen = false;
+        let rankOpen = false;      // panel de ranking abierto
+        let rankEntries = [];      // puntuaciones del ranking (top)
+        let rankOnline = false;    // último acceso al ranking global correcto
+        let rankBusy = false;      // evita guardar la puntuación dos veces
+        let rankLoaded = false;    // se ha intentado descargar el ranking
+        let playerId = "";         // identificador del jugador en este dispositivo
+        let savedScore = false;    // la puntuación de esta partida ya se ha guardado
 
         const t = k => I18N[lang][k];
 
@@ -854,6 +1038,15 @@
         const shopMsg = document.getElementById("shopMsg");
         const shopCoins = document.getElementById("shopCoins");
         const btnShop = document.getElementById("btnShop");
+        const btnRanking = document.getElementById("btnRanking");
+        const ranking = document.getElementById("ranking");
+        const rankList = document.getElementById("rankList");
+        const rankEmpty = document.getElementById("rankEmpty");
+        const rankStatus = document.getElementById("rankStatus");
+        const rankForm = document.getElementById("rankForm");
+        const rankSaved = document.getElementById("rankSaved");
+        const playerName = document.getElementById("playerName");
+        const saveScoreBtn = document.getElementById("saveScoreBtn");
         const results = document.getElementById("results");
         const btnEs = document.getElementById("btnEs");
         const btnEn = document.getElementById("btnEn");
@@ -862,7 +1055,7 @@
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
-        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnShop];
+        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnShop, btnRanking];
 
         // ---------- Récord por idioma ----------
         function loadBest() {
@@ -898,6 +1091,234 @@
                 localStorage.setItem("mejorPalabras." + lang, String(bestWords));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
+
+        // ---------- Ranking global ----------
+        // El ranking vive en un JSON público: todos los visitantes leen y escriben
+        // el mismo documento, de modo que la lista es común a todo el mundo.
+        // Mientras tanto se guarda una copia en este dispositivo por si no hay internet.
+
+        // Petición con tiempo de espera: evita que la interfaz se quede colgada
+        function rankFetch(url, opts) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), RANK_TIMEOUT);
+            return fetch(url, Object.assign({}, opts, { signal: ctrl.signal }))
+                .finally(() => clearTimeout(timer));
+        }
+
+        function makeId() {
+            if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+            return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 11);
+        }
+
+        // Identificador fijo del jugador: así su mejor marca no ocupa dos puestos
+        function loadPlayerId() {
+            if (playerId) return playerId;
+            try {
+                playerId = localStorage.getItem("teclear.jugador") || "";
+                if (!playerId) {
+                    playerId = makeId();
+                    localStorage.setItem("teclear.jugador", playerId);
+                }
+            } catch (e) {
+                playerId = makeId();
+            }
+            return playerId;
+        }
+
+        function loadPlayerName() {
+            try {
+                return String(localStorage.getItem("teclear.nombre") || "").slice(0, NAME_MAX);
+            } catch (e) {
+                return "";
+            }
+        }
+
+        function savePlayerName(name) {
+            try {
+                localStorage.setItem("teclear.nombre", name);
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        function loadLocalRanking() {
+            try {
+                const data = JSON.parse(localStorage.getItem("teclear.ranking") || "null");
+                return (data && Array.isArray(data.entries)) ? data.entries : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveLocalRanking(entries) {
+            try {
+                localStorage.setItem("teclear.ranking", JSON.stringify({ v: 1, entries: entries }));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // Limpia los datos, se queda con la MEJOR marca de cada jugador,
+        // ordena de mayor a menor puntuación y recorta a las RANK_MAX primeras
+        function normalizeRank(list) {
+            const byId = {};
+            (Array.isArray(list) ? list : []).forEach(e => {
+                if (!e) return;
+                const id = String(e.id || "");
+                const s = parseInt(e.s, 10) || 0;
+                const w = parseInt(e.w, 10) || 0;
+                if (!id || s <= 0) return;
+                const entry = {
+                    id: id,
+                    n: String(e.n || "Anónimo").slice(0, NAME_MAX),
+                    s: s,
+                    w: w,
+                    m: String(e.m || "type"),
+                    d: String(e.d || "")
+                };
+                const prev = byId[id];
+                if (!prev || entry.s > prev.s || (entry.s === prev.s && entry.w > prev.w)) {
+                    byId[id] = entry;
+                }
+            });
+            return Object.values(byId)
+                .sort((a, b) => b.s - a.s || b.w - a.w || (a.d < b.d ? 1 : a.d > b.d ? -1 : 0))
+                .slice(0, RANK_MAX);
+        }
+
+        function fetchRanking() {
+            return rankFetch(RANK_URL, { method: "GET" }).then(res => {
+                if (!res.ok) {
+                    // Se marca el error como "de servidor" para poder recrear el documento
+                    const err = new Error("HTTP " + res.status);
+                    err.fromServer = true;
+                    throw err;
+                }
+                return res.json();
+            }).then(data => (data && Array.isArray(data.entries)) ? data.entries : []);
+        }
+
+        function pushRanking(entries) {
+            return rankFetch(RANK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ v: 1, entries: entries })
+            }).then(res => {
+                if (!res.ok) throw new Error("HTTP " + res.status);
+            });
+        }
+
+        // Descarga el ranking de la web y lo mezcla con la copia local
+        function refreshRanking() {
+            const local = loadLocalRanking();
+            return fetchRanking()
+                .then(remote => {
+                    rankOnline = true;
+                    rankEntries = normalizeRank(remote.concat(local));
+                    saveLocalRanking(rankEntries);
+                })
+                .catch(() => {
+                    rankOnline = false;
+                    rankEntries = normalizeRank(local);
+                })
+                .then(() => {
+                    rankLoaded = true;
+                    renderRanking();
+                });
+        }
+
+        // Sube la puntuación al ranking de todos los jugadores.
+        // Primero se guarda en local (nunca se pierde) y luego se reintenta la subida.
+        function uploadScore(entry) {
+            rankEntries = normalizeRank(loadLocalRanking().concat([entry]));
+            saveLocalRanking(rankEntries);
+            rankOnline = false;
+            rankLoaded = true;
+            renderRanking();
+
+            function attempt(triesLeft) {
+                return fetchRanking()
+                    .catch(err => {
+                        // El servidor respondió pero no hay documento: se recrea con la
+                        // copia local. Si es falta de conexión, se reintenta más tarde.
+                        if (err && err.fromServer) return [];
+                        throw err;
+                    })
+                    .then(remote => {
+                        const merged = normalizeRank(remote.concat(loadLocalRanking(), [entry]));
+                        return pushRanking(merged).then(() => {
+                            rankEntries = merged;
+                            saveLocalRanking(merged);
+                            rankOnline = true;
+                            renderRanking();
+                        });
+                    })
+                    .catch(() => {
+                        if (triesLeft > 0) {
+                            return new Promise(r => setTimeout(r, 600))
+                                .then(() => attempt(triesLeft - 1));
+                        }
+                        rankOnline = false;
+                        renderRanking();
+                    });
+            }
+
+            return attempt(2);
+        }
+
+        function rankDate(iso) {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return "";
+            try {
+                return d.toLocaleDateString(lang === "es" ? "es-ES" : "en-GB");
+            } catch (e) {
+                return d.toLocaleDateString();
+            }
+        }
+
+        function renderRanking() {
+            if (!rankList) return;
+            const myId = loadPlayerId();
+            rankList.innerHTML = "";
+
+            rankEntries.forEach((e, i) => {
+                const li = document.createElement("li");
+                if (e.id === myId) li.classList.add("me");
+
+                const pos = document.createElement("span");
+                pos.className = "rank-pos";
+                pos.textContent = lang === "es" ? (i + 1) + "º" : "#" + (i + 1);
+
+                const name = document.createElement("span");
+                name.className = "rank-name";
+                name.textContent = e.n;
+
+                const pts = document.createElement("span");
+                pts.className = "rank-score";
+                pts.textContent = e.s;
+
+                const words = document.createElement("span");
+                words.className = "rank-words";
+                words.textContent = "📝 " + e.w;
+
+                const date = document.createElement("span");
+                date.className = "rank-date";
+                date.textContent = rankDate(e.d);
+
+                li.append(pos, name, pts, words, date);
+                rankList.appendChild(li);
+            });
+
+            rankEmpty.classList.toggle("hidden", rankEntries.length > 0);
+            rankStatus.textContent = !rankLoaded ? ""
+                : rankOnline ? t("rankSync") : t("rankLocal");
+        }
+
+        function toggleRanking() {
+            if (state === "playing") return;
+            rankOpen = !rankOpen;
+            ranking.classList.toggle("hidden", !rankOpen);
+            btnRanking.classList.toggle("active", rankOpen);
+            if (rankOpen) refreshRanking();
+        }
+
+        btnRanking.addEventListener("click", toggleRanking);
 
         // ---------- Monedas y tienda: persistencia ----------
         function loadShop() {
@@ -1108,6 +1529,14 @@
             document.getElementById("kCoins").textContent = t("kCoins");
             document.getElementById("kBestWords").textContent = t("kBestWords");
             btnShop.textContent = t("btnShop");
+            btnRanking.textContent = t("btnRanking");
+            document.getElementById("rankTitle").textContent = t("rankTitle");
+            document.getElementById("rankHint").textContent = t("rankHint");
+            document.getElementById("rankEmpty").textContent = t("rankEmpty");
+            document.getElementById("rkNameLabel").textContent = t("rkNameLabel");
+            saveScoreBtn.textContent = t("rankSave");
+            playerName.placeholder = t("rankPlaceholder");
+            renderRanking();
             document.getElementById("shopTitle").textContent = t("shopTitle");
             document.getElementById("shopHint").textContent = t("shopHint");
             document.getElementById("shopFontsTitle").textContent = t("shopFontsTitle");
@@ -1496,6 +1925,15 @@
             rMsgEl.textContent = msg;
             rMsgEl.classList.toggle("record", newScoreRecord || newWordsRecord);
 
+            // Formulario para apuntar la puntuación en el ranking global
+            savedScore = false;
+            rankBusy = false;
+            rankSaved.textContent = "";
+            rankSaved.classList.remove("off");
+            saveScoreBtn.disabled = false;
+            rankForm.classList.toggle("hidden", score <= 0);
+            if (score > 0 && !playerName.value.trim()) playerName.value = loadPlayerName();
+
             board.innerHTML = '<em class="hint">' + t("boardEnd") + "</em>";
             status.textContent = t("statusEnd");
             results.classList.remove("hidden");
@@ -1624,6 +2062,44 @@
 
         startBtn.addEventListener("click", startGame);
 
+        // ---------- Guardar la puntuación en el ranking ----------
+        saveScoreBtn.addEventListener("click", function () {
+            if (state === "playing" || rankBusy) return;
+            if (savedScore) {
+                rankSaved.textContent = t("rankAlready");
+                return;
+            }
+            if (score <= 0) return;
+
+            rankBusy = true;
+            saveScoreBtn.disabled = true;
+
+            const name = (playerName.value.trim() || t("rankPlaceholder")).slice(0, NAME_MAX);
+            playerName.value = name;
+            savePlayerName(name);
+
+            const entry = {
+                id: loadPlayerId(),   // el mismo jugador solo ocupa un puesto
+                n: name,
+                s: score,             // la mejor marca es la que manda
+                w: completed,
+                m: mode,
+                d: new Date().toISOString()
+            };
+
+            rankSaved.classList.remove("off");
+            rankSaved.textContent = t("rankSaving");
+
+            uploadScore(entry).then(() => {
+                rankBusy = false;
+                savedScore = true;
+                saveScoreBtn.disabled = false;
+                rankSaved.textContent = rankOnline ? t("rankSaved") : t("rankSavedLocal");
+                rankSaved.classList.toggle("off", !rankOnline);
+                if (!rankOpen) toggleRanking();  // se abre el ranking para ver la marca
+            });
+        });
+
         // ---------- Inicio ----------
         loadShop();
         try {
@@ -1637,6 +2113,8 @@
         applyStyle();
         updateCoins();
         applyLang();
+        playerName.value = loadPlayerName();
+        refreshRanking();   // descarga el ranking compartido (si hay internet)
     </script>
 </body>
 </html>

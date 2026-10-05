@@ -197,6 +197,90 @@
         .ship-desc b { color: #6ef0ff; letter-spacing: 1px; }
         .ship-desc .abl { color: #ffd166; }
 
+        /* ---------- Controles (reasignación de teclas) ---------- */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .ghostBtn {
+            margin-top: 6px;
+            background: linear-gradient(180deg, #1a2248, #101536);
+            border: 1px solid #3d4a8f;
+            font-size: 14px;
+            padding: 12px 24px;
+        }
+
+        .ctrl-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(210px, 1fr));
+            gap: 8px 20px;
+            background: rgba(8, 12, 36, 0.8);
+            border: 1px solid #2b3a7a;
+            border-radius: 8px;
+            padding: 12px 16px;
+            max-width: 540px;
+        }
+
+        .ctrl-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 12.5px;
+            letter-spacing: 1px;
+            color: #9aa6dd;
+        }
+
+        .ctrl-row .act {
+            text-transform: uppercase;
+            color: #aab4e6;
+        }
+
+        .keyBtn {
+            margin-top: 0;
+            min-width: 108px;
+            padding: 7px 12px;
+            font-size: 13px;
+            letter-spacing: 1px;
+            background: linear-gradient(180deg, #1a2248, #101536);
+            border: 1px solid #3d4a8f;
+            color: #6ef0ff;
+            box-shadow: none;
+        }
+
+        .keyBtn.listening {
+            border-color: #ffd166;
+            color: #ffd166;
+            box-shadow: 0 0 16px rgba(255, 209, 102, 0.45);
+            animation: keyBlink 0.8s infinite;
+        }
+
+        @keyframes keyBlink { 50% { opacity: 0.5; } }
+
+        .ctrl-hint {
+            min-height: 15px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: #7f8ac0;
+        }
+
+        .ctrl-hint.warn { color: #ff8fa3; }
+
+        .smallBtn {
+            margin-top: 0;
+            padding: 7px 16px;
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 720px) {
+            .ctrl-grid { grid-template-columns: 1fr; }
+        }
+
         footer {
             margin-top: 10px;
             font-size: 12px;
@@ -218,6 +302,7 @@
         <div id="hud">
             <span>PUNTOS: <b id="score">0</b></span>
             <span>OLEADA: <b id="wave">1</b></span>
+            <span>ENEMIGAS: <b id="remaining">0</b></span>
             <span>DIFICULTAD: <b id="diff">NORMAL</b></span>
             <span>VIDAS: <b id="lives">♥♥♥</b></span>
             <span><b id="abName">TURBO</b>: <b id="turbo">LISTO</b></span>
@@ -225,7 +310,7 @@
 
         <div id="overlay">
             <h2 id="ovTitle">EstesIA Odyssey</h2>
-            <p id="ovText">Pilota tu nave por el sector EstesIA y despacha a todas las naves enemigas que se interpongan en tu ruta. ¡Cuidado: cada 5 oleadas aparece un jefe con mucha vida, y cada uno es más duro que el anterior!</p>
+            <p id="ovText">Pilota tu nave por el sector EstesIA y destruye a todas las naves enemigas: solo pasas de oleada cuando no queda ninguna en pie. ¡Las que se escapan por la parte inferior vuelven a entrar por arriba, así que no hay perdón por escaparse! Cada 5 oleadas aparece un jefe con mucha vida, y cada uno es más duro que el anterior. La única forma de perder la partida es quedarte sin vidas.</p>
 
             <div class="diff-block" id="diffBlock">
                 <div class="diff-label">Dificultad</div>
@@ -246,6 +331,20 @@
                 <div class="ship-desc" id="shipDesc"></div>
             </div>
 
+            <div class="diff-block hidden" id="ctrlBlock">
+                <div class="diff-label">Controles</div>
+                <div class="ctrl-grid" id="ctrlGrid">
+                    <div class="ctrl-row"><span class="act">Disparar</span><button class="keyBtn" data-act="shoot" type="button">—</button></div>
+                    <div class="ctrl-row"><span class="act">Habilidad</span><button class="keyBtn" data-act="ability" type="button">—</button></div>
+                    <div class="ctrl-row"><span class="act">Mover arriba</span><button class="keyBtn" data-act="up" type="button">—</button></div>
+                    <div class="ctrl-row"><span class="act">Mover abajo</span><button class="keyBtn" data-act="down" type="button">—</button></div>
+                    <div class="ctrl-row"><span class="act">Mover izquierda</span><button class="keyBtn" data-act="left" type="button">—</button></div>
+                    <div class="ctrl-row"><span class="act">Mover derecha</span><button class="keyBtn" data-act="right" type="button">—</button></div>
+                </div>
+                <div class="ctrl-hint" id="ctrlHint">Haz clic en una tecla y pulsa la nueva tecla para asignarla (ESC cancela). WASD y el clic izquierdo siguen disponibles.</div>
+                <button class="smallBtn" id="resetKeysBtn" type="button">Restablecer teclas</button>
+            </div>
+
             <div class="keys" id="ovKeys">
                 ← → &nbsp;o&nbsp; A / D — mover lateralmente<br>
                 ↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>
@@ -253,7 +352,10 @@
                 MAYÚS (SHIFT) — turbo con 3 s de recarga<br>
                 P — pausar
             </div>
-            <button id="startBtn">Jugar</button>
+            <div class="btn-row">
+                <button id="startBtn">Jugar</button>
+                <button id="ctrlBtn" class="ghostBtn" type="button">Controles</button>
+            </div>
         </div>
     </div>
 
@@ -269,6 +371,7 @@
         const H = canvas.height;
 
         const scoreEl = document.getElementById("score");
+        const remainingEl = document.getElementById("remaining");
         const waveEl = document.getElementById("wave");
         const livesEl = document.getElementById("lives");
         const diffEl = document.getElementById("diff");
@@ -284,6 +387,135 @@
         const shipBlock = document.getElementById("shipBlock");
         const shipDesc = document.getElementById("shipDesc");
         const abNameEl = document.getElementById("abName");
+        const ctrlBlock = document.getElementById("ctrlBlock");
+        const ctrlBtn = document.getElementById("ctrlBtn");
+        const ctrlHint = document.getElementById("ctrlHint");
+        const keyBtns = document.querySelectorAll(".keyBtn");
+        const resetKeysBtn = document.getElementById("resetKeysBtn");
+
+        // ---------- Teclas configurables ----------
+        const DEFAULT_BINDS = {
+            shoot: "Space",       // disparar (el clic izquierdo del ratón siempre funciona)
+            ability: "ShiftLeft", // habilidad de la nave
+            up: "ArrowUp",
+            down: "ArrowDown",
+            left: "ArrowLeft",
+            right: "ArrowRight"
+        };
+        // alternativas fijas de movimiento (WASD), no reasignables
+        const MOVE_ALT = { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" };
+        const BIND_NAMES = {
+            shoot: "disparar",
+            ability: "habilidad",
+            up: "mover arriba",
+            down: "mover abajo",
+            left: "mover izquierda",
+            right: "mover derecha"
+        };
+        const STORE_KEY = "estesiaOdyssey.controles.v1";
+        const DEFAULT_HINT = ctrlHint ? ctrlHint.textContent : "";
+        let binds = Object.assign({}, DEFAULT_BINDS);
+        let rebinding = null;   // acción que se está reasignando (null = modo normal)
+
+        function loadBinds() {
+            try {
+                const raw = localStorage.getItem(STORE_KEY);
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                for (const act in DEFAULT_BINDS) {
+                    if (saved && typeof saved[act] === "string" && saved[act]) binds[act] = saved[act];
+                }
+            } catch (err) { /* sin almacenamiento disponible */ }
+        }
+
+        function saveBinds() {
+            try { localStorage.setItem(STORE_KEY, JSON.stringify(binds)); }
+            catch (err) { /* sin almacenamiento disponible */ }
+        }
+
+        function keyLabel(code) {
+            const ARROWS = { ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→" };
+            if (ARROWS[code]) return ARROWS[code];
+            if (code.indexOf("Key") === 0) return code.slice(3);
+            if (code.indexOf("Digit") === 0) return code.slice(5);
+            if (code.indexOf("Numpad") === 0) return "NUM " + code.slice(6);
+            if (code === "Space") return "ESPACIO";
+            if (code === "ShiftLeft") return "MAYÚS IZQ";
+            if (code === "ShiftRight") return "MAYÚS DER";
+            if (code === "ControlLeft") return "CTRL IZQ";
+            if (code === "ControlRight") return "CTRL DER";
+            if (code === "AltLeft") return "ALT IZQ";
+            if (code === "AltRight") return "ALT DER";
+            if (code === "Escape") return "ESC";
+            if (code === "Enter" || code === "NumpadEnter") return "ENTER";
+            if (code === "Tab") return "TAB";
+            if (code === "Backspace") return "RETROCESO";
+            if (code === "CapsLock") return "MAYÚSCULAS";
+            if (code === "Comma") return ",";
+            if (code === "Period") return ".";
+            if (code === "Slash") return "/";
+            if (code === "Semicolon") return ";";
+            if (code === "Quote") return "'";
+            if (code === "BracketLeft") return "[";
+            if (code === "BracketRight") return "]";
+            return code.toUpperCase();
+        }
+
+        // sustituye {SHOOT} y {ABILITY} por la tecla asignada en ese momento
+        function fmt(text) {
+            return text
+                .replace(/\{SHOOT\}/g, keyLabel(binds.shoot))
+                .replace(/\{ABILITY\}/g, keyLabel(binds.ability));
+        }
+
+        function dirText(act) {
+            const main = keyLabel(binds[act]);
+            if (binds[act] === MOVE_ALT[act]) return main;
+            return main + " (o " + keyLabel(MOVE_ALT[act]) + ")";
+        }
+
+        function isDown(act) {
+            return !!(keys[binds[act]] || keys[MOVE_ALT[act]]);
+        }
+
+        function isAbilityKey(code) {
+            if (code === binds.ability) return true;
+            // cualquier MAYÚS vale si la habilidad está en un MAYÚS
+            if (binds.ability === "ShiftLeft" && code === "ShiftRight") return true;
+            if (binds.ability === "ShiftRight" && code === "ShiftLeft") return true;
+            return false;
+        }
+
+        // ¿está "code" ya usada por otra acción? (devuelve su nombre o null)
+        function keyConflict(code, exceptAct) {
+            for (const act in binds) {
+                if (act !== exceptAct && binds[act] === code) return BIND_NAMES[act];
+            }
+            if (MOVE_ALT[exceptAct] === code) return null; // alternativa fija de la propia acción
+            for (const act in MOVE_ALT) {
+                if (act !== exceptAct && MOVE_ALT[act] === code) return BIND_NAMES[act];
+            }
+            return null;
+        }
+
+        function setHint(msg, warn) {
+            if (!ctrlHint) return;
+            ctrlHint.textContent = msg;
+            ctrlHint.classList.toggle("warn", !!warn);
+        }
+
+        function renderBinds() {
+            keyBtns.forEach((btn) => {
+                const act = btn.dataset.act;
+                btn.textContent = keyLabel(binds[act]);
+                btn.classList.toggle("listening", rebinding === act);
+            });
+        }
+
+        function stopRebinding() {
+            rebinding = null;
+            renderBinds();
+        }
 
         // ---------- Dificultad ----------
         const DIFF = {
@@ -301,12 +533,9 @@
                 duration: 1,     // segundos de turbo
                 cooldown: 3,     // recarga del turbo
                 desc: "<b>CAZADOR</b> — la nave estándar: un proyectil por cada clic.<br>" +
-                      "<span class='abl'>MAYÚS</span>: turbo (3 s de impulso, 3 s de recarga).",
-                keys: "← → &nbsp;o&nbsp; A / D — mover lateralmente<br>" +
-                      "↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>" +
-                      "CLIC IZQUIERDO — disparar un proyectil por clic<br>" +
-                      "<span class='abl'>MAYÚS (SHIFT)</span> — turbo: 3 s de impulso, 3 s de recarga<br>" +
-                      "P — pausar"
+                      "<span class='abl'>{ABILITY}</span>: turbo (3 s de impulso, 3 s de recarga).",
+                fire: "{SHOOT} (o CLIC IZQUIERDO) — disparar un proyectil por clic",
+                abilityLine: "{ABILITY} — turbo: 3 s de impulso, 3 s de recarga"
             },
             rayo: {
                 key: "rayo", name: "Haz", ability: "ONDA",
@@ -319,12 +548,9 @@
                 shockSpeed: 1150, // velocidad de propagación (px/s)
                 desc: "<b>HAZ</b> — dispara un láser continuo mientras mantienes pulsado el ratón " +
                       "(te mueves más despacio mientras está activo).<br>" +
-                      "<span class='abl'>MAYÚS</span>: onda de choque que barre toda la pantalla (10 s de recarga).",
-                keys: "← → &nbsp;o&nbsp; A / D — mover lateralmente<br>" +
-                      "↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>" +
-                      "<span class='abl'>MANTENER CLIC IZQUIERDO</span> — haz láser (reduce tu velocidad)<br>" +
-                      "<span class='abl'>MAYÚS (SHIFT)</span> — onda de choque: 10 s de recarga<br>" +
-                      "P — pausar"
+                      "<span class='abl'>{ABILITY}</span>: onda de choque que barre toda la pantalla (10 s de recarga).",
+                fire: "MANTENER {SHOOT} o CLIC IZQUIERDO — haz láser (reduce tu velocidad)",
+                abilityLine: "{ABILITY} — onda de choque: 10 s de recarga"
             },
             campo: {
                 key: "campo", name: "Defensor", ability: "CAMPO",
@@ -332,12 +558,9 @@
                 duration: 10,     // segundos de campo de energía
                 cooldown: 20,     // recarga del campo
                 desc: "<b>DEFENSOR</b> — lanza proyectiles autodirigidos que buscan al enemigo más cercano.<br>" +
-                      "<span class='abl'>MAYÚS</span>: campo de energía que protege la nave durante 10 s (20 s de recarga).",
-                keys: "← → &nbsp;o&nbsp; A / D — mover lateralmente<br>" +
-                      "↑ ↓ &nbsp;o&nbsp; W / S — avanzar / retroceder<br>" +
-                      "CLIC IZQUIERDO — proyectil autodirigido al enemigo más cercano<br>" +
-                      "<span class='abl'>MAYÚS (SHIFT)</span> — campo de energía 10 s, 20 s de recarga<br>" +
-                      "P — pausar"
+                      "<span class='abl'>{ABILITY}</span>: campo de energía que protege la nave durante 10 s (20 s de recarga).",
+                fire: "{SHOOT} (o CLIC IZQUIERDO) — proyectil autodirigido al enemigo más cercano",
+                abilityLine: "{ABILITY} — campo de energía 10 s, 20 s de recarga"
             }
         };
         let shipId = "caza";                     // la primera (Cazador) es la por defecto
@@ -385,6 +608,9 @@
         let particles = [];     // explosiones
         let spawnTimer = 0;
         let spawnInterval = 1.6;
+        let waveQuota = 0;        // naves que deben aparecer en la oleada actual
+        let waveSpawned = 0;      // cuántas de ellas ya han aparecido
+        let remainingShown = -1;  // último contador de enemigos mostrado en el HUD
 
         // ---------- Jefe de oleada ----------
         const BOSS_EVERY = 5;    // aparece un jefe cada 5 oleadas
@@ -392,33 +618,91 @@
         let bannerText = "";     // aviso grande en pantalla
         let bannerTimer = 0;
         let bannerMax = 1;
+        let bannerQueue = [];    // avisos pendientes (se muestran en orden)
 
         function showBanner(text, time) {
-            bannerText = text;
-            bannerTimer = time;
-            bannerMax = time;
+            bannerQueue.push({ text: text, time: time });
         }
 
-        // ¿hay alguna oleada de jefe entre "from+1" y "to"? (devuelve esa oleada o -1)
-        function nextBossWave(from, to) {
-            const candidate = (Math.floor(from / BOSS_EVERY) + 1) * BOSS_EVERY;
-            return candidate <= to ? candidate : -1;
+        // muestra el siguiente aviso de la cola cuando el anterior se ha agotado
+        function nextBanner() {
+            if (bannerTimer > 0 || bannerQueue.length === 0) return;
+            const b = bannerQueue.shift();
+            bannerText = b.text;
+            bannerTimer = b.time;
+            bannerMax = b.time;
+        }
+
+        // ---------- Oleadas ----------
+        // Naves que componen una oleada normal (más a medida que sube la oleada)
+        function waveSize(w) {
+            const d = DIFF[difficulty];
+            return Math.max(3, Math.min(18, Math.round((4 + w * 2) / d.spawn)));
+        }
+
+        // Pone en marcha la oleada actual: los jefes van solos, el resto hay que destruirlos todos
+        function beginWave() {
+            waveSpawned = 0;
+            spawnTimer = 0.7;
+            if (wave % BOSS_EVERY === 0) {
+                waveQuota = 0;
+                spawnBoss();
+            } else {
+                waveQuota = waveSize(wave);
+                showBanner("¡OLEADA " + wave + "!", 1.6);
+            }
+            updateHUD();
         }
 
         // ---------- Entrada ----------
         window.addEventListener("keydown", (e) => {
+            // --- modo reasignación de teclas (panel Controles) ---
+            if (rebinding) {
+                if (!/^F\d{1,2}$/.test(e.code)) e.preventDefault();  // no bloquear F5, etc.
+                if (e.code === "Escape") {
+                    stopRebinding();
+                    setHint("Asignación cancelada");
+                    return;
+                }
+                if (e.code === "KeyP") {
+                    setHint("La tecla P está reservada para pausar", true);
+                    return;
+                }
+                const taken = keyConflict(e.code, rebinding);
+                if (taken) {
+                    setHint("Esa tecla ya se usa para: " + taken, true);
+                    return;
+                }
+                binds[rebinding] = e.code;
+                player.beamOn = false;
+                saveBinds();
+                stopRebinding();
+                applyShipInfo();
+                setHint("Tecla asignada correctamente");
+                return;
+            }
+
             keys[e.code] = true;
-            if (["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.code)) {
+            if (["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.code) ||
+                e.code === binds.shoot) {
                 e.preventDefault();
             }
             if (e.code === "KeyP" && (state === "playing" || state === "paused")) {
                 togglePause();
             }
-            if (!e.repeat && (e.code === "ShiftLeft" || e.code === "ShiftRight")) {
+            // disparo con tecla (el clic izquierdo del ratón también sigue funcionando)
+            if (!e.repeat && state === "playing" && e.code === binds.shoot) {
+                if (shipId === "rayo") player.beamOn = true;
+                else shoot();
+            }
+            if (!e.repeat && isAbilityKey(e.code)) {
                 activateAbility();
             }
         });
-        window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+        window.addEventListener("keyup", (e) => {
+            keys[e.code] = false;
+            if (e.code === binds.shoot) player.beamOn = false;   // suelta la tecla y se apaga el haz
+        });
 
         // Disparo con el ratón:
         //  - Cazador / Defensor: un proyectil por cada clic
@@ -457,12 +741,56 @@
             });
         });
 
+        // ---------- Panel de controles ----------
+        ctrlBtn.addEventListener("click", () => {
+            const willOpen = ctrlBlock.classList.contains("hidden");
+            ctrlBlock.classList.toggle("hidden", !willOpen);
+            if (willOpen) {
+                stopRebinding();
+                setHint(DEFAULT_HINT);
+            } else {
+                stopRebinding();
+            }
+        });
+
+        keyBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const act = btn.dataset.act;
+                if (rebinding === act) {          // segundo clic: se cancela
+                    stopRebinding();
+                    setHint(DEFAULT_HINT);
+                    return;
+                }
+                rebinding = act;
+                renderBinds();
+                setHint("Pulsa la nueva tecla para «" + BIND_NAMES[act] + "» — ESC cancela");
+            });
+        });
+
+        resetKeysBtn.addEventListener("click", () => {
+            binds = Object.assign({}, DEFAULT_BINDS);
+            player.beamOn = false;
+            stopRebinding();
+            saveBinds();
+            renderBinds();
+            applyShipInfo();
+            setHint("Teclas restauradas a los valores por defecto");
+        });
+
+        function shipKeysText(s) {
+            return dirText("left") + " / " + dirText("right") + " — mover lateralmente<br>" +
+                   dirText("up") + " / " + dirText("down") + " — avanzar / retroceder<br>" +
+                   fmt(s.fire) + "<br>" +
+                   "<span class='abl'>" + fmt(s.abilityLine) + "</span><br>" +
+                   "P — pausar";
+        }
+
         function applyShipInfo() {
             const s = currentShip();
-            if (shipDesc) shipDesc.innerHTML = s.desc;
+            if (shipDesc) shipDesc.innerHTML = fmt(s.desc);
             if (abNameEl) abNameEl.textContent = s.ability;
             // solo se tocan las teclas si el overlay está en su pantalla inicial
-            if (state === "menu") ovKeys.innerHTML = s.keys;
+            if (state === "menu") ovKeys.innerHTML = shipKeysText(s);
             player.w = s.w;
             player.h = s.h;
             updateHUD();
@@ -475,6 +803,9 @@
             } else {
                 diffBlock.classList.add("hidden");
                 shipBlock.classList.add("hidden");
+                ctrlBlock.classList.add("hidden");   // el panel de controles solo se abre a petición
+                stopRebinding();
+                setHint(DEFAULT_HINT);
             }
         }
 
@@ -499,9 +830,12 @@
             particles = [];
             spawnTimer = 0;
             spawnInterval = 1.6 * d.spawn;
+            waveQuota = 0;
+            waveSpawned = 0;
             boss = null;
             bannerText = "";
             bannerTimer = 0;
+            bannerQueue = [];
             const s = currentShip();
             player.x = W / 2;
             player.y = H - 70;
@@ -518,6 +852,7 @@
             state = "playing";
             showOptions(false);
             overlay.classList.add("hidden");
+            beginWave();          // la oleada 1 empieza con sus naves pendientes
             updateHUD();
             lastTime = performance.now();
         }
@@ -561,6 +896,15 @@
             waveEl.textContent = wave;
             diffEl.textContent = DIFF[difficulty].label.toUpperCase();
             livesEl.textContent = lives > 0 ? "♥".repeat(lives) : "—";
+            updateRemainingHUD();
+        }
+
+        // naves que quedan por destruir en la oleada actual (vivas + pendientes de aparecer)
+        function updateRemainingHUD() {
+            const n = enemies.length + Math.max(0, waveQuota - waveSpawned);
+            if (n === remainingShown) return;
+            remainingShown = n;
+            if (remainingEl) remainingEl.textContent = n;
         }
 
         // ---------- Utilidades ----------
@@ -869,15 +1213,15 @@
 
             // --- jugador: lateral (← → / A D) ---
             let dir = 0;
-            if (keys["ArrowLeft"] || keys["KeyA"]) dir -= 1;
-            if (keys["ArrowRight"] || keys["KeyD"]) dir += 1;
+            if (isDown("left")) dir -= 1;
+            if (isDown("right")) dir += 1;
             player.x += dir * player.speed * moveMul * dt;
             player.x = Math.max(player.w / 2 + 6, Math.min(W - player.w / 2 - 6, player.x));
 
             // --- jugador: adelante / atrás (↑ ↓ / W S) ---
             let dirY = 0;
-            if (keys["ArrowUp"] || keys["KeyW"]) dirY -= 1;
-            if (keys["ArrowDown"] || keys["KeyS"]) dirY += 1;
+            if (isDown("up")) dirY -= 1;
+            if (isDown("down")) dirY += 1;
             player.y += dirY * player.speed * 0.8 * moveMul * dt;
             const topLimit = 76;                 // deja libre la barra de HUD
             const botLimit = H - player.h / 2 - 8;
@@ -939,13 +1283,14 @@
                 }
             }
 
-            // --- enemigos ---
+            // --- enemigos: solo aparecen los que faltan por destruir en la oleada ---
             if (boss) {
                 spawnTimer = spawnInterval;   // durante el duelo de jefe solo salen sus escoltas
-            } else {
+            } else if (waveSpawned < waveQuota) {
                 spawnTimer -= dt;
                 if (spawnTimer <= 0) {
                     spawnEnemy();
+                    waveSpawned++;
                     spawnInterval = Math.max(0.45, 1.6 - wave * 0.12) * DIFF[difficulty].spawn;
                     spawnTimer = spawnInterval;
                 }
@@ -969,12 +1314,11 @@
                         enemyBullets.push({ x: e.x, y: e.y + e.h / 2, w: 6, h: 14, vy: (240 + wave * 10) * DIFF[difficulty].bullet });
                     }
 
-                    // llegó abajo: castigo
+                    // llegó abajo: no se destruye ni cuesta vidas, vuelve a entrar
+                    // por el mismo borde por el que salió (arriba) y en su misma columna
                     if (e.y > H + e.h) {
-                        enemies.splice(i, 1);
-                        lives--;
-                        updateHUD();
-                        if (lives <= 0) { gameOver(); return; }
+                        e.y = -e.h;
+                        e.timer = Math.max(e.fireRate, 1);   // deja un momento sin disparar al reentrar
                         continue;
                     }
                 }
@@ -1086,20 +1430,21 @@
                 p.vy *= 0.96;
             }
 
-            // --- aviso grande en pantalla ---
-            bannerTimer = Math.max(0, bannerTimer - dt);
+            // --- aviso grande en pantalla (cola de avisos encadenados) ---
+            if (bannerTimer > 0) bannerTimer = Math.max(0, bannerTimer - dt);
+            else nextBanner();
 
             // --- control de oleadas ---
-            // mientras el jefe siga vivo no avanza la oleada
-            if (!boss) {
-                const newWave = Math.floor(score / 1000) + 1;
-                if (newWave > wave) {
-                    const bossWave = nextBossWave(wave, newWave);
-                    wave = bossWave > 0 ? bossWave : newWave;
-                    updateHUD();
-                    if (wave % BOSS_EVERY === 0) spawnBoss();
-                }
+            // la oleada solo avanza cuando ya no queda nada que destruir
+            if (!boss && waveSpawned >= waveQuota && enemies.length === 0) {
+                const cleared = wave;
+                wave++;
+                enemyBullets = [];   // la pantalla queda despejada como recompensa
+                showBanner("¡OLEADA " + cleared + " SUPERADA!", 1.8);
+                beginWave();
             }
+
+            updateRemainingHUD();
         }
 
         // ---------- Dibujo ----------
@@ -1360,6 +1705,8 @@
             requestAnimationFrame(loop);
         }
 
+        loadBinds();        // teclas guardadas por el jugador (si las hay)
+        renderBinds();
         applyShipInfo();   // descripción, teclas y nombre de la habilidad de la nave elegida
         updateHUD();
         requestAnimationFrame((t) => { lastTime = t; requestAnimationFrame(loop); });
