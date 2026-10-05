@@ -9,166 +9,250 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pacifico&family=Poppins:wght@600&display=swap" rel="stylesheet">
     <style>
+        /* =========================================================
+           Base, variables y tipografía
+           ========================================================= */
         * {
             box-sizing: border-box;
         }
-        body {
-            font-family: "Segoe UI", Arial, sans-serif;
-            max-width: 760px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            background-color: #10141c;
-            color: #e8ecf4;
-            text-align: center;
+        :root {
+            --bg: #0a0e16;
+            --surface: #141b2a;
+            --surface-2: #0f1522;
+            --line: #26314a;
+            --line-soft: #1d2639;
+            --text: #e8ecf4;
+            --muted: #8b97ad;
+            --accent: #5eead4;
+            --accent-2: #14b8a6;
+            --gold: #ffd76a;
+            --pink: #f0abfc;
+            --danger: #f87171;
+            --radius: 16px;
+            --shadow: 0 14px 34px rgba(0, 0, 0, .35);
         }
-        /* Fondo alternativo: retrato de Francisco Franco (1930) */
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 22px 18px 44px;
+            line-height: 1.6;
+            color: var(--text);
+            text-align: center;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
+                radial-gradient(760px 420px at 110% 115%, rgba(56, 130, 246, .12), transparent 60%);
+            background-attachment: fixed;
+        }
+        h1, h2, h3 {
+            font-family: "Poppins", "Segoe UI", Arial, sans-serif;
+            line-height: 1.25;
+        }
+
+        /* ---------- Fondos de pantalla ---------- */
         body.bg-franco {
             background-image:
-                linear-gradient(rgba(16, 20, 28, 0.85), rgba(16, 20, 28, 0.85)),
+                radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
+                linear-gradient(rgba(10, 14, 22, .88), rgba(10, 14, 22, .88)),
                 url("Francisco_Franco_1930.jpg");
-            background-size: cover;
-            background-position: center top;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-size: auto, cover, cover;
+            background-position: center, center top, center top;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-attachment: fixed, fixed, fixed;
         }
-        /* Fondos desbloqueables en la tienda */
         body.bg-elprico {
             background-image:
-                linear-gradient(rgba(16, 20, 28, 0.8), rgba(16, 20, 28, 0.8)),
+                radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
+                linear-gradient(rgba(10, 14, 22, .84), rgba(10, 14, 22, .84)),
                 url("Elprico.jfif");
-            background-size: cover;
-            background-position: center top;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-size: auto, cover, cover;
+            background-position: center, center top, center top;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-attachment: fixed, fixed, fixed;
         }
         body.bg-esteso {
+            background-color: var(--bg);
             background-image:
-                linear-gradient(rgba(16, 20, 28, 0.78), rgba(16, 20, 28, 0.78)),
+                radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
+                linear-gradient(rgba(10, 14, 22, .84), rgba(10, 14, 22, .84)),
                 url("esteso.jfif");
-            /* imagen pequeña (100x100): se usa como patrón en vez de estirarla */
-            background-size: auto, 170px 170px;
-            background-position: center, center;
-            background-repeat: no-repeat, repeat;
-            background-attachment: fixed, fixed;
-            background-color: #10141c;
+            background-size: auto, auto, 170px 170px;
+            background-position: center, center, center;
+            background-repeat: no-repeat, no-repeat, repeat;
+            background-attachment: fixed, fixed, fixed;
         }
+
+        /* ---------- Cabecera ---------- */
         header {
-            background-color: #1b2333;
-            border: 2px solid #2e3a54;
-            border-radius: 12px;
-            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            padding: 26px 24px;
+            background:
+                linear-gradient(135deg, rgba(20, 184, 166, .20), rgba(56, 130, 246, .10) 55%, rgba(20, 184, 166, 0) 100%),
+                var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
         }
         header h1 {
             margin: 0;
-            letter-spacing: 2px;
+            font-size: clamp(23px, 4.6vw, 32px);
+            letter-spacing: .5px;
         }
         header p {
-            margin: 8px 0 0;
-            color: #8b97ad;
+            margin: 8px auto 0;
+            max-width: 620px;
+            color: var(--muted);
+            font-size: 15px;
         }
 
-        /* ---------- Selectores (idioma y modo) ---------- */
+        /* ---------- Menú de opciones ---------- */
         .selectors {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
             margin-top: 18px;
+            padding: 4px 20px;
+            text-align: left;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
         .sel-row {
             display: flex;
-            gap: 8px;
-            justify-content: center;
             align-items: center;
+            gap: 14px;
             flex-wrap: wrap;
+            padding: 13px 0;
+            border-top: 1px solid var(--line-soft);
+        }
+        .sel-row:first-child {
+            border-top: 0;
         }
         .sel-label {
-            font-size: 13px;
+            flex: 0 0 132px;
+            font-size: 11px;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8b97ad;
+            letter-spacing: 1.4px;
+            color: var(--muted);
+        }
+        /* Los fondos extra se insertan como chips sueltos de la fila */
+        #bgExtra {
+            display: contents;
         }
         .chip-btn {
-            background-color: #1b2333;
-            color: #8b97ad;
-            border: 2px solid #2e3a54;
-            padding: 8px 16px;
-            font-size: 15px;
-            border-radius: 8px;
+            background-color: rgba(255, 255, 255, .03);
+            color: var(--muted);
+            border: 1px solid var(--line);
+            padding: 8px 15px;
+            font-size: 14px;
+            line-height: 1.3;
+            border-radius: 999px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: color .18s, border-color .18s, background-color .18s, transform .18s;
         }
         .chip-btn:hover:not(:disabled) {
-            border-color: #5eead4;
-            color: #e8ecf4;
+            color: var(--text);
+            border-color: var(--accent);
+            background-color: rgba(94, 234, 212, .10);
+        }
+        .chip-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .chip-btn:active:not(:disabled) {
+            transform: translateY(1px);
         }
         .chip-btn.active {
-            background-color: #14b8a6;
-            border-color: #14b8a6;
-            color: #062019;
-            font-weight: bold;
+            background: linear-gradient(180deg, #2dd4bf, #14b8a6);
+            border-color: transparent;
+            color: #052e2a;
+            font-weight: 700;
+            box-shadow: 0 6px 16px rgba(20, 184, 166, .35);
         }
         .chip-btn:disabled {
-            opacity: 0.5;
+            opacity: .45;
             cursor: not-allowed;
         }
 
         /* ---------- Marcador ---------- */
         .stats {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
             gap: 10px;
-            justify-content: center;
-            margin: 22px 0;
+            margin: 20px 0;
         }
         .stat {
-            background-color: #1b2333;
-            border: 2px solid #2e3a54;
-            border-radius: 10px;
-            padding: 8px 16px;
-            min-width: 115px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 10px 6px;
         }
         .stat span {
             display: block;
-            font-size: 11px;
+            font-size: 10.5px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8b97ad;
+            letter-spacing: 1.2px;
+            color: var(--muted);
         }
         .stat strong {
+            display: block;
             font-size: 24px;
-            color: #5eead4;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+        .stat.low {
+            border-color: rgba(248, 113, 113, .55);
         }
         .stat.low strong {
-            color: #f87171;
-            animation: blink 0.5s infinite alternate;
+            color: var(--danger);
+            animation: blink .5s infinite alternate;
         }
         @keyframes blink {
-            to { opacity: 0.4; }
+            to { opacity: .4; }
+        }
+        .stat.coins strong {
+            color: var(--gold);
+        }
+        .stat.words strong {
+            color: var(--pink);
         }
 
-        /* ---------- Tablero ---------- */
+        /* ---------- Zona de juego ---------- */
         .stage {
             position: relative;
         }
         .board {
-            background-color: #0b0e14;
-            border: 2px dashed #2e3a54;
-            border-radius: 14px;
-            padding: 30px 15px;
-            min-height: 110px;
-            margin: 20px auto 0;
+            min-height: 124px;
+            margin-top: 4px;
+            padding: 34px 16px;
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 7px;
             justify-content: center;
             align-items: center;
+            background:
+                radial-gradient(120% 130% at 50% 0%, rgba(94, 234, 212, .07), transparent 60%),
+                var(--surface-2);
+            border: 1px dashed var(--line);
+            border-radius: var(--radius);
             font-family: Consolas, "Courier New", monospace;
             font-size: 32px;
         }
         .board.shake {
-            animation: shake 0.25s;
+            animation: shake .25s;
         }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -176,19 +260,20 @@
             75% { transform: translateX(8px); }
         }
         .board .hint {
-            font-size: 18px;
-            color: #8b97ad;
+            font-size: 17px;
+            color: var(--muted);
             font-family: "Segoe UI", Arial, sans-serif;
         }
         .board span {
             display: inline-block;
-            min-width: 36px;
-            padding: 6px 8px;
-            background-color: #232c40;
-            border-radius: 8px;
-            border-bottom: 3px solid #384564;
-            color: #e8ecf4;
+            min-width: 38px;
+            padding: 7px 9px;
+            background-color: #1b2436;
+            border-radius: 10px;
+            border-bottom: 3px solid #33405c;
+            color: var(--text);
             text-transform: uppercase;
+            transition: background-color .12s, border-color .12s, color .12s;
         }
         .board span.ok {
             background-color: #14532d;
@@ -201,13 +286,14 @@
             color: #fecaca;
         }
         .board span.blank {
-            background-color: #10141c;
-            border-bottom-color: #5eead4;
-            color: #5eead4;
+            background-color: transparent;
+            border-bottom-color: var(--accent);
+            color: var(--accent);
         }
         .board span.cursor {
-            outline: 2px solid #5eead4;
-            animation: pulse 0.9s infinite;
+            outline: 2px solid var(--accent);
+            outline-offset: 1px;
+            animation: pulse .9s infinite;
         }
         @keyframes pulse {
             50% { background-color: #2e3a54; }
@@ -218,8 +304,8 @@
             right: 14px;
             font-size: 20px;
             font-weight: bold;
-            color: #5eead4;
-            animation: floatUp 0.9s ease forwards;
+            color: var(--accent);
+            animation: floatUp .9s ease forwards;
             pointer-events: none;
         }
         @keyframes floatUp {
@@ -229,130 +315,151 @@
 
         /* ---------- Vidas y letras erróneas (modo adivinar) ---------- */
         .misses {
-            min-height: 30px;
+            min-height: 32px;
             margin-top: 12px;
             font-size: 20px;
-            color: #f87171;
+            color: var(--danger);
         }
         .misses.is-off {
             display: none;
         }
         .misses .wrong {
             display: inline-block;
-            margin-left: 12px;
-            font-size: 15px;
-            color: #8b97ad;
+            margin-left: 10px;
+            font-size: 14px;
+            color: var(--muted);
             font-family: Consolas, "Courier New", monospace;
-            background-color: #1b2333;
-            border: 1px solid #2e3a54;
-            border-radius: 6px;
-            padding: 2px 10px;
+            background-color: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 2px 12px;
         }
 
-        /* ---------- Entrada y botones ---------- */
+        /* ---------- Entrada, estado y botón principal ---------- */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+        }
         #typing {
             width: 100%;
             max-width: 420px;
             font-family: Consolas, "Courier New", monospace;
             font-size: 22px;
-            padding: 12px;
-            margin-top: 5px;
-            border-radius: 10px;
-            border: 2px solid #2e3a54;
-            background-color: #151b28;
-            color: #e8ecf4;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background-color: var(--surface-2);
+            color: var(--text);
             text-align: center;
             outline: none;
+            transition: border-color .18s, box-shadow .18s, opacity .18s;
         }
         #typing:focus {
-            border-color: #5eead4;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(94, 234, 212, .14);
+        }
+        #typing:disabled {
+            opacity: .5;
         }
         #status {
-            min-height: 28px;
-            color: #8b97ad;
-            font-size: 17px;
+            min-height: 26px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 15.5px;
         }
         .main-btn {
-            background-color: #14b8a6;
-            color: #062019;
             border: none;
-            padding: 14px 32px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 10px;
+            padding: 14px 40px;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: .3px;
+            color: #052e2a;
+            background: linear-gradient(180deg, #2dd4bf, #14b8a6);
+            border-radius: 999px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 10px 24px rgba(20, 184, 166, .35);
+            transition: transform .15s, box-shadow .15s, filter .15s;
         }
         .main-btn:hover {
-            background-color: #5eead4;
+            filter: brightness(1.08);
+            transform: translateY(-2px);
         }
         .main-btn:active {
-            transform: scale(0.96);
+            transform: scale(.97);
+        }
+        .main-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
         }
         .main-btn:disabled {
-            background-color: #384564;
-            color: #8b97ad;
+            background: #2b3550;
+            color: var(--muted);
+            box-shadow: none;
             cursor: not-allowed;
+            transform: none;
         }
 
-        /* ---------- Resultados ---------- */
-        .results {
-            background-color: #1b2333;
-            border: 2px solid #2e3a54;
-            border-radius: 12px;
-            padding: 20px;
+        /* ---------- Tarjetas: resultados, tienda y ranking ---------- */
+        .results,
+        .shop,
+        .ranking {
             margin-top: 20px;
+            padding: 20px;
+            text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
-        .results.hidden {
+        .results.hidden,
+        .shop.hidden,
+        .ranking.hidden {
             display: none;
         }
-        .results h2 {
-            margin-top: 0;
-            color: #5eead4;
+        .results h2,
+        .shop-head h2,
+        .ranking h2 {
+            margin: 0 0 6px;
+            font-size: 20px;
+            color: var(--accent);
         }
         .results ul {
             list-style: none;
             padding: 0;
-            margin: 10px 0;
-            display: flex;
-            flex-wrap: wrap;
+            margin: 14px 0 6px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
             gap: 10px;
-            justify-content: center;
         }
         .results li {
-            background-color: #10141c;
-            border: 1px solid #2e3a54;
-            border-radius: 8px;
-            padding: 8px 14px;
+            background: var(--surface-2);
+            border: 1px solid var(--line-soft);
+            border-radius: 12px;
+            padding: 10px 8px;
+        }
+        .results li span {
+            display: block;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 1.1px;
+            color: var(--muted);
+        }
+        .results li strong {
+            display: block;
+            margin-top: 2px;
+            font-size: 20px;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
         }
         .results p.record {
-            color: #ffd76a;
-            font-weight: bold;
-        }
-        /* ---------- Monedas ---------- */
-        .stat.coins strong {
-            color: #ffd76a;
-        }
-        .stat.words strong {
-            color: #f0abfc;
-        }
-        .points.coin {
-            right: 120px;
-            color: #ffd76a;
-            font-size: 17px;
+            color: var(--gold);
+            font-weight: 700;
         }
 
-        /* ---------- Tienda de estilos de letra ---------- */
-        .shop {
-            background-color: #1b2333;
-            border: 2px solid #2e3a54;
-            border-radius: 12px;
-            padding: 18px;
-            margin-top: 18px;
-        }
-        .shop.hidden {
-            display: none;
-        }
+        /* ---------- Tienda de estilos ---------- */
         .shop-head {
             display: flex;
             justify-content: space-between;
@@ -360,21 +467,16 @@
             gap: 10px;
             flex-wrap: wrap;
         }
-        .shop-head h2 {
-            margin: 0;
-            font-size: 20px;
-            color: #5eead4;
-        }
         .shop-coins {
-            background-color: #10141c;
-            border: 2px solid #2e3a54;
-            border-radius: 20px;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 999px;
             padding: 6px 16px;
-            color: #ffd76a;
+            color: var(--gold);
             font-weight: bold;
         }
         .shop-hint {
-            color: #8b97ad;
+            color: var(--muted);
             font-size: 14px;
             margin: 8px 0 14px;
         }
@@ -384,32 +486,34 @@
             gap: 12px;
         }
         .shop-sub {
-            margin: 20px 0 10px;
-            font-size: 15px;
+            margin: 20px 0 12px;
+            font-size: 13px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8b97ad;
-            border-bottom: 1px solid #2e3a54;
-            padding-bottom: 6px;
+            letter-spacing: 1.4px;
+            color: var(--muted);
+            border-bottom: 1px solid var(--line-soft);
+            padding-bottom: 8px;
         }
         .shop-card {
-            background-color: #10141c;
-            border: 2px solid #2e3a54;
-            border-radius: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 12px;
             padding: 14px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 6px;
-            transition: border-color 0.2s, transform 0.2s;
+            transition: border-color .18s, transform .18s, box-shadow .18s;
         }
         .shop-card:hover {
-            border-color: #5eead4;
+            border-color: var(--accent);
             transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .3);
         }
         .shop-card.equipped {
-            border-color: #14b8a6;
-            background-color: #0e2723;
+            border-color: var(--accent-2);
+            background-color: #0d2b27;
+            box-shadow: inset 0 0 0 1px rgba(20, 184, 166, .4);
         }
         .shop-preview {
             font-size: 30px;
@@ -421,8 +525,8 @@
             width: 100%;
             height: 78px;
             border-radius: 8px;
-            border: 1px solid #2e3a54;
-            background-color: #10141c;
+            border: 1px solid var(--line-soft);
+            background-color: var(--bg);
             background-size: cover;
             background-position: center;
             display: flex;
@@ -433,53 +537,39 @@
         .shop-name {
             font-size: 14px;
             font-weight: bold;
-            color: #e8ecf4;
+            color: var(--text);
         }
         .shop-price {
             font-size: 13px;
-            color: #ffd76a;
+            color: var(--gold);
         }
         .shop-btn {
             font-size: 13px;
-            padding: 6px 12px;
+            padding: 6px 14px;
             margin-top: 4px;
         }
         .shop-btn.cant {
-            background-color: #384564;
-            color: #8b97ad;
-            border: 2px solid #2e3a54;
+            background-color: #2b3550;
+            color: var(--muted);
+            border-color: var(--line);
         }
         .shop-btn.cant:hover {
-            border-color: #f87171;
-            color: #f87171;
+            border-color: var(--danger);
+            color: var(--danger);
+            background-color: rgba(248, 113, 113, .08);
         }
         .shop-msg {
             min-height: 22px;
             margin: 12px 0 0;
             font-size: 14px;
-            color: #5eead4;
+            color: var(--accent);
         }
 
         /* ---------- Ranking global ---------- */
-        .ranking {
-            background-color: #1b2333;
-            border: 2px solid #2e3a54;
-            border-radius: 12px;
-            padding: 18px;
-            margin-top: 20px;
-        }
-        .ranking.hidden {
-            display: none;
-        }
-        .ranking h2 {
-            margin: 0 0 6px;
-            color: #5eead4;
-            font-size: 20px;
-        }
         .rank-hint {
-            color: #8b97ad;
+            color: var(--muted);
             font-size: 14px;
-            margin: 0 0 12px;
+            margin: 0 0 14px;
         }
         .rank-list {
             list-style: none;
@@ -493,21 +583,29 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background-color: #10141c;
-            border: 1px solid #2e3a54;
-            border-radius: 8px;
-            padding: 8px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--line-soft);
+            border-radius: 10px;
+            padding: 9px 12px;
             text-align: left;
+            transition: border-color .18s, transform .18s;
+        }
+        .rank-list li:hover {
+            border-color: var(--line);
+            transform: translateX(2px);
         }
         .rank-list li.me {
-            border-color: #14b8a6;
-            background-color: #0e2723;
+            border-color: var(--accent-2);
+            background-color: #0d2b27;
         }
         .rank-pos {
-            min-width: 30px;
+            min-width: 34px;
             font-weight: bold;
-            color: #ffd76a;
+            color: var(--muted);
         }
+        .rank-list li:nth-child(1) .rank-pos { color: var(--gold); }
+        .rank-list li:nth-child(2) .rank-pos { color: #cfd8e6; }
+        .rank-list li:nth-child(3) .rank-pos { color: #e3a06b; }
         .rank-name {
             flex: 1;
             overflow: hidden;
@@ -515,27 +613,28 @@
             white-space: nowrap;
         }
         .rank-score {
-            color: #5eead4;
+            color: var(--accent);
             font-weight: bold;
-            min-width: 55px;
+            min-width: 58px;
             text-align: right;
+            font-variant-numeric: tabular-nums;
         }
         .rank-words {
-            color: #f0abfc;
+            color: var(--pink);
             font-size: 13px;
-            min-width: 52px;
+            min-width: 54px;
             text-align: right;
         }
         .rank-date {
-            color: #8b97ad;
+            color: var(--muted);
             font-size: 12px;
-            min-width: 74px;
+            min-width: 76px;
             text-align: right;
         }
         .rank-empty {
-            color: #8b97ad;
+            color: var(--muted);
             font-size: 15px;
-            margin: 6px 0 0;
+            margin: 8px 0 0;
         }
         .rank-empty.hidden {
             display: none;
@@ -544,47 +643,52 @@
             min-height: 20px;
             margin: 12px 0 0;
             font-size: 13px;
-            color: #8b97ad;
+            color: var(--muted);
         }
-        /* Formulario de nombre para guardar la puntuación */
+
+        /* ---------- Formulario de nombre del ranking ---------- */
         .rank-form {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             justify-content: center;
             align-items: center;
-            margin-top: 14px;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--line-soft);
         }
         .rank-form.hidden {
             display: none;
         }
         .rank-form label {
-            font-size: 13px;
-            color: #8b97ad;
+            font-size: 12px;
+            color: var(--muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
         }
         #playerName {
-            background-color: #10141c;
-            border: 2px solid #2e3a54;
-            border-radius: 8px;
-            color: #e8ecf4;
-            padding: 8px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--text);
+            padding: 9px 16px;
             font-size: 15px;
-            width: 190px;
+            width: 200px;
+            outline: none;
+            transition: border-color .18s, box-shadow .18s;
         }
         #playerName:focus {
-            outline: none;
-            border-color: #14b8a6;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(94, 234, 212, .14);
         }
         .rank-saved {
             min-height: 20px;
             margin: 10px 0 0;
             font-size: 14px;
-            color: #5eead4;
+            color: var(--accent);
         }
         .rank-saved.off {
-            color: #ffd76a;
+            color: var(--gold);
         }
 
         /* ---------- Estilos de letra comprados ---------- */
@@ -654,15 +758,63 @@
         body.ff-manuscrito .board { font-size: 28px; }
         body.ff-comic .board { font-size: 28px; }
 
+        /* ---------- Pie de página ---------- */
         footer {
-            background-color: #1b2333;
-            border: 2px solid #2e3a54;
-            border-radius: 12px;
-            text-align: center;
-            padding: 10px;
             margin-top: 30px;
-            color: #8b97ad;
-            font-size: 14px;
+            padding: 12px;
+            color: var(--muted);
+            font-size: 13px;
+            border-top: 1px solid var(--line-soft);
+        }
+
+        /* ---------- Adaptación a móvil ---------- */
+        @media (max-width: 640px) {
+            body {
+                padding: 14px 12px 32px;
+            }
+            .selectors {
+                padding: 4px 14px;
+            }
+            .sel-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 12px 0;
+            }
+            .sel-label {
+                flex: 0 0 auto;
+            }
+            .board {
+                font-size: 26px;
+                padding: 26px 10px;
+                min-height: 104px;
+            }
+            .board span {
+                min-width: 32px;
+                padding: 6px 7px;
+            }
+            .stat strong {
+                font-size: 20px;
+            }
+            #typing {
+                font-size: 19px;
+            }
+            .results,
+            .shop,
+            .ranking {
+                padding: 16px;
+            }
+            #playerName {
+                width: 100%;
+            }
+        }
+
+        /* ---------- Menos movimiento si el sistema lo pide ---------- */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: .001s !important;
+                transition-duration: .001s !important;
+            }
         }
     </style>
 </head>
@@ -691,6 +843,7 @@
             <span id="bgExtra"></span>
         </div>
         <div class="sel-row">
+            <span class="sel-label" id="actLabel">Acciones</span>
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
             <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
         </div>
@@ -730,22 +883,24 @@
 
     <div class="misses is-off" id="misses"></div>
 
-    <input id="typing" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
-           placeholder="Escribe aquí..." disabled>
+    <div class="controls">
+        <input id="typing" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+               placeholder="Escribe aquí..." disabled>
 
-    <p id="status">Modo relájado: sin presión, teclea a tu ritma… ¡hasta que empiezas!</p>
+        <p id="status">Modo relájado: sin presión, teclea a tu ritma… ¡hasta que empiezas!</p>
 
-    <button class="main-btn" id="startBtn">Jugar</button>
+        <button class="main-btn" id="startBtn">Jugar</button>
+    </div>
 
     <div class="results hidden" id="results">
         <h2 id="rTitle">¡Tiempo agotado! ⏱️</h2>
         <ul>
-            <li><span id="rkScore">Puntos</span>: <strong id="rScore">0</strong></li>
-            <li><span id="rkWords">Palabras</span>: <strong id="rWords">0</strong></li>
-            <li><span id="rkAcc">Precisión</span>: <strong id="rAcc">0%</strong></li>
-            <li><span id="rkPpm">Palabras/min</span>: <strong id="rPpm">0</strong></li>
-            <li><span id="rkCoins">Monedas</span>: <strong id="rCoins">0</strong></li>
-            <li><span id="rkBestWords">Récord palabras</span>: <strong id="rBestWords">0</strong></li>
+            <li><span id="rkScore">Puntos</span><strong id="rScore">0</strong></li>
+            <li><span id="rkWords">Palabras</span><strong id="rWords">0</strong></li>
+            <li><span id="rkAcc">Precisión</span><strong id="rAcc">0%</strong></li>
+            <li><span id="rkPpm">Palabras/min</span><strong id="rPpm">0</strong></li>
+            <li><span id="rkCoins">Monedas</span><strong id="rCoins">0</strong></li>
+            <li><span id="rkBestWords">Récord palabras</span><strong id="rBestWords">0</strong></li>
         </ul>
         <p id="rMsg"></p>
 
@@ -887,6 +1042,7 @@
                 btnGuess: "🧩 Adivinar",
                 btnMurciano: "🗣️ Murciano",
                 bgLabel: "Fondo de pantalla",
+                actLabel: "Acciones",
                 bgDark: "🌙 Oscuro",
                 bgFranco: "🖼️ Francisco Franco",
                 kScore: "Puntos", kTime: "Tiempo", kStreak: "Racha", kLevel: "Nivel", kBest: "Récord",
@@ -951,6 +1107,7 @@
                 btnGuess: "🧩 Guess word",
                 btnMurciano: "🗣️ Murcia dialect",
                 bgLabel: "Background",
+                actLabel: "Actions",
                 bgDark: "🌙 Dark",
                 bgFranco: "🖼️ Francisco Franco",
                 kScore: "Points", kTime: "Time", kStreak: "Streak", kLevel: "Level", kBest: "Best",
@@ -1341,7 +1498,13 @@
             rankOpen = !rankOpen;
             ranking.classList.toggle("hidden", !rankOpen);
             btnRanking.classList.toggle("active", rankOpen);
-            if (rankOpen) refreshRanking();
+            if (rankOpen) {
+                refreshRanking();
+                // El panel queda por debajo: se lleva a la vista para que se note
+                if (ranking.scrollIntoView) {
+                    ranking.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
         }
 
         btnRanking.addEventListener("click", toggleRanking);
@@ -1545,6 +1708,7 @@
             btnGuess.textContent = t("btnGuess");
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent = t("bgLabel");
+            document.getElementById("actLabel").textContent = t("actLabel");
             btnBgDark.textContent = t("bgDark");
             btnBgFranco.textContent = t("bgFranco");
             document.getElementById("kScore").textContent = t("kScore");
