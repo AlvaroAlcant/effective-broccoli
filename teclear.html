@@ -298,6 +298,35 @@
         @keyframes pulse {
             50% { background-color: #2e3a54; }
         }
+
+        /* ---------- Modo Imágenes: foto arriba, letras debajo ---------- */
+        .board .pic {
+            flex: 1 0 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            min-height: 118px;
+        }
+        .board .pic img {
+            width: 104px;
+            height: 104px;
+            display: block;
+            filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .45));
+        }
+        .board .pic .pic-fallback {
+            font-size: 84px;
+            line-height: 1.1;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(.7); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .board .pic img,
+        .board .pic .pic-fallback {
+            animation: popIn .22s ease-out;
+        }
         .points {
             position: absolute;
             top: 6px;
@@ -919,12 +948,13 @@
             <span class="sel-label" id="langLabel">Idioma / Language</span>
             <button class="chip-btn active" id="btnEs">🇪🇸 Español</button>
             <button class="chip-btn" id="btnEn">🇬🇧 English</button>
+            <button class="chip-btn" id="btnMurciano">🗣️ Murciano</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="modeLabel">Modo de juego</span>
             <button class="chip-btn active" id="btnType">⌨️ Tecleo</button>
             <button class="chip-btn" id="btnGuess">🧩 Adivinar</button>
-            <button class="chip-btn" id="btnMurciano">🗣️ Murciano</button>
+            <button class="chip-btn" id="btnImagen">🖼️ Imágenes</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="bgLabel">Fondo de pantalla</span>
@@ -1123,6 +1153,76 @@
             "potaje", "puchero", "garbanzos", "morcilla", "ferrás"
         ];
 
+        // ---------- Imágenes del modo Imágenes ----------
+        // em: emoji de reserva (se pinta si no hay internet)
+        // La imagen real es el SVG de Twemoji de esa emoji: la misma figura
+        // en todos los sistemas, con o sin conexión.
+        const IMAGENES = [
+            { es: "manzana",     en: "apple",      em: "🍎" },
+            { es: "coche",       en: "car",        em: "🚗" },
+            { es: "árbol",       en: "tree",       em: "🌳" },
+            { es: "sol",         en: "sun",        em: "☀️" },
+            { es: "luna",        en: "moon",       em: "🌙" },
+            { es: "pez",         en: "fish",       em: "🐟" },
+            { es: "gato",        en: "cat",        em: "🐱" },
+            { es: "perro",       en: "dog",        em: "🐶" },
+            { es: "pájaro",      en: "bird",       em: "🐦" },
+            { es: "casa",        en: "house",      em: "🏠" },
+            { es: "estrella",    en: "star",       em: "⭐" },
+            { es: "fuego",       en: "fire",       em: "🔥" },
+            { es: "agua",        en: "water",      em: "💧" },
+            { es: "nieve",       en: "snow",       em: "❄️" },
+            { es: "flor",        en: "flower",     em: "🌸" },
+            { es: "pizza",       en: "pizza",      em: "🍕" },
+            { es: "pan",         en: "bread",      em: "🍞" },
+            { es: "leche",       en: "milk",       em: "🥛" },
+            { es: "abeja",       en: "bee",        em: "🐝" },
+            { es: "rana",        en: "frog",       em: "🐸" },
+            { es: "mono",        en: "monkey",     em: "🐵" },
+            { es: "globo",       en: "balloon",    em: "🎈" },
+            { es: "regalo",      en: "gift",       em: "🎁" },
+            { es: "balón",       en: "ball",       em: "⚽" },
+            { es: "piano",       en: "piano",      em: "🎹" },
+            { es: "guitarra",    en: "guitar",     em: "🎸" },
+            { es: "libro",       en: "book",       em: "📚" },
+            { es: "lápiz",       en: "pencil",     em: "✏️" },
+            { es: "llave",       en: "key",        em: "🔑" },
+            { es: "reloj",       en: "clock",      em: "⏰" },
+            { es: "corona",      en: "crown",      em: "👑" },
+            { es: "corazón",     en: "heart",      em: "❤️" },
+            { es: "bici",        en: "bike",       em: "🚲" },
+            { es: "barco",       en: "boat",       em: "⛵" },
+            { es: "avión",       en: "plane",      em: "✈️" },
+            { es: "cohete",      en: "rocket",     em: "🚀" },
+            { es: "queso",       en: "cheese",     em: "🧀" },
+            { es: "huevo",       en: "egg",        em: "🥚" },
+            { es: "plátano",     en: "banana",     em: "🍌" },
+            { es: "naranja",     en: "orange",     em: "🍊" },
+            { es: "fresa",       en: "strawberry", em: "🍓" },
+            { es: "sandía",      en: "watermelon", em: "🍉" },
+            { es: "helado",      en: "icecream",   em: "🍦" },
+            { es: "pastel",      en: "cake",       em: "🎂" },
+            { es: "hamburguesa", en: "burger",     em: "🍔" },
+            { es: "patatas",     en: "fries",      em: "🍟" },
+            { es: "sombrero",    en: "hat",        em: "🎩" },
+            { es: "dado",        en: "dice",       em: "🎲" },
+            { es: "vela",        en: "candle",     em: "🕯️" },
+            { es: "unicornio",   en: "unicorn",    em: "🦄" },
+            { es: "tortuga",     en: "turtle",     em: "🐢" },
+            { es: "mundo",       en: "earth",      em: "🌍" },
+            { es: "cereza",      en: "cherry",     em: "🍒" },
+            { es: "melocotón",   en: "peach",      em: "🍑" }
+        ];
+
+        // SVG de Twemoji para una emoji (si la descarga falla se pinta la emoji)
+        function emojiSrc(em) {
+            const cps = Array.from(String(em))
+                .filter(ch => ch !== "\u200d" && ch !== "\ufe0f")
+                .map(ch => ch.codePointAt(0).toString(16))
+                .join("-");
+            return "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/" + cps + ".svg";
+        }
+
         // ---------- Estilos de letra de la tienda ----------
         // font: pila de fuentes (la última siempre existe como reserva)
         // cls: clase CSS que aplica el estilo (definida en el bloque de estilos)
@@ -1208,9 +1308,11 @@
                 subtitleT: "Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!",
                 subtitleG: "Adivina la palabra con letras ocultas: escribe solo una letra cada vez. ¡Los fallos quitan vidas!",
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
+                subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
                 modeLabel: "Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
+                btnImagen: "🖼️ Imágenes",
                 btnMurciano: "🗣️ Murciano",
                 bgLabel: "Fondo de pantalla",
                 actLabel: "Acciones",
@@ -1245,6 +1347,7 @@
                 statusPlay: "Escribe la palabra completa para sumar puntos. ¡Mantén la racha!",
                 statusPlayG: "Adivina las letras que faltan, una por vez. ¡" + MAX_MISSES + " fallos y se acabó la palabra!",
                 statusPlayM: "Teclea la palabra murciana tal y como aparece, sin cambiarle nada. ¡Vamoh a ve!",
+                statusPlayI: "Escribe la palabra que representa la imagen. ¡A ojo de buen cubero!",
                 statusEnd: "Pulsa la barra espaciadora o el botón para volver a jugar.",
                 statusError: "¡Tecla incorrecta! -5 puntos y pierdes la racha 😵",
                 statusOk: "¡Sigue así! La racha multiplica tus puntos. 🚀",
@@ -1288,9 +1391,11 @@
                 subtitleT: "Type every word before time runs out. Wrong keys break your streak!",
                 subtitleG: "Guess the word with hidden letters: type only one letter at a time. Misses cost lives!",
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
+                subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
                 modeLabel: "Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
+                btnImagen: "🖼️ Pictures",
                 btnMurciano: "🗣️ Murcia dialect",
                 bgLabel: "Background",
                 actLabel: "Actions",
@@ -1325,6 +1430,7 @@
                 statusPlay: "Type the whole word to score. Keep your streak alive!",
                 statusPlayG: "Guess the missing letters, one at a time. " + MAX_MISSES + " misses and the word is over!",
                 statusPlayM: "Type the Murcian word exactly as shown, letter for letter. Let's go!",
+                statusPlayI: "Type the word the image stands for. Trust your eyes!",
                 statusEnd: "Press the space bar or the button to play again.",
                 statusError: "Wrong key! -5 points and you lose your streak 😵",
                 statusOk: "Keep it up! Your streak multiplies your points. 🚀",
@@ -1365,11 +1471,12 @@
         };
 
         // ---------- Estado ----------
-        let lang = "es";
-        let mode = "type";      // type | guess | murciano
-        let bg = "dark";        // dark | franco | elprico | esteso
-        let state = "idle";     // idle | playing | over
+        let lang = "es";         // es | en | mur (murciano)
+        let mode = "type";       // type | guess | imagen
+        let bg = "dark";         // dark | franco | elprico | esteso
+        let state = "idle";      // idle | playing | over
         let word = "";
+        let currentImg = null;   // imagen en pantalla (modo Imágenes)
         let mask = [];          // modo adivinar: "start" | "hidden" | "found"
         let wrongLetters = [];  // modo adivinar
         let misses = 0;         // modo adivinar
@@ -1415,7 +1522,17 @@
         let verifyCode = "";       // código aleatorio de verificación humana
         let verifyTyped = "";      // lo tecleado con teclas REALES (no se puede rellenar a mano)
 
-        const t = k => I18N[lang][k];
+        // El murciano es un dialecto: los textos, récords y fechas se guardan
+        // igual que en español, pero las palabras salen del diccionario murciano.
+        const uiLang = () => (lang === "mur" ? "es" : lang);
+        const t = k => I18N[uiLang()][k];
+
+        // Modo que se etiqueta en el ranking: el murciano tecleado sigue
+        // registrándose como "murciano", igual que hasta ahora.
+        function entryMode() {
+            if (mode === "type" && lang === "mur") return "murciano";
+            return mode;
+        }
 
         // ---------- Elementos ----------
         const stage = document.getElementById("stage");
@@ -1461,16 +1578,17 @@
         const btnEn = document.getElementById("btnEn");
         const btnType = document.getElementById("btnType");
         const btnGuess = document.getElementById("btnGuess");
+        const btnImagen = document.getElementById("btnImagen");
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
-        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnPicante, btnCaos, btnShop, btnRanking];
+        const selBtns = [btnEs, btnEn, btnMurciano, btnType, btnGuess, btnImagen, btnPicante, btnCaos, btnShop, btnRanking];
 
         // ---------- Récord por idioma ----------
         function loadBest() {
             try {
-                let v = localStorage.getItem("mejorTecleo." + lang);
-                if (v === null && lang === "es") {
+                let v = localStorage.getItem("mejorTecleo." + uiLang());
+                if (v === null && uiLang() === "es") {
                     v = localStorage.getItem("mejorTecleo"); // récord antiguo
                 }
                 return parseInt(v || "0", 10) || 0;
@@ -1481,14 +1599,14 @@
 
         function saveBest() {
             try {
-                localStorage.setItem("mejorTecleo." + lang, String(best));
+                localStorage.setItem("mejorTecleo." + uiLang(), String(best));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
         // ---------- Récord personal de palabras escritas ----------
         function loadBestWords() {
             try {
-                const v = localStorage.getItem("mejorPalabras." + lang);
+                const v = localStorage.getItem("mejorPalabras." + uiLang());
                 return parseInt(v || "0", 10) || 0;
             } catch (e) {
                 return 0;
@@ -1497,7 +1615,7 @@
 
         function saveBestWords() {
             try {
-                localStorage.setItem("mejorPalabras." + lang, String(bestWords));
+                localStorage.setItem("mejorPalabras." + uiLang(), String(bestWords));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -1636,7 +1754,7 @@
             if (s <= 0 || w <= 0) return null;
             if (s > MAX_SCORE || w > MAX_WORDS) return null;
             const m = String(raw.m || "type");
-            if (["type", "guess", "murciano"].indexOf(m) < 0) return null;
+            if (["type", "guess", "murciano", "imagen"].indexOf(m) < 0) return null;
             const d = String(raw.d || "");
             if (d && (d.length > 30 || isNaN(new Date(d).getTime()))) return null;
             // Coherencia puntos ↔ palabras: imposible de lograr jugando
@@ -2075,7 +2193,7 @@
             const d = new Date(iso);
             if (isNaN(d.getTime())) return "";
             try {
-                return d.toLocaleDateString(lang === "es" ? "es-ES" : "en-GB");
+                return d.toLocaleDateString(uiLang() === "es" ? "es-ES" : "en-GB");
             } catch (e) {
                 return d.toLocaleDateString();
             }
@@ -2092,7 +2210,7 @@
 
                 const pos = document.createElement("span");
                 pos.className = "rank-pos";
-                pos.textContent = lang === "es" ? (i + 1) + "º" : "#" + (i + 1);
+                pos.textContent = uiLang() === "es" ? (i + 1) + "º" : "#" + (i + 1);
 
                 const name = document.createElement("span");
                 name.className = "rank-name";
@@ -2261,7 +2379,7 @@
 
                 const name = document.createElement("div");
                 name.className = "shop-name";
-                name.textContent = lang === "es" ? st.es : st.en;
+                name.textContent = uiLang() === "es" ? st.es : st.en;
                 card.appendChild(name);
 
                 const price = document.createElement("div");
@@ -2305,7 +2423,7 @@
 
                 const name = document.createElement("div");
                 name.className = "shop-name";
-                name.textContent = lang === "es" ? b.es : b.en;
+                name.textContent = uiLang() === "es" ? b.es : b.en;
                 card.appendChild(name);
 
                 const price = document.createElement("div");
@@ -2350,7 +2468,7 @@
                 const chip = EXTRA_CHIPS[x.id];
                 if (!chip) return;
                 chip.style.display = ownsExtra(x.id) ? "" : "none";
-                chip.textContent = x.icon + " " + (lang === "es" ? x.es : x.en);
+                chip.textContent = x.icon + " " + (uiLang() === "es" ? x.es : x.en);
                 chip.classList.toggle("active", extraActive(x.id));
                 document.body.classList.toggle(x.id + "-on", extraActive(x.id));
             });
@@ -2403,7 +2521,7 @@
 
                 const name = document.createElement("div");
                 name.className = "shop-name";
-                name.textContent = lang === "es" ? x.es : x.en;
+                name.textContent = uiLang() === "es" ? x.es : x.en;
                 card.appendChild(name);
 
                 const price = document.createElement("div");
@@ -2413,7 +2531,7 @@
 
                 const desc = document.createElement("div");
                 desc.className = "shop-desc";
-                desc.textContent = lang === "es" ? x.descEs : x.descEn;
+                desc.textContent = uiLang() === "es" ? x.descEs : x.descEn;
                 card.appendChild(desc);
 
                 const btn = document.createElement("button");
@@ -2449,16 +2567,18 @@
 
         // ---------- Idioma y modo ----------
         function applyLang() {
-            document.documentElement.lang = lang;
+            document.documentElement.lang = uiLang();
             document.title = t("docTitle");
 
             document.getElementById("title").textContent = t("title");
             document.getElementById("subtitle").textContent =
+                mode === "imagen" ? t("subtitleI") :
                 mode === "guess" ? t("subtitleG") :
-                mode === "murciano" ? t("subtitleM") : t("subtitleT");
+                lang === "mur" ? t("subtitleM") : t("subtitleT");
             document.getElementById("modeLabel").textContent = t("modeLabel");
             btnType.textContent = t("btnType");
             btnGuess.textContent = t("btnGuess");
+            btnImagen.textContent = t("btnImagen");
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent = t("bgLabel");
             document.getElementById("actLabel").textContent = t("actLabel");
@@ -2501,9 +2621,10 @@
             typing.placeholder = t("placeholder");
             btnEs.classList.toggle("active", lang === "es");
             btnEn.classList.toggle("active", lang === "en");
+            btnMurciano.classList.toggle("active", lang === "mur");
             btnType.classList.toggle("active", mode === "type");
             btnGuess.classList.toggle("active", mode === "guess");
-            btnMurciano.classList.toggle("active", mode === "murciano");
+            btnImagen.classList.toggle("active", mode === "imagen");
             btnBgDark.classList.toggle("active", bg === "dark");
             // El fondo de Franco solo aparece en el selector si está desbloqueado
             const hasFranco = ownedBgs.includes("franco");
@@ -2550,9 +2671,10 @@
 
         btnEs.addEventListener("click", () => setLang("es"));
         btnEn.addEventListener("click", () => setLang("en"));
+        btnMurciano.addEventListener("click", () => setLang("mur"));
         btnType.addEventListener("click", () => setMode("type"));
         btnGuess.addEventListener("click", () => setMode("guess"));
-        btnMurciano.addEventListener("click", () => setMode("murciano"));
+        btnImagen.addEventListener("click", () => setMode("imagen"));
 
         // ---------- Fondo de pantalla ----------
         function setBg(next) {
@@ -2579,7 +2701,7 @@
                 if (!ownedBgs.includes(b.id)) return;
                 const btn = document.createElement("button");
                 btn.className = "chip-btn";
-                btn.textContent = (b.id === "elprico" ? "😎 " : "🎨 ") + (lang === "es" ? b.es : b.en);
+                btn.textContent = (b.id === "elprico" ? "😎 " : "🎨 ") + (uiLang() === "es" ? b.es : b.en);
                 btn.classList.toggle("active", bg === b.id);
                 btn.addEventListener("click", () => setBg(b.id));
                 bgExtra.appendChild(btn);
@@ -2628,19 +2750,47 @@
         // activado, aproximadamente la mitad de las palabras de la partida
         // salen de la lista subida de tono (+18) del idioma en juego.
         // Con el modo Caos se mezclan todos los idiomas y modos a la vez.
+        // (El modo Imágenes no usa estas listas: la palabra es la de la imagen.)
         function wordPool() {
             if (extraActive("caos")) {
                 let pool = WORDS.es.concat(WORDS.en, MURCIANO_WORDS);
                 if (extraActive("picante")) pool = pool.concat(PICANTE.es, PICANTE.en);
                 return pool;
             }
-            const base = mode === "murciano" ? MURCIANO_WORDS : WORDS[lang];
+            const base = lang === "mur" ? MURCIANO_WORDS : WORDS[lang];
             if (!extraActive("picante")) return base;
-            const spicy = mode === "murciano" ? PICANTE.es : PICANTE[lang];
+            const spicy = lang === "mur" ? PICANTE.es : PICANTE[lang];
             return Math.random() < 0.5 ? spicy : base;
         }
 
+        // ---------- Modo Imágenes ----------
+        // Palabra que nombra la imagen, según el idioma elegido
+        function imageWord(im) {
+            return uiLang() === "en" ? im.en : im.es;
+        }
+
+        // Elige una imagen cuya palabra encaje con el nivel actual
+        function nextImageWord() {
+            const lvl = level();
+            const cabe = w => {
+                if (lvl <= 1) return w.length <= 5;
+                if (lvl <= 3) return w.length <= 7;
+                if (lvl <= 6) return w.length >= 5;
+                return w.length >= 6;
+            };
+            let pool = IMAGENES.filter(im => cabe(imageWord(im)));
+            if (pool.length === 0) pool = IMAGENES;
+
+            let im;
+            do {
+                im = pool[Math.floor(Math.random() * pool.length)];
+            } while (im === currentImg && pool.length > 1);
+            currentImg = im;
+            return imageWord(im);
+        }
+
         function nextWord() {
+            if (mode === "imagen") return nextImageWord();
             const list = wordPool();
             const lvl = level();
             let pool;
@@ -2689,8 +2839,8 @@
             timeBox.classList.toggle("low", timeLeft <= 10 && state === "playing");
         }
 
-        function renderWord(typed) {
-            board.innerHTML = "";
+        // Dibuja las letras de la palabra (con el cursor y lo ya tecleado)
+        function fillLetters(typed) {
             for (let i = 0; i < word.length; i++) {
                 const s = document.createElement("span");
                 s.textContent = word[i];
@@ -2701,6 +2851,37 @@
                 }
                 board.appendChild(s);
             }
+        }
+
+        function renderWord(typed) {
+            board.innerHTML = "";
+            fillLetters(typed);
+        }
+
+        // ---------- Modo Imágenes: la foto en el tablero ----------
+        function renderImage(typed) {
+            board.innerHTML = "";
+
+            const box = document.createElement("div");
+            box.className = "pic";
+
+            const fallback = document.createElement("div");
+            fallback.className = "pic-fallback";
+            fallback.textContent = currentImg ? currentImg.em : "🖼️";
+            fallback.style.display = "none";   // solo se ve si la imagen no carga
+
+            const img = document.createElement("img");
+            img.alt = "";
+            img.addEventListener("error", function () {   // sin internet: emoji
+                img.remove();
+                fallback.style.display = "";
+            });
+            if (currentImg) img.src = emojiSrc(currentImg.em);
+
+            box.appendChild(img);
+            box.appendChild(fallback);
+            board.appendChild(box);
+            fillLetters(typed);
         }
 
         function renderGuess() {
@@ -2720,7 +2901,8 @@
         }
 
         function renderCurrent() {
-            if (mode === "guess") renderGuess();
+            if (mode === "imagen") renderImage(typing.value);
+            else if (mode === "guess") renderGuess();
             else renderWord(typing.value);
         }
 
@@ -2824,8 +3006,9 @@
             typing.value = "";
             typing.focus();
             status.textContent =
+                mode === "imagen" ? t("statusPlayI") :
                 mode === "guess" ? t("statusPlayG") :
-                mode === "murciano" ? t("statusPlayM") : t("statusPlay");
+                (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
             lastTick = performance.now();
 
             newWord();
@@ -3115,7 +3298,7 @@
                 n: name,
                 s: score,             // la mejor marca es la que manda
                 w: completed,
-                m: mode,
+                m: entryMode(),
                 d: new Date().toISOString()
             };
 
@@ -3183,7 +3366,7 @@
                 get hits() { return hits; },
                 get errors() { return errors; },
                 get word() { return word; },
-                get mode() { return mode; },
+                get mode() { return entryMode(); },
                 get lang() { return lang; },
                 get savedScore() { return savedScore; },
                 get rankResets() { return rankResets; },
