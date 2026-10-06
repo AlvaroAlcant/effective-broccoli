@@ -565,6 +565,38 @@
             color: var(--accent);
         }
 
+        /* ---------- Extras de juego (modo picante) ---------- */
+        .shop-preview.extra {
+            font-size: 36px;
+            filter: drop-shadow(0 0 10px rgba(248, 113, 113, .55));
+        }
+        .shop-desc {
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--muted);
+            min-height: 34px;
+        }
+        .shop-card.extra-on {
+            border-color: var(--danger);
+            background-color: #2a1214;
+            box-shadow: inset 0 0 0 1px rgba(248, 113, 113, .45);
+        }
+        /* El tablero se enciende en rojo mientras el modo picante está activo */
+        body.picante-on .board {
+            border-color: rgba(248, 113, 113, .65);
+            box-shadow: 0 0 22px rgba(248, 113, 113, .20);
+        }
+        body.picante-on .chip-btn#btnPicante {
+            color: var(--danger);
+            border-color: rgba(248, 113, 113, .55);
+        }
+        body.picante-on .chip-btn#btnPicante.active {
+            background: linear-gradient(180deg, #fb7185, #ef4444);
+            border-color: transparent;
+            color: #2b0a0d;
+            box-shadow: 0 6px 16px rgba(248, 113, 113, .35);
+        }
+
         /* ---------- Ranking global ---------- */
         .rank-hint {
             color: var(--muted);
@@ -880,6 +912,10 @@
             <button class="chip-btn" id="btnBgFranco">🖼️ Francisco Franco</button>
             <span id="bgExtra"></span>
         </div>
+        <div class="sel-row" id="extraRow">
+            <span class="sel-label" id="extraLabel">Extra</span>
+            <button class="chip-btn" id="btnPicante">🌶️ Modo picante</button>
+        </div>
         <div class="sel-row">
             <span class="sel-label" id="actLabel">Acciones</span>
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
@@ -909,6 +945,9 @@
 
         <h3 class="shop-sub" id="shopBgsTitle">🖼️ Fondos de pantalla</h3>
         <div class="shop-grid" id="shopBgGrid"></div>
+
+        <h3 class="shop-sub" id="shopExtrasTitle">🔥 Extras de juego</h3>
+        <div class="shop-grid" id="shopExtraGrid"></div>
 
         <p class="shop-msg" id="shopMsg"></p>
     </section>
@@ -1086,6 +1125,44 @@
             { id: "esteso",  price: 90, es: "Esteso",            en: "Esteso",           img: "esteso.jfif" }
         ];
 
+        // ---------- Modo picante (+18) ----------
+        // Palabras subidas de tono: solo aparecen en la partida cuando el
+        // extra "Modo picante" está comprado y activado por el jugador.
+        const PICANTE = {
+            es: [
+                "joder", "jodida", "jodido", "mierda", "puto", "puta",
+                "gilipollas", "capullo", "cabrón", "cabrona", "coño", "carajo",
+                "polla", "pene", "vagina", "culo", "nalgas", "teta", "chichis",
+                "trasero", "pedo", "follar", "caliente", "desnudo", "desnuda",
+                "erótico", "erótica", "sexo", "orgasmo", "tetona", "sucio",
+                "sucia", "zorra", "pajero", "guarra", "guarro", "hostia",
+                "malnacido", "lamida", "pornografía"
+            ],
+            en: [
+                "damn", "crap", "hell", "ass", "arse", "butt", "boobs", "tits",
+                "dick", "cock", "pussy", "fuck", "shit", "bastard", "prick",
+                "knob", "wanker", "slut", "whore", "naked", "nude", "sexy",
+                "horny", "kinky", "erotic", "orgasm", "screw", "bloody",
+                "bollocks", "bugger", "shaft", "moan", "booty", "boner",
+                "willy", "balls", "hump", "thong"
+            ]
+        };
+
+        // ---------- Extras de la tienda ----------
+        // id: identificador guardado en localStorage · price: precio en monedas
+        // icon: vista previa de la tarjeta · desc*: texto de la tarjeta
+        const EXTRAS = [
+            {
+                id: "picante",
+                price: 1000,
+                icon: "🌶️",
+                es: "Modo picante",
+                en: "Spicy mode",
+                descEs: "Palabras subidas de tono (+18) a mitad de cada partida.",
+                descEn: "Risque (+18) words halfway through every match."
+            }
+        ];
+
         // ---------- Textos de la interfaz por idioma ----------
         const I18N = {
             es: {
@@ -1110,6 +1187,12 @@
                 shopHint: "Gana 1 moneda por cada palabra que completes. ¡Cómpralas para desbloquear letras y fondos de pantalla!",
                 shopFontsTitle: "🔤 Estilos de letra",
                 shopBgsTitle: "🖼️ Fondos de pantalla",
+                extraLabel: "Extra",
+                btnPicante: "🌶️ Modo picante",
+                shopExtrasTitle: "🔥 Extras de juego",
+                shopBoughtExtra: "¡Modo picante desbloqueado! Ya puedes activarlo cuando quieras. 🌶️",
+                shopEquippedExtraMsg: "Modo picante activado: ahora aparecen palabras +18. 🌶️",
+                shopDeactivatedExtraMsg: "Modo picante desactivado. 😌",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
                 shopBought: "¡Estilo desbloqueado! Ya puedes usarlo. ✨",
@@ -1182,6 +1265,12 @@
                 shopHint: "Earn 1 coin for every word you complete. Spend them to unlock fonts and wallpapers!",
                 shopFontsTitle: "🔤 Font styles",
                 shopBgsTitle: "🖼️ Wallpapers",
+                extraLabel: "Extra",
+                btnPicante: "🌶️ Spicy mode",
+                shopExtrasTitle: "🔥 Gameplay extras",
+                shopBoughtExtra: "Spicy mode unlocked! Turn it on whenever you want. 🌶️",
+                shopEquippedExtraMsg: "Spicy mode on: +18 words from now on. 🌶️",
+                shopDeactivatedExtraMsg: "Spicy mode off. 😌",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
                 shopNoMoney: "Not enough coins! 🪙",
                 shopBought: "Style unlocked! You can equip it now. ✨",
@@ -1259,6 +1348,8 @@
         let owned = ["clasico"];   // estilos comprados
         let equipped = "clasico";  // estilo activo
         let ownedBgs = ["dark"];   // fondos desbloqueados (Franco se compra)
+        let ownedExtras = [];      // extras comprados (modo picante)
+        let picante = false;       // modo picante activo
         let shopOpen = false;
         let rankOpen = false;      // panel de ranking abierto
         let rankEntries = [];      // puntuaciones del ranking (top)
@@ -1301,6 +1392,10 @@
         const shopGrid = document.getElementById("shopGrid");
         const shopBgGrid = document.getElementById("shopBgGrid");
         const bgExtra = document.getElementById("bgExtra");
+        const extraRow = document.getElementById("extraRow");
+        const extraLabel = document.getElementById("extraLabel");
+        const btnPicante = document.getElementById("btnPicante");
+        const shopExtraGrid = document.getElementById("shopExtraGrid");
         const shopMsg = document.getElementById("shopMsg");
         const shopCoins = document.getElementById("shopCoins");
         const btnShop = document.getElementById("btnShop");
@@ -1324,7 +1419,7 @@
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
-        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnShop, btnRanking];
+        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnPicante, btnShop, btnRanking];
 
         // ---------- Récord por idioma ----------
         function loadBest() {
@@ -2014,14 +2109,22 @@
                     // Migración: quien ya usaba el fondo de Franco antes de la tienda lo conserva
                     ownedBgs = ["dark", "franco"];
                 }
+                const ex = JSON.parse(localStorage.getItem("teclear.extras") || "null");
+                if (Array.isArray(ex)) ownedExtras = ex;
+                picante = localStorage.getItem("teclear.picante") === "1";
             } catch (e) {
                 coins = 0;
                 owned = ["clasico"];
                 equipped = "clasico";
                 ownedBgs = ["dark"];
+                ownedExtras = [];
+                picante = false;
             }
             if (!owned.includes("clasico")) owned.push("clasico");
             if (!ownedBgs.includes("dark")) ownedBgs.push("dark");
+            // Solo se admiten extras conocidos y comprados: nada de marcas raras
+            ownedExtras = ownedExtras.filter(id => EXTRAS.some(x => x.id === id));
+            if (!ownedExtras.includes("picante")) picante = false;
         }
 
         function saveShop() {
@@ -2030,6 +2133,8 @@
                 localStorage.setItem("teclear.estilos", JSON.stringify(owned));
                 localStorage.setItem("teclear.estilo", equipped);
                 localStorage.setItem("teclear.fondos", JSON.stringify(ownedBgs));
+                localStorage.setItem("teclear.extras", JSON.stringify(ownedExtras));
+                localStorage.setItem("teclear.picante", picante ? "1" : "0");
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -2126,6 +2231,7 @@
                 shopGrid.appendChild(card);
             });
             renderBgShop();
+            renderExtraShop();
         }
 
         function renderBgShop() {
@@ -2170,6 +2276,99 @@
             });
         }
 
+        // ---------- Extras de juego (modo picante) ----------
+        function picanteOwned() {
+            return ownedExtras.includes("picante");
+        }
+
+        // Refresca el chip del selector y el aspecto del tablero
+        function applyPicante() {
+            const has = picanteOwned();
+            if (extraRow) extraRow.style.display = has ? "" : "none";
+            if (btnPicante) {
+                btnPicante.textContent = t("btnPicante");
+                btnPicante.classList.toggle("active", picante);
+            }
+            document.body.classList.toggle("picante-on", picante);
+        }
+
+        function setPicante(next) {
+            if (!picanteOwned() || state === "playing") return;
+            picante = !!next;
+            saveShop();
+            applyPicante();
+            if (shopOpen) renderExtraShop();
+            shopMsg.textContent = picante ? t("shopEquippedExtraMsg") : t("shopDeactivatedExtraMsg");
+        }
+
+        function buyExtra(x) {
+            if (ownedExtras.includes(x.id)) {
+                if (x.id === "picante") setPicante(true);
+                return;
+            }
+            if (coins < x.price) {
+                shopMsg.textContent = t("shopNoMoney");
+                return;
+            }
+            coins -= x.price;
+            ownedExtras.push(x.id);
+            if (x.id === "picante") picante = true;
+            saveShop();
+            applyPicante();
+            updateCoins();
+            renderExtraShop();
+            shopMsg.textContent = t("shopBoughtExtra");
+        }
+
+        function renderExtraShop() {
+            if (!shopExtraGrid) return;
+            shopExtraGrid.innerHTML = "";
+            EXTRAS.forEach(x => {
+                const ownedX = ownedExtras.includes(x.id);
+                const on = x.id === "picante" ? picante : false;
+
+                const card = document.createElement("div");
+                card.className = "shop-card";
+                if (on) card.classList.add("extra-on");
+
+                const prev = document.createElement("div");
+                prev.className = "shop-preview extra";
+                prev.textContent = x.icon;
+                card.appendChild(prev);
+
+                const name = document.createElement("div");
+                name.className = "shop-name";
+                name.textContent = lang === "es" ? x.es : x.en;
+                card.appendChild(name);
+
+                const price = document.createElement("div");
+                price.className = "shop-price";
+                price.textContent = ownedX ? "✓ " + t("shopOwned") : "🪙 " + x.price;
+                card.appendChild(price);
+
+                const desc = document.createElement("div");
+                desc.className = "shop-desc";
+                desc.textContent = lang === "es" ? x.descEs : x.descEn;
+                card.appendChild(desc);
+
+                const btn = document.createElement("button");
+                btn.className = "chip-btn shop-btn";
+                if (on) {
+                    btn.textContent = t("shopEquipped");
+                    btn.disabled = true;
+                } else if (ownedX) {
+                    btn.textContent = t("shopEquip");
+                    btn.addEventListener("click", () => setPicante(true));
+                } else {
+                    btn.textContent = t("shopBuy");
+                    if (coins < x.price) btn.classList.add("cant");
+                    btn.addEventListener("click", () => buyExtra(x));
+                }
+                card.appendChild(btn);
+                shopExtraGrid.appendChild(card);
+            });
+        }
+
         function toggleShop() {
             if (state === "playing") return;
             shopOpen = !shopOpen;
@@ -2198,6 +2397,7 @@
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent = t("bgLabel");
             document.getElementById("actLabel").textContent = t("actLabel");
+            if (extraLabel) extraLabel.textContent = t("extraLabel");
             btnBgDark.textContent = t("bgDark");
             btnBgFranco.textContent = t("bgFranco");
             document.getElementById("kScore").textContent = t("kScore");
@@ -2221,6 +2421,8 @@
             document.getElementById("shopHint").textContent = t("shopHint");
             document.getElementById("shopFontsTitle").textContent = t("shopFontsTitle");
             document.getElementById("shopBgsTitle").textContent = t("shopBgsTitle");
+            document.getElementById("shopExtrasTitle").textContent = t("shopExtrasTitle");
+            applyPicante();   // chip del selector + acento rojo del tablero
             document.getElementById("rTitle").textContent = t("rTitle");
             document.getElementById("rkScore").textContent = t("rkScore");
             document.getElementById("rkWords").textContent =
@@ -2300,6 +2502,11 @@
         btnBgDark.addEventListener("click", () => setBg("dark"));
         btnBgFranco.addEventListener("click", () => setBg("franco"));
 
+        // El modo picante se activa y desactiva desde el chip del selector
+        if (btnPicante) {
+            btnPicante.addEventListener("click", () => setPicante(!picante));
+        }
+
         // Añade al selector los fondos comprados en la tienda
         function renderBgChips() {
             bgExtra.innerHTML = "";
@@ -2353,8 +2560,18 @@
             return 1 + Math.floor(completed / 5);
         }
 
+        // Lista de la que sale la siguiente palabra. Con el modo picante
+        // activado, aproximadamente la mitad de las palabras de la partida
+        // salen de la lista subida de tono (+18) del idioma en juego.
+        function wordPool() {
+            const base = mode === "murciano" ? MURCIANO_WORDS : WORDS[lang];
+            if (!picante) return base;
+            const spicy = mode === "murciano" ? PICANTE.es : PICANTE[lang];
+            return Math.random() < 0.5 ? spicy : base;
+        }
+
         function nextWord() {
-            const list = mode === "murciano" ? MURCIANO_WORDS : WORDS[lang];
+            const list = wordPool();
             const lvl = level();
             let pool;
             if (lvl <= 1) pool = list.filter(w => w.length <= 5);
