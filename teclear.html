@@ -581,20 +581,40 @@
             background-color: #2a1214;
             box-shadow: inset 0 0 0 1px rgba(248, 113, 113, .45);
         }
-        /* El tablero se enciende en rojo mientras el modo picante está activo */
+        /* El tablero se enciende mientras un extra está activo */
         body.picante-on .board {
             border-color: rgba(248, 113, 113, .65);
             box-shadow: 0 0 22px rgba(248, 113, 113, .20);
         }
-        body.picante-on .chip-btn#btnPicante {
+        body.caos-on .board {
+            border-color: rgba(167, 139, 250, .7);
+            box-shadow: 0 0 22px rgba(139, 92, 246, .28);
+        }
+        /* Cada chip de extra lleva su color cuando está en uso */
+        .chip-btn.chip-picante {
             color: var(--danger);
             border-color: rgba(248, 113, 113, .55);
         }
-        body.picante-on .chip-btn#btnPicante.active {
+        .chip-btn.chip-picante.active {
             background: linear-gradient(180deg, #fb7185, #ef4444);
             border-color: transparent;
             color: #2b0a0d;
             box-shadow: 0 6px 16px rgba(248, 113, 113, .35);
+        }
+        .chip-btn.chip-caos {
+            color: #c4b5fd;
+            border-color: rgba(167, 139, 250, .55);
+        }
+        .chip-btn.chip-caos.active {
+            background: linear-gradient(180deg, #a78bfa, #7c3aed);
+            border-color: transparent;
+            color: #160a2b;
+            box-shadow: 0 6px 16px rgba(139, 92, 246, .35);
+        }
+        .shop-card.card-caos.extra-on {
+            border-color: #a78bfa;
+            background-color: #1a1230;
+            box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .45);
         }
 
         /* ---------- Ranking global ---------- */
@@ -914,7 +934,8 @@
         </div>
         <div class="sel-row" id="extraRow">
             <span class="sel-label" id="extraLabel">Extra</span>
-            <button class="chip-btn" id="btnPicante">🌶️ Modo picante</button>
+            <button class="chip-btn chip-picante" id="btnPicante">🌶️ Modo picante</button>
+            <button class="chip-btn chip-caos" id="btnCaos">🌀 Modo Caos</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="actLabel">Acciones</span>
@@ -1151,6 +1172,7 @@
         // ---------- Extras de la tienda ----------
         // id: identificador guardado en localStorage · price: precio en monedas
         // icon: vista previa de la tarjeta · desc*: texto de la tarjeta
+        // msgBuy/msgOn/msgOff: claves de texto de la tienda (i18n)
         const EXTRAS = [
             {
                 id: "picante",
@@ -1159,7 +1181,22 @@
                 es: "Modo picante",
                 en: "Spicy mode",
                 descEs: "Palabras subidas de tono (+18) a mitad de cada partida.",
-                descEn: "Risque (+18) words halfway through every match."
+                descEn: "Risque (+18) words halfway through every match.",
+                msgBuy: "shopBoughtExtra",
+                msgOn: "shopEquippedExtraMsg",
+                msgOff: "shopDeactivatedExtraMsg"
+            },
+            {
+                id: "caos",
+                price: 3333,
+                icon: "🌀",
+                es: "Modo Caos",
+                en: "Chaos mode",
+                descEs: "Mezcla palabras de todos los idiomas y modos en la misma partida, con letras de todo tipo.",
+                descEn: "Mixes words from every language and mode in one match, all kinds of letters.",
+                msgBuy: "shopBoughtCaos",
+                msgOn: "shopEquippedCaosMsg",
+                msgOff: "shopDeactivatedCaosMsg"
             }
         ];
 
@@ -1188,11 +1225,13 @@
                 shopFontsTitle: "🔤 Estilos de letra",
                 shopBgsTitle: "🖼️ Fondos de pantalla",
                 extraLabel: "Extra",
-                btnPicante: "🌶️ Modo picante",
                 shopExtrasTitle: "🔥 Extras de juego",
                 shopBoughtExtra: "¡Modo picante desbloqueado! Ya puedes activarlo cuando quieras. 🌶️",
                 shopEquippedExtraMsg: "Modo picante activado: ahora aparecen palabras +18. 🌶️",
                 shopDeactivatedExtraMsg: "Modo picante desactivado. 😌",
+                shopBoughtCaos: "¡Modo Caos desbloqueado! Ya puedes activarlo cuando quieras. 🌀",
+                shopEquippedCaosMsg: "Modo Caos activado: se mezclan todos los idiomas y modos. 🌀",
+                shopDeactivatedCaosMsg: "Modo Caos desactivado. 😌",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
                 shopBought: "¡Estilo desbloqueado! Ya puedes usarlo. ✨",
@@ -1266,11 +1305,13 @@
                 shopFontsTitle: "🔤 Font styles",
                 shopBgsTitle: "🖼️ Wallpapers",
                 extraLabel: "Extra",
-                btnPicante: "🌶️ Spicy mode",
                 shopExtrasTitle: "🔥 Gameplay extras",
                 shopBoughtExtra: "Spicy mode unlocked! Turn it on whenever you want. 🌶️",
                 shopEquippedExtraMsg: "Spicy mode on: +18 words from now on. 🌶️",
                 shopDeactivatedExtraMsg: "Spicy mode off. 😌",
+                shopBoughtCaos: "Chaos mode unlocked! Turn it on whenever you want. 🌀",
+                shopEquippedCaosMsg: "Chaos mode on: every language and mode mixed together. 🌀",
+                shopDeactivatedCaosMsg: "Chaos mode off. 😌",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
                 shopNoMoney: "Not enough coins! 🪙",
                 shopBought: "Style unlocked! You can equip it now. ✨",
@@ -1348,8 +1389,11 @@
         let owned = ["clasico"];   // estilos comprados
         let equipped = "clasico";  // estilo activo
         let ownedBgs = ["dark"];   // fondos desbloqueados (Franco se compra)
-        let ownedExtras = [];      // extras comprados (modo picante)
-        let picante = false;       // modo picante activo
+        let ownedExtras = [];      // extras comprados (picante, caos…)
+        let extraOn = {            // extras activos en este momento
+            picante: false,
+            caos: false
+        };
         let shopOpen = false;
         let rankOpen = false;      // panel de ranking abierto
         let rankEntries = [];      // puntuaciones del ranking (top)
@@ -1395,6 +1439,7 @@
         const extraRow = document.getElementById("extraRow");
         const extraLabel = document.getElementById("extraLabel");
         const btnPicante = document.getElementById("btnPicante");
+        const btnCaos = document.getElementById("btnCaos");
         const shopExtraGrid = document.getElementById("shopExtraGrid");
         const shopMsg = document.getElementById("shopMsg");
         const shopCoins = document.getElementById("shopCoins");
@@ -1419,7 +1464,7 @@
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
-        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnPicante, btnShop, btnRanking];
+        const selBtns = [btnEs, btnEn, btnType, btnGuess, btnMurciano, btnPicante, btnCaos, btnShop, btnRanking];
 
         // ---------- Récord por idioma ----------
         function loadBest() {
@@ -2111,20 +2156,29 @@
                 }
                 const ex = JSON.parse(localStorage.getItem("teclear.extras") || "null");
                 if (Array.isArray(ex)) ownedExtras = ex;
-                picante = localStorage.getItem("teclear.picante") === "1";
+                const rawOn = localStorage.getItem("teclear.extrasOn");
+                if (rawOn) {
+                    const eo = JSON.parse(rawOn);
+                    if (eo && typeof eo === "object") extraOn = eo;
+                } else if (localStorage.getItem("teclear.picante") === "1") {
+                    extraOn.picante = true;   // clave antigua del modo picante
+                }
             } catch (e) {
                 coins = 0;
                 owned = ["clasico"];
                 equipped = "clasico";
                 ownedBgs = ["dark"];
                 ownedExtras = [];
-                picante = false;
+                extraOn = { picante: false, caos: false };
             }
             if (!owned.includes("clasico")) owned.push("clasico");
             if (!ownedBgs.includes("dark")) ownedBgs.push("dark");
             // Solo se admiten extras conocidos y comprados: nada de marcas raras
             ownedExtras = ownedExtras.filter(id => EXTRAS.some(x => x.id === id));
-            if (!ownedExtras.includes("picante")) picante = false;
+            EXTRAS.forEach(x => {
+                if (!ownedExtras.includes(x.id)) extraOn[x.id] = false;
+                extraOn[x.id] = !!extraOn[x.id];
+            });
         }
 
         function saveShop() {
@@ -2134,7 +2188,8 @@
                 localStorage.setItem("teclear.estilo", equipped);
                 localStorage.setItem("teclear.fondos", JSON.stringify(ownedBgs));
                 localStorage.setItem("teclear.extras", JSON.stringify(ownedExtras));
-                localStorage.setItem("teclear.picante", picante ? "1" : "0");
+                localStorage.setItem("teclear.extrasOn", JSON.stringify(extraOn));
+                localStorage.setItem("teclear.picante", extraOn.picante ? "1" : "0");
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -2276,34 +2331,44 @@
             });
         }
 
-        // ---------- Extras de juego (modo picante) ----------
-        function picanteOwned() {
-            return ownedExtras.includes("picante");
+        // ---------- Extras de juego (picante, caos…) ----------
+        // Chip del selector asociado a cada extra
+        const EXTRA_CHIPS = { picante: btnPicante, caos: btnCaos };
+
+        function ownsExtra(id) {
+            return ownedExtras.includes(id);
         }
 
-        // Refresca el chip del selector y el aspecto del tablero
-        function applyPicante() {
-            const has = picanteOwned();
-            if (extraRow) extraRow.style.display = has ? "" : "none";
-            if (btnPicante) {
-                btnPicante.textContent = t("btnPicante");
-                btnPicante.classList.toggle("active", picante);
-            }
-            document.body.classList.toggle("picante-on", picante);
+        function extraActive(id) {
+            return ownsExtra(id) && !!extraOn[id];
         }
 
-        function setPicante(next) {
-            if (!picanteOwned() || state === "playing") return;
-            picante = !!next;
+        // Refresca el chip del selector, la fila de extras y el tablero
+        function applyExtras() {
+            if (extraRow) extraRow.style.display = ownedExtras.length ? "" : "none";
+            EXTRAS.forEach(x => {
+                const chip = EXTRA_CHIPS[x.id];
+                if (!chip) return;
+                chip.style.display = ownsExtra(x.id) ? "" : "none";
+                chip.textContent = x.icon + " " + (lang === "es" ? x.es : x.en);
+                chip.classList.toggle("active", extraActive(x.id));
+                document.body.classList.toggle(x.id + "-on", extraActive(x.id));
+            });
+        }
+
+        function setExtra(id, on) {
+            if (!ownsExtra(id) || state === "playing") return;
+            extraOn[id] = !!on;
             saveShop();
-            applyPicante();
+            applyExtras();
             if (shopOpen) renderExtraShop();
-            shopMsg.textContent = picante ? t("shopEquippedExtraMsg") : t("shopDeactivatedExtraMsg");
+            const x = EXTRAS.find(e => e.id === id);
+            if (x) shopMsg.textContent = t(on ? x.msgOn : x.msgOff);
         }
 
         function buyExtra(x) {
-            if (ownedExtras.includes(x.id)) {
-                if (x.id === "picante") setPicante(true);
+            if (ownsExtra(x.id)) {
+                setExtra(x.id, true);
                 return;
             }
             if (coins < x.price) {
@@ -2312,23 +2377,23 @@
             }
             coins -= x.price;
             ownedExtras.push(x.id);
-            if (x.id === "picante") picante = true;
+            extraOn[x.id] = true;
             saveShop();
-            applyPicante();
+            applyExtras();
             updateCoins();
             renderExtraShop();
-            shopMsg.textContent = t("shopBoughtExtra");
+            shopMsg.textContent = t(x.msgBuy);
         }
 
         function renderExtraShop() {
             if (!shopExtraGrid) return;
             shopExtraGrid.innerHTML = "";
             EXTRAS.forEach(x => {
-                const ownedX = ownedExtras.includes(x.id);
-                const on = x.id === "picante" ? picante : false;
+                const ownedX = ownsExtra(x.id);
+                const on = extraActive(x.id);
 
                 const card = document.createElement("div");
-                card.className = "shop-card";
+                card.className = "shop-card card-" + x.id;
                 if (on) card.classList.add("extra-on");
 
                 const prev = document.createElement("div");
@@ -2358,7 +2423,7 @@
                     btn.disabled = true;
                 } else if (ownedX) {
                     btn.textContent = t("shopEquip");
-                    btn.addEventListener("click", () => setPicante(true));
+                    btn.addEventListener("click", () => setExtra(x.id, true));
                 } else {
                     btn.textContent = t("shopBuy");
                     if (coins < x.price) btn.classList.add("cant");
@@ -2422,7 +2487,7 @@
             document.getElementById("shopFontsTitle").textContent = t("shopFontsTitle");
             document.getElementById("shopBgsTitle").textContent = t("shopBgsTitle");
             document.getElementById("shopExtrasTitle").textContent = t("shopExtrasTitle");
-            applyPicante();   // chip del selector + acento rojo del tablero
+            applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent = t("rTitle");
             document.getElementById("rkScore").textContent = t("rkScore");
             document.getElementById("rkWords").textContent =
@@ -2502,10 +2567,9 @@
         btnBgDark.addEventListener("click", () => setBg("dark"));
         btnBgFranco.addEventListener("click", () => setBg("franco"));
 
-        // El modo picante se activa y desactiva desde el chip del selector
-        if (btnPicante) {
-            btnPicante.addEventListener("click", () => setPicante(!picante));
-        }
+        // Cada extra se activa y desactiva desde su chip del selector
+        if (btnPicante) btnPicante.addEventListener("click", () => setExtra("picante", !extraOn.picante));
+        if (btnCaos) btnCaos.addEventListener("click", () => setExtra("caos", !extraOn.caos));
 
         // Añade al selector los fondos comprados en la tienda
         function renderBgChips() {
@@ -2563,9 +2627,15 @@
         // Lista de la que sale la siguiente palabra. Con el modo picante
         // activado, aproximadamente la mitad de las palabras de la partida
         // salen de la lista subida de tono (+18) del idioma en juego.
+        // Con el modo Caos se mezclan todos los idiomas y modos a la vez.
         function wordPool() {
+            if (extraActive("caos")) {
+                let pool = WORDS.es.concat(WORDS.en, MURCIANO_WORDS);
+                if (extraActive("picante")) pool = pool.concat(PICANTE.es, PICANTE.en);
+                return pool;
+            }
             const base = mode === "murciano" ? MURCIANO_WORDS : WORDS[lang];
-            if (!picante) return base;
+            if (!extraActive("picante")) return base;
             const spicy = mode === "murciano" ? PICANTE.es : PICANTE[lang];
             return Math.random() < 0.5 ? spicy : base;
         }
