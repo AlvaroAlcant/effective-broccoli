@@ -71,7 +71,7 @@
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
                 linear-gradient(rgba(10, 14, 22, .84), rgba(10, 14, 22, .84)),
-                url("Elprico.jfif");
+                url("Elprico.png");
             background-size: auto, cover, cover;
             background-position: center, center top, center top;
             background-repeat: no-repeat, no-repeat, no-repeat;
@@ -82,11 +82,34 @@
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
                 linear-gradient(rgba(10, 14, 22, .84), rgba(10, 14, 22, .84)),
-                url("esteso.jfif");
+                url("esteso.jpg");
             background-size: auto, auto, 170px 170px;
             background-position: center, center, center;
             background-repeat: no-repeat, no-repeat, repeat;
             background-attachment: fixed, fixed, fixed;
+        }
+
+        /* ---------- Fondo "Sopa de Letras": letras que rebotan (canvas) ---------- */
+        body.bg-sopa {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .14), transparent 65%),
+                radial-gradient(760px 420px at 110% 115%, rgba(56, 130, 246, .14), transparent 60%);
+            background-size: auto, auto;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            background-attachment: fixed, fixed;
+        }
+        /* Lienzo fijo detrás de todo el contenido: las letras chocan
+           entre sí y contra los bordes de la ventana */
+        #soupCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
         }
 
         /* ---------- Cabecera ---------- */
@@ -1120,7 +1143,13 @@
 </head>
 <body>
     <header>
-        <img class="game-logo" src="estesoTeclea.png" alt="Logo de Teclea a la Velocidad">
+        <div class="logo-wrap">
+            <button type="button" class="logo-btn" id="logoBtn"
+                    aria-label="Toca el logo y saldrá una frase distinta">
+                <img class="game-logo" src="estesoTeclea.png" alt="Logo de Teclea a la Velocidad">
+            </button>
+            <span class="logo-phrase" id="logoPhrase" aria-live="polite"></span>
+        </div>
         <h1 id="title">⌨️ Teclea a la Velocidad</h1>
         <p id="subtitle">Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!</p>
     </header>
@@ -1479,12 +1508,15 @@
         ];
 
         // ---------- Fondos de pantalla de la tienda ----------
-        // price 0 = siempre disponible; Franco se compra en la tienda (120 monedas)
+        // price 0 = siempre disponible; el resto se compran con monedas
+        // icon: emoji de la miniatura cuando no hay imagen (Sopa de Letras
+        // se dibuja con el canvas animado de letras rebotando)
         const BACKGROUNDS = [
             { id: "dark",    price: 0,   es: "Oscuro",            en: "Dark",             img: "" },
             { id: "franco",  price: 120, es: "Francisco Franco",  en: "Francisco Franco", img: "Francisco_Franco_1930.jpg" },
-            { id: "elprico", price: 60, es: "Elprico",           en: "Elprico",          img: "Elprico.jfif" },
-            { id: "esteso",  price: 90, es: "Esteso",            en: "Esteso",           img: "esteso.jfif" }
+            { id: "elprico", price: 60,  es: "Elprico",           en: "Elprico",          img: "Elprico.png" },
+            { id: "esteso",  price: 90,  es: "Esteso",            en: "Esteso",           img: "esteso.jpg" },
+            { id: "sopa",    price: 550, es: "Sopa de Letras",    en: "Letter Soup",      img: "", icon: "🔤" }
         ];
 
         // ---------- Modo picante (+18) ----------
@@ -3357,7 +3389,7 @@
                 const thumb = document.createElement("div");
                 thumb.className = "shop-thumb";
                 if (b.img) thumb.style.backgroundImage = 'url("' + b.img + '")';
-                else thumb.textContent = "🌙";
+                else thumb.textContent = b.icon || "🌙";
                 card.appendChild(thumb);
 
                 const name = document.createElement("div");
@@ -3588,6 +3620,7 @@
                 document.body.classList.toggle("bg-" + b.id, bg === b.id);
             });
             renderBgChips();
+            syncLetterSoup(bg === "sopa");   // letras rebotando solo con ese fondo
 
             best = loadBest();
             bestEl.textContent = best;
@@ -3664,12 +3697,230 @@
                 if (!ownedBgs.includes(b.id)) return;
                 const btn = document.createElement("button");
                 btn.className = "chip-btn";
-                btn.textContent = (b.id === "elprico" ? "😎 " : "🎨 ") + (uiLang() === "es" ? b.es : b.en);
+                btn.textContent = (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
+                    (uiLang() === "es" ? b.es : b.en);
                 btn.classList.toggle("active", bg === b.id);
                 btn.addEventListener("click", () => setBg(b.id));
                 bgExtra.appendChild(btn);
             });
         }
+
+        // ---------- Fondo "Sopa de Letras": letras que rebotan ----------
+        // Un lienzo fijo, por detrás de todo el contenido, lleno de teclas
+        // sueltas: cada letra se mueve y rebota contra las demás y contra
+        // los bordes de la ventana. Solo funciona con este fondo activo.
+        const SOUP_CHARS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789";
+        const SOUP_COLORS = ["#5eead4", "#14b8a6", "#ffd76a", "#f0abfc", "#3882f6", "#e8ecf4"];
+        const SOUP_SPEED = 62;        // velocidad base (píxeles/segundo)
+        const SOUP_DENSITY = 26000;   // píxeles cuadrados por letra
+        let soupCanvas = null;
+        let soupCtx = null;
+        let soupLetters = [];
+        let soupOn = false;
+        let soupRaf = 0;
+        let soupPrev = 0;
+        let soupDpr = 1;
+        let soupW = 0;
+        let soupH = 0;
+
+        function soupReduced() {
+            return !!(window.matchMedia &&
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+        }
+
+        function sizeSoupCanvas() {
+            if (!soupCanvas) return;
+            soupDpr = Math.min(window.devicePixelRatio || 1, 2);
+            soupW = window.innerWidth;
+            soupH = window.innerHeight;
+            soupCanvas.width = Math.max(1, Math.round(soupW * soupDpr));
+            soupCanvas.height = Math.max(1, Math.round(soupH * soupDpr));
+        }
+
+        function soupCount() {
+            return Math.max(16, Math.min(48, Math.round(soupW * soupH / SOUP_DENSITY)));
+        }
+
+        function buildSoup() {
+            const total = soupCount();
+            soupLetters = [];
+            for (let i = 0; i < total; i++) {
+                const size = 22 + Math.random() * 20;
+                const r = size * .62;   // radio de choque de la tecla
+                soupLetters.push({
+                    ch: SOUP_CHARS.charAt(Math.floor(Math.random() * SOUP_CHARS.length)),
+                    col: SOUP_COLORS[i % SOUP_COLORS.length],
+                    size: size,
+                    r: r,
+                    x: r + Math.random() * Math.max(1, soupW - 2 * r),
+                    y: r + Math.random() * Math.max(1, soupH - 2 * r),
+                    vx: (Math.random() < .5 ? -1 : 1) * SOUP_SPEED * (.5 + Math.random() * .8),
+                    vy: (Math.random() * 2 - 1) * SOUP_SPEED,
+                    a: .16 + Math.random() * .30   // opacidad de la tecla
+                });
+            }
+        }
+
+        function soupStep(dt) {
+            const L = soupLetters;
+            let i, j, p;
+
+            // 1) Avance y rebote contra las paredes
+            for (i = 0; i < L.length; i++) {
+                p = L[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                if (p.x < p.r) { p.x = p.r; p.vx = Math.abs(p.vx); }
+                else if (p.x > soupW - p.r) { p.x = soupW - p.r; p.vx = -Math.abs(p.vx); }
+                if (p.y < p.r) { p.y = p.r; p.vy = Math.abs(p.vy); }
+                else if (p.y > soupH - p.r) { p.y = soupH - p.r; p.vy = -Math.abs(p.vy); }
+            }
+
+            // 2) Choque entre letras: se separan e intercambian velocidades
+            for (i = 0; i < L.length; i++) {
+                const a = L[i];
+                for (j = i + 1; j < L.length; j++) {
+                    const b = L[j];
+                    const dx = b.x - a.x, dy = b.y - a.y;
+                    const min = a.r + b.r;
+                    const d2 = dx * dx + dy * dy;
+                    if (d2 >= min * min || d2 === 0) continue;
+                    const d = Math.sqrt(d2);
+                    const nx = dx / d, ny = dy / d;
+                    const push = (min - d) / 2 + .1;
+                    a.x -= nx * push; a.y -= ny * push;
+                    b.x += nx * push; b.y += ny * push;
+                    const along = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+                    if (along <= 0) continue;
+                    a.vx -= along * nx; a.vy -= along * ny;
+                    b.vx += along * nx; b.vy += along * ny;
+                }
+            }
+
+            // 3) Ninguna tecla se queda quieta del todo
+            for (i = 0; i < L.length; i++) {
+                p = L[i];
+                if (Math.sqrt(p.vx * p.vx + p.vy * p.vy) < 25) {
+                    const ang = Math.random() * Math.PI * 2;
+                    p.vx = Math.cos(ang) * 45;
+                    p.vy = Math.sin(ang) * 45;
+                }
+            }
+        }
+
+        function soupRoundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function soupDraw() {
+            if (!soupCtx) return;
+            const ctx = soupCtx;
+            ctx.setTransform(soupDpr, 0, 0, soupDpr, 0, 0);
+            ctx.clearRect(0, 0, soupW, soupH);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            for (let i = 0; i < soupLetters.length; i++) {
+                const p = soupLetters[i];
+                const box = p.size * 1.12;
+                // la tecla
+                ctx.globalAlpha = p.a;
+                soupRoundRect(ctx, p.x - box / 2, p.y - box / 2, box, box, p.size * .26);
+                ctx.fillStyle = "#141b2a";
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = p.col;
+                ctx.stroke();
+                // la letra grabada encima
+                ctx.globalAlpha = Math.min(1, p.a + .55);
+                ctx.fillStyle = p.col;
+                ctx.font = "700 " + Math.round(p.size * .54) +
+                    "px Consolas, 'Courier New', monospace";
+                ctx.fillText(p.ch, p.x, p.y + 1);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function soupTick(now) {
+            soupRaf = 0;
+            if (!soupOn || document.hidden) return;
+            const dt = Math.min(.05, Math.max(0, (now - soupPrev) / 1000)) || .016;
+            soupPrev = now;
+            soupStep(dt);
+            soupDraw();
+            soupRaf = requestAnimationFrame(soupTick);
+        }
+
+        function startSoup() {
+            if (soupRaf || !soupOn) return;
+            soupPrev = performance.now();
+            soupRaf = requestAnimationFrame(soupTick);
+        }
+
+        function stopSoup() {
+            if (soupRaf) cancelAnimationFrame(soupRaf);
+            soupRaf = 0;
+        }
+
+        // La llama applyLang() cada vez que cambia el fondo activo
+        function syncLetterSoup(active) {
+            soupOn = !!active;
+            if (!soupOn) {
+                stopSoup();
+                if (soupCanvas) soupCanvas.style.display = "none";
+                return;
+            }
+            if (!soupCanvas) {
+                soupCanvas = document.createElement("canvas");
+                soupCanvas.id = "soupCanvas";
+                soupCanvas.setAttribute("aria-hidden", "true");
+                document.body.appendChild(soupCanvas);
+                soupCtx = soupCanvas.getContext("2d");
+            }
+            soupCanvas.style.display = "block";
+            sizeSoupCanvas();
+            if (!soupLetters.length) buildSoup();
+            if (soupReduced()) {   // sin movimiento si el sistema lo pide
+                stopSoup();
+                soupDraw();
+                return;
+            }
+            startSoup();
+        }
+
+        // Al cambiar el tamaño de la ventana se recolocan las letras
+        window.addEventListener("resize", function () {
+            if (!soupOn) return;
+            sizeSoupCanvas();
+            if (Math.abs(soupCount() - soupLetters.length) > 6) {
+                buildSoup();
+            } else {
+                for (let i = 0; i < soupLetters.length; i++) {
+                    const p = soupLetters[i];
+                    p.x = Math.min(Math.max(p.x, p.r), Math.max(p.r, soupW - p.r));
+                    p.y = Math.min(Math.max(p.y, p.r), Math.max(p.r, soupH - p.r));
+                }
+            }
+            if (soupReduced() || document.hidden) soupDraw();
+            else startSoup();
+        });
+
+        // Pestaña oculta: se apaga la animación y al volver se reanuda
+        document.addEventListener("visibilitychange", function () {
+            if (!soupOn) return;
+            if (document.hidden) stopSoup();
+            else if (soupReduced()) soupDraw();
+            else startSoup();
+        });
 
         function setBgEquipped(id) {
             if (!ownedBgs.includes(id)) return;
@@ -4241,6 +4492,44 @@
         });
 
         startBtn.addEventListener("click", startGame);
+
+        // ---------- Frases del logo: cada toque muestra una distinta ----------
+        const LOGO_PHRASES = [
+            "arreglo", "IA", "veyon", "va a botarlo", "yo soy la IA", "enseñe su array"
+        ];
+        const logoBtn = document.getElementById("logoBtn");
+        const logoPhrase = document.getElementById("logoPhrase");
+        let logoLast = -1;      // índice de la última frase mostrada
+        let logoHide = 0;       // temporizador para quitar la frase
+
+        function showLogoPhrase() {
+            if (!logoPhrase) return;
+            // Se descarta la anterior: nunca salen dos frases seguidas iguales
+            let i = logoLast;
+            while (i === logoLast) {
+                i = Math.floor(Math.random() * LOGO_PHRASES.length);
+            }
+            logoLast = i;
+            logoPhrase.textContent = LOGO_PHRASES[i];
+
+            // Se retira la clase y se fuerza un reflow para reiniciar la animación
+            logoPhrase.classList.remove("show");
+            void logoPhrase.offsetWidth;
+            logoPhrase.classList.add("show");
+
+            clearTimeout(logoHide);
+            logoHide = setTimeout(function () {
+                logoPhrase.classList.remove("show");
+            }, 2000);
+
+            if (logoBtn) {
+                logoBtn.classList.remove("pop");
+                void logoBtn.offsetWidth;
+                logoBtn.classList.add("pop");
+            }
+        }
+
+        if (logoBtn) logoBtn.addEventListener("click", showLogoPhrase);
 
         // ---------- Guardar la puntuación en el ranking ----------
         saveScoreBtn.addEventListener("click", function () {
