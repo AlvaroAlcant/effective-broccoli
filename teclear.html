@@ -341,6 +341,10 @@
             from { opacity: 1; transform: translateY(0); }
             to { opacity: 0; transform: translateY(-35px); }
         }
+        /* Aviso de monedas ganadas: en dorado para distinguirlo de los puntos */
+        .points.coin {
+            color: var(--gold);
+        }
 
         /* ---------- Vidas y letras erróneas (modo adivinar) ---------- */
         .misses {
@@ -1074,7 +1078,7 @@
             <h2 id="shopTitle">🛒 Tienda de estilos</h2>
             <span class="shop-coins">🪙 <span id="shopCoins">0</span></span>
         </div>
-        <p class="shop-hint" id="shopHint">Gana 1 moneda por cada palabra que completes. ¡Cómpralas para desbloquear estilos de letra!</p>
+        <p class="shop-hint" id="shopHint">Gana monedas por cada palabra sin errores: la racha las multiplica (hasta x5). ¡Cómpralas para desbloquear estilos de letra!</p>
 
         <h3 class="shop-sub" id="shopFontsTitle">🔤 Estilos de letra</h3>
         <div class="shop-grid" id="shopGrid"></div>
@@ -1465,7 +1469,7 @@
                 kBestWords: "Récord palabras",
                 btnShop: "🛒 Tienda",
                 shopTitle: "🛒 Tienda de estilos",
-                shopHint: "Gana 1 moneda por cada palabra que completes. ¡Cómpralas para desbloquear letras y fondos de pantalla!",
+                shopHint: "Gana monedas por cada palabra sin errores: la racha las multiplica (hasta x5). ¡Cómpralas para desbloquear letras y fondos de pantalla!",
                 shopFontsTitle: "🔤 Estilos de letra",
                 shopBgsTitle: "🖼️ Fondos de pantalla",
                 extraLabel: "Extra",
@@ -1492,7 +1496,7 @@
                 statusPlayI: "Escribe la palabra que representa la imagen. ¡A ojo de buen cubero!",
                 statusEnd: "Pulsa la barra espaciadora o el botón para volver a jugar.",
                 statusError: "¡Tecla incorrecta! -5 puntos y pierdes la racha 😵",
-                statusOk: "¡Sigue así! La racha multiplica tus puntos. 🚀",
+                statusOk: "¡Sigue así! La racha multiplica tus puntos y tus monedas. 🚀",
                 statusNoPaste: "🚫 Pegar no cuenta: teclea las palabras a mano.",
                 wordFailed: "¡Se te resistió! La palabra era: ",
                 btnStart: "Jugar", btnRestart: "Reiniciar", btnAgain: "Jugar otra vez",
@@ -1581,7 +1585,7 @@
                 kBestWords: "Words record",
                 btnShop: "🛒 Shop",
                 shopTitle: "🛒 Style Shop",
-                shopHint: "Earn 1 coin for every word you complete. Spend them to unlock fonts and wallpapers!",
+                shopHint: "Earn coins for every word you complete without mistakes: your streak multiplies them (up to x5). Spend them to unlock fonts and wallpapers!",
                 shopFontsTitle: "🔤 Font styles",
                 shopBgsTitle: "🖼️ Wallpapers",
                 extraLabel: "Extra",
@@ -1608,7 +1612,7 @@
                 statusPlayI: "Type the word the image stands for. Trust your eyes!",
                 statusEnd: "Press the space bar or the button to play again.",
                 statusError: "Wrong key! -5 points and you lose your streak 😵",
-                statusOk: "Keep it up! Your streak multiplies your points. 🚀",
+                statusOk: "Keep it up! Your streak multiplies your points and your coins. 🚀",
                 statusNoPaste: "🚫 Pasting does not count: type the words by hand.",
                 wordFailed: "It got away! The word was: ",
                 btnStart: "Play", btnRestart: "Restart", btnAgain: "Play again",
@@ -3156,7 +3160,8 @@
             if (accOpen && accSession) renderAccount();
         }
 
-        // Otorga monedas por cada palabra completada (1 por palabra)
+        // Otorga monedas por cada palabra completada sin errores.
+        // La cantidad sube con la racha (x1 … x5), igual que los puntos
         function giveCoins(n) {
             coins += n;
             coinsRun += n;
@@ -3794,10 +3799,10 @@
             setTimeout(() => p.remove(), 900);
         }
 
-        function showCoin() {
+        function showCoin(n) {
             const c = document.createElement("div");
             c.className = "points coin";
-            c.textContent = "🪙 +1";
+            c.textContent = "🪙 +" + n;
             stage.appendChild(c);
             setTimeout(() => c.remove(), 900);
         }
@@ -3826,11 +3831,16 @@
         function completeWord() {
             completed++;
             streak++;
-            const points = word.length * 10 * multiplier();
+            const mult = multiplier();
+            const points = word.length * 10 * mult;
             score += points;
             showPoints(points);
-            giveCoins(1);        // 1 moneda por cada palabra escrita
-            showCoin();
+            // Monedas al estilo experiencia: la racha multiplica lo que ganas.
+            // Cada palabra sin errores paga 1 moneda por cada nivel de racha
+            // (x1 al principio y hasta x5 con la racha larga).
+            const coinGain = mult;
+            giveCoins(coinGain);
+            showCoin(coinGain);
             newWord();
         }
 
