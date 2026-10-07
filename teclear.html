@@ -431,10 +431,11 @@
             transform: none;
         }
 
-        /* ---------- Tarjetas: resultados, tienda y ranking ---------- */
+        /* ---------- Tarjetas: resultados, tienda, ranking y perfil ---------- */
         .results,
         .shop,
-        .ranking {
+        .ranking,
+        .perfil {
             margin-top: 20px;
             padding: 20px;
             text-align: center;
@@ -445,12 +446,14 @@
         }
         .results.hidden,
         .shop.hidden,
-        .ranking.hidden {
+        .ranking.hidden,
+        .perfil.hidden {
             display: none;
         }
         .results h2,
         .shop-head h2,
-        .ranking h2 {
+        .ranking h2,
+        .perfil h2 {
             margin: 0 0 6px;
             font-size: 20px;
             color: var(--accent);
@@ -592,6 +595,9 @@
             margin: 12px 0 0;
             font-size: 14px;
             color: var(--accent);
+        }
+        .shop-msg.warn {
+            color: var(--danger);
         }
 
         /* ---------- Extras de juego (modo picante) ---------- */
@@ -747,20 +753,96 @@
             text-transform: uppercase;
             letter-spacing: 1.2px;
         }
-        #playerName {
+        /* ---------- Panel de perfil (registro e inicio de sesión) ---------- */
+        .perfil-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 330px;
+            margin: 14px auto 0;
+            text-align: left;
+        }
+        .perfil-form.hidden,
+        .perfil-data.hidden,
+        .pf-field.hidden {
+            display: none;
+        }
+        .pf-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .pf-field label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+        .pf-field input {
             background: var(--surface-2);
             border: 1px solid var(--line);
             border-radius: 999px;
             color: var(--text);
             padding: 9px 16px;
             font-size: 15px;
-            width: 200px;
+            width: 100%;
             outline: none;
             transition: border-color .18s, box-shadow .18s;
         }
-        #playerName:focus {
+        .pf-field input:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 4px rgba(94, 234, 212, .14);
+        }
+        .perfil-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 4px;
+        }
+        .perfil-who {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 18px;
+            color: var(--text);
+        }
+        .perfil-who .perfil-avatar {
+            font-size: 26px;
+        }
+        .perfil-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .perfil-cell {
+            background: var(--surface-2);
+            border: 1px solid var(--line-soft);
+            border-radius: 12px;
+            padding: 10px 8px;
+        }
+        .perfil-cell span {
+            display: block;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 1.1px;
+            color: var(--muted);
+        }
+        .perfil-cell strong {
+            display: block;
+            margin-top: 2px;
+            font-size: 20px;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+        /* Aviso bajo los resultados: con qué nombre se guardará la puntuación */
+        .rank-who {
+            margin-top: 12px;
+            font-size: 14px;
+            color: var(--muted);
         }
 
         /* Verificación humana: hay que teclear el código con teclas reales */
@@ -920,10 +1002,11 @@
             }
             .results,
             .shop,
-            .ranking {
+            .ranking,
+            .perfil {
                 padding: 16px;
             }
-            #playerName {
+            .pf-field input {
                 width: 100%;
             }
         }
@@ -971,6 +1054,8 @@
             <span class="sel-label" id="actLabel">Acciones</span>
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
             <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
+            <button class="chip-btn" id="btnRegister">👤 Registrar</button>
+            <button class="chip-btn" id="btnLogin">🔑 Iniciar sesión</button>
         </div>
     </div>
 
@@ -1003,6 +1088,57 @@
         <p class="shop-msg" id="shopMsg"></p>
     </section>
 
+    <!-- Perfil: registro e inicio de sesión (guarda dinero, experiencia, récords…) -->
+    <section class="perfil hidden" id="perfil">
+        <div class="shop-head">
+            <h2 id="accTitle">👤 Tu perfil</h2>
+            <span class="shop-coins">🪙 <span id="accCoins">0</span></span>
+        </div>
+        <p class="shop-hint" id="accHint">Crea una cuenta con tu nombre y una contraseña para guardar tu dinero, tu experiencia y tus récords. Se guarda solo al terminar cada partida.</p>
+
+        <form class="perfil-form hidden" id="accForm" novalidate>
+            <div class="pf-field">
+                <label for="accName" id="accNameLabel">Tu nombre</label>
+                <input id="accName" type="text" maxlength="20" autocomplete="username"
+                       placeholder="Anónimo" spellcheck="false">
+            </div>
+            <div class="pf-field">
+                <label for="accPass" id="accPassLabel">Contraseña</label>
+                <input id="accPass" type="password" maxlength="64" autocomplete="current-password"
+                       placeholder="••••••">
+            </div>
+            <div class="pf-field hidden" id="accPass2Box">
+                <label for="accPass2" id="accPass2Label">Repite la contraseña</label>
+                <input id="accPass2" type="password" maxlength="64" autocomplete="new-password"
+                       placeholder="••••••">
+            </div>
+            <div class="perfil-actions">
+                <button type="submit" class="chip-btn" id="accSubmit">Crear perfil</button>
+                <button type="button" class="chip-btn" id="accSwitch">🔑 Ya tengo cuenta</button>
+                <button type="button" class="chip-btn" id="accClose">✖ Cerrar</button>
+            </div>
+        </form>
+
+        <div class="perfil-data hidden" id="accData">
+            <div class="perfil-who"><span class="perfil-avatar">👤</span><strong id="accWho">-</strong></div>
+            <div class="perfil-grid">
+                <div class="perfil-cell"><span id="accKCoins">Monedas</span><strong id="accVCoins">0</strong></div>
+                <div class="perfil-cell"><span id="accKXp">Experiencia</span><strong id="accVXp">0</strong></div>
+                <div class="perfil-cell"><span id="accKLevel">Nivel</span><strong id="accVLevel">1</strong></div>
+                <div class="perfil-cell"><span id="accKGames">Partidas</span><strong id="accVGames">0</strong></div>
+                <div class="perfil-cell"><span id="accKWords">Palabras escritas</span><strong id="accVWords">0</strong></div>
+                <div class="perfil-cell"><span id="accKBest">Récord</span><strong id="accVBest">0</strong></div>
+            </div>
+            <div class="perfil-actions">
+                <button type="button" class="chip-btn" id="accSave">💾 Guardar ahora</button>
+                <button type="button" class="chip-btn" id="accOut">🚪 Cerrar sesión</button>
+                <button type="button" class="chip-btn" id="accClose2">✖ Cerrar</button>
+            </div>
+        </div>
+
+        <p class="shop-msg" id="accMsg"></p>
+    </section>
+
     <div class="stage" id="stage">
         <div class="board" id="board">
             <em class="hint">Pulsa "Jugar" o la barra espaciadora para empezar</em>
@@ -1028,14 +1164,13 @@
             <li><span id="rkAcc">Precisión</span><strong id="rAcc">0%</strong></li>
             <li><span id="rkPpm">Palabras/min</span><strong id="rPpm">0</strong></li>
             <li><span id="rkCoins">Monedas</span><strong id="rCoins">0</strong></li>
+            <li><span id="rkXp">Experiencia</span><strong id="rXp">0</strong></li>
             <li><span id="rkBestWords">Récord palabras</span><strong id="rBestWords">0</strong></li>
         </ul>
         <p id="rMsg"></p>
 
         <div class="rank-form hidden" id="rankForm">
-            <label for="playerName" id="rkNameLabel">Tu nombre en el ranking</label>
-            <input id="playerName" type="text" maxlength="20" autocomplete="nickname"
-                   placeholder="Anónimo">
+            <p class="rank-who" id="rankWho">Se guardará con tu perfil</p>
             <div class="verify-row">
                 <label for="verifyInput" id="verifyLabel">Comprueba que eres una persona: teclea</label>
                 <span class="verify-code" id="verifyCode" aria-hidden="true">----</span>
@@ -1083,6 +1218,13 @@
         const MAX_WORDS = 50000;      // palabras absolutas admisibles
         const PTS_PER_WORD = 600;     // puntos máximos alcanzables por palabra
         const SEAL_SALT = "teclear.v1"; // sal del sello de integridad
+
+        // Perfiles de usuario: mismo almacén que el ranking, documento aparte.
+        // La contraseña JAMÁS se guarda: solo su resumen con sal y con varias
+        // iteraciones, de modo que quien descargue el JSON no puede leerla.
+        const PROFILES_URL = "https://mantledb.sh/v2/teclear-ranking/perfiles";
+        const PASS_MIN = 6;          // longitud mínima de la contraseña
+        const KDF_ROUNDS = 20000;    // iteraciones al resumir la contraseña
 
         const WORDS = {
             es: [
@@ -1370,8 +1512,6 @@
                 rankEmpty: "Todavía no hay puntuaciones en el ranking. ¡Sé el primero! 🚀",
                 rankSync: "🌍 En línea: tu puntuación se comparte con todos los jugadores.",
                 rankLocal: "⚠️ Sin conexión: se muestran las puntuaciones guardadas en este dispositivo.",
-                rkNameLabel: "Tu nombre en el ranking",
-                rankPlaceholder: "Anónimo",
                 rankSave: "🏆 Guardar puntuación",
                 rankSaving: "Guardando tu puntuación…",
                 rankSaved: "🏆 ¡Puntuación guardada en el ranking! Ya la ven todos. 🌍",
@@ -1379,10 +1519,45 @@
                 rankAlready: "✅ Ya habías guardado esta puntuación. ¡A por la siguiente! 💪",
                 rankChecking: "Comprobando que el nombre esté libre…",
                 rankNameTaken: "⚠️ Ese nombre ya lo usa otro jugador: escribe uno distinto para evitar confusiones.",
-                rankNameBad: "⚠️ El nombre solo puede llevar letras, números y espacios (máximo 20).",
                 verifyLabel: "Comprueba que eres una persona: teclea",
                 rankHuman: "🤝 Escribe con tus teclas el código que aparece en pantalla para poder guardar.",
                 rankBot: "🚫 Se ha detectado escritura automática o una puntuación manipulada: no se sube al ranking. Juega tecleando con tus manos. 🙌",
+                btnRegister: "👤 Registrar",
+                btnLogin: "🔑 Iniciar sesión",
+                btnProfile: "👤 Mi perfil",
+                accTitle: "👤 Tu perfil",
+                accHint: "Crea una cuenta con tu nombre y una contraseña para guardar tu dinero, tu experiencia y tus récords. Se guarda solo al terminar cada partida. Usa una contraseña que no uses en otro sitio.",
+                accDataHint: "Tus datos se guardan solos al terminar cada partida. Vuelve a entrar cuando quieras para recuperarlos.",
+                accNameLabel: "Tu nombre",
+                accPassLabel: "Contraseña",
+                accPass2Label: "Repite la contraseña",
+                accSubmitReg: "Crear perfil",
+                accSubmitLogin: "Entrar",
+                accSwitchToLogin: "🔑 Ya tengo cuenta",
+                accSwitchToReg: "👤 Crear perfil nuevo",
+                accClose: "✖ Cerrar",
+                accSave: "💾 Guardar ahora",
+                accOut: "🚪 Cerrar sesión",
+                accXp: "Experiencia",
+                accGames: "Partidas",
+                accWords: "Palabras escritas",
+                accNameBad: "⚠️ El nombre solo puede llevar letras, números y espacios (máximo 20).",
+                accPassShort: "⚠️ La contraseña debe tener al menos " + PASS_MIN + " caracteres.",
+                accPassDiff: "⚠️ Las dos contraseñas no coinciden.",
+                accExists: "⚠️ Ese nombre de perfil ya existe. Inicia sesión o elige otro.",
+                accNoUser: "⚠️ No existe ninguna cuenta con ese nombre.",
+                accBadPass: "⚠️ Contraseña incorrecta.",
+                accCreated: "✅ ¡Perfil creado! Ya puedes cerrar la ventana y jugar.",
+                accLoggedIn: "✅ Sesión iniciada. Bienvenido de nuevo, ",
+                accLoggedOut: "👋 Sesión cerrada. Tus datos siguen guardados.",
+                accSaved: "💾 Perfil guardado en la nube.",
+                accSavedLocal: "📱 Sin conexión: perfil guardado en este dispositivo. Se subirá en cuanto haya internet.",
+                accSaving: "⏳ Guardando tu perfil…",
+                accWho: "👤 Sesión iniciada: ",
+                accRankWith: "Se guardará la puntuación con tu perfil: ",
+                accRankNo: "🔒 Para guardar en el ranking necesitas un perfil: pulsa «👤 Registrar».",
+                accNoSession: "🔒 No has iniciado sesión: no hay nada que guardar todavía.",
+                accXpGain: "Experiencia ganada",
                 footer: "&copy; 2026 Minijuegos Web · Archivo: teclear.html"
             },
             en: {
@@ -1453,8 +1628,6 @@
                 rankEmpty: "No scores on the leaderboard yet. Be the first one! 🚀",
                 rankSync: "🌍 Online: your score is shared with every player.",
                 rankLocal: "⚠️ Offline: showing the scores saved on this device.",
-                rkNameLabel: "Your name on the leaderboard",
-                rankPlaceholder: "Anonymous",
                 rankSave: "🏆 Save score",
                 rankSaving: "Saving your score…",
                 rankSaved: "🏆 Score saved! Everyone can see it now. 🌍",
@@ -1462,10 +1635,45 @@
                 rankAlready: "✅ You had already saved this score. Go for the next one! 💪",
                 rankChecking: "Checking that the name is free…",
                 rankNameTaken: "⚠️ That name is already used by another player: type a different one to avoid confusion.",
-                rankNameBad: "⚠️ The name may only contain letters, numbers and spaces (max 20).",
                 verifyLabel: "Prove you are human: type",
                 rankHuman: "🤝 Type the code shown on screen with your own keys to save your score.",
                 rankBot: "🚫 Automated typing or a tampered score was detected: not uploaded. Play by typing with your own hands. 🙌",
+                btnRegister: "👤 Register",
+                btnLogin: "🔑 Log in",
+                btnProfile: "👤 My profile",
+                accTitle: "👤 Your profile",
+                accHint: "Create an account with your name and a password to save your coins, experience and records. Everything is saved at the end of each game. Use a password you do not use anywhere else.",
+                accDataHint: "Your data is saved automatically at the end of each game. Log back in whenever you want to get it back.",
+                accNameLabel: "Your name",
+                accPassLabel: "Password",
+                accPass2Label: "Repeat your password",
+                accSubmitReg: "Create account",
+                accSubmitLogin: "Log in",
+                accSwitchToLogin: "🔑 I already have an account",
+                accSwitchToReg: "👤 Create a new account",
+                accClose: "✖ Close",
+                accSave: "💾 Save now",
+                accOut: "🚪 Log out",
+                accXp: "Experience",
+                accGames: "Games",
+                accWords: "Words typed",
+                accNameBad: "⚠️ The name may only contain letters, numbers and spaces (max 20).",
+                accPassShort: "⚠️ The password must be at least " + PASS_MIN + " characters.",
+                accPassDiff: "⚠️ The two passwords do not match.",
+                accExists: "⚠️ That profile name already exists. Log in or pick another one.",
+                accNoUser: "⚠️ There is no account with that name.",
+                accBadPass: "⚠️ Wrong password.",
+                accCreated: "✅ Account created! You can close this window and play.",
+                accLoggedIn: "✅ Logged in. Welcome back, ",
+                accLoggedOut: "👋 Logged out. Your data is still saved.",
+                accSaved: "💾 Profile saved to the cloud.",
+                accSavedLocal: "📱 Offline: profile saved on this device. It will be uploaded when you are back online.",
+                accSaving: "⏳ Saving your profile…",
+                accWho: "👤 Signed in as: ",
+                accRankWith: "Your score will be saved with your profile: ",
+                accRankNo: "🔒 You need a profile to save to the leaderboard: press “👤 Register”.",
+                accNoSession: "🔒 You are not logged in: there is nothing to save yet.",
+                accXpGain: "Experience earned",
                 footer: "&copy; 2026 Web Mini-Games · File: teclear.html"
             }
         };
@@ -1522,6 +1730,15 @@
         let verifyCode = "";       // código aleatorio de verificación humana
         let verifyTyped = "";      // lo tecleado con teclas REALES (no se puede rellenar a mano)
 
+        // ---------- Perfil de usuario ----------
+        let accOpen = false;       // panel de perfil abierto
+        let accMode = "reg";       // reg | login  (formulario que se está mostrando)
+        let accBusy = false;       // evita registrar/entrar dos veces a la vez
+        let accSession = null;     // { id, n } de la cuenta con sesión abierta
+        let xp = 0;                // experiencia acumulada en todas las partidas
+        let gamesPlayed = 0;       // partidas terminadas
+        let wordsTotal = 0;        // palabras escritas en total
+
         // El murciano es un dialecto: los textos, récords y fechas se guardan
         // igual que en español, pero las palabras salen del diccionario murciano.
         const uiLang = () => (lang === "mur" ? "es" : lang);
@@ -1562,13 +1779,32 @@
         const shopCoins = document.getElementById("shopCoins");
         const btnShop = document.getElementById("btnShop");
         const btnRanking = document.getElementById("btnRanking");
+        const btnRegister = document.getElementById("btnRegister");
+        const btnLogin = document.getElementById("btnLogin");
+        const perfil = document.getElementById("perfil");
+        const accForm = document.getElementById("accForm");
+        const accData = document.getElementById("accData");
+        const accMsg = document.getElementById("accMsg");
+        const accHint = document.getElementById("accHint");
+        const accName = document.getElementById("accName");
+        const accPass = document.getElementById("accPass");
+        const accPass2 = document.getElementById("accPass2");
+        const accPass2Box = document.getElementById("accPass2Box");
+        const accSubmit = document.getElementById("accSubmit");
+        const accSwitch = document.getElementById("accSwitch");
+        const accClose = document.getElementById("accClose");
+        const accClose2 = document.getElementById("accClose2");
+        const accSave = document.getElementById("accSave");
+        const accOut = document.getElementById("accOut");
+        const accWho = document.getElementById("accWho");
+        const accCoins = document.getElementById("accCoins");
         const ranking = document.getElementById("ranking");
         const rankList = document.getElementById("rankList");
         const rankEmpty = document.getElementById("rankEmpty");
         const rankStatus = document.getElementById("rankStatus");
         const rankForm = document.getElementById("rankForm");
         const rankSaved = document.getElementById("rankSaved");
-        const playerName = document.getElementById("playerName");
+        const rankWho = document.getElementById("rankWho");
         const saveScoreBtn = document.getElementById("saveScoreBtn");
         const verifyInput = document.getElementById("verifyInput");
         const verifyCodeEl = document.getElementById("verifyCode");
@@ -1582,7 +1818,17 @@
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
-        const selBtns = [btnEs, btnEn, btnMurciano, btnType, btnGuess, btnImagen, btnPicante, btnCaos, btnShop, btnRanking];
+        const selBtns = [btnEs, btnEn, btnMurciano, btnType, btnGuess, btnImagen, btnPicante, btnCaos,
+            btnShop, btnRanking, btnRegister, btnLogin];
+        // Celdas con datos del perfil (etiqueta + valor)
+        const accCells = [
+            ["accKCoins", "accVCoins", "kCoins"],
+            ["accKXp", "accVXp", "accXp"],
+            ["accKLevel", "accVLevel", "kLevel"],
+            ["accKGames", "accVGames", "accGames"],
+            ["accKWords", "accVWords", "accWords"],
+            ["accKBest", "accVBest", "kBest"]
+        ];
 
         // ---------- Récord por idioma ----------
         function loadBest() {
@@ -1979,6 +2225,597 @@
                 .catch(() => finish([], true));   // sin conexión: solo comprobación local
         }
 
+        // ---------- Perfiles de usuario (registro e inicio de sesión) ----------
+        // La contraseña NUNCA se guarda: solo su resumen SHA-256 calculado con
+        // una sal aleatoria y miles de iteraciones. El documento es público,
+        // así que quien lo descargue únicamente ve hashes ilegibles.
+
+        function sha256hex(txt) {
+            // 1) La cadena pasa a bytes UTF-8
+            const bytes = [];
+            for (let i = 0; i < txt.length; i++) {
+                let c = txt.codePointAt(i);
+                if (c > 0xFFFF) i++;
+                if (c < 0x80) bytes.push(c);
+                else if (c < 0x800) bytes.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+                else if (c < 0x10000) bytes.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+                else bytes.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+            }
+            // 2) Longitud en bits y relleno hasta un múltiplo de 64 bytes
+            const bits = bytes.length * 8;
+            bytes.push(0x80);
+            while (bytes.length % 64 !== 56) bytes.push(0);
+            const hi = Math.floor(bits / 4294967296);
+            const lo = bits >>> 0;
+            bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255,
+                (lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+
+            // 3) Constantes y estado inicial del algoritmo
+            const K = [
+                0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+                0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+                0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+                0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+                0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+                0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+                0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+                0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+            ];
+            const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+                0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+            const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+            const w = new Array(64);
+
+            for (let off = 0; off < bytes.length; off += 64) {
+                for (let i = 0; i < 16; i++) {
+                    const j = off + i * 4;
+                    w[i] = ((bytes[j] << 24) | (bytes[j + 1] << 16) | (bytes[j + 2] << 8) | bytes[j + 3]) | 0;
+                }
+                for (let i = 16; i < 64; i++) {
+                    const a15 = w[i - 15], a2 = w[i - 2];
+                    const s0 = rotr(a15, 7) ^ rotr(a15, 18) ^ (a15 >>> 3);
+                    const s1 = rotr(a2, 17) ^ rotr(a2, 19) ^ (a2 >>> 10);
+                    w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+                }
+                let a = H[0], b = H[1], c2 = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+                for (let i = 0; i < 64; i++) {
+                    const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+                    const ch = (e & f) ^ (~e & g);
+                    const t1 = (h + S1 + ch + K[i] + w[i]) | 0;
+                    const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+                    const maj = (a & b) ^ (a & c2) ^ (b & c2);
+                    const t2 = (S0 + maj) | 0;
+                    h = g; g = f; f = e; e = (d + t1) | 0;
+                    d = c2; c2 = b; b = a; a = (t1 + t2) | 0;
+                }
+                H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c2) | 0; H[3] = (H[3] + d) | 0;
+                H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+            }
+            let out = "";
+            for (let i = 0; i < 8; i++) out += (H[i] >>> 0).toString(16).padStart(8, "0");
+            return out;
+        }
+
+        // Sal aleatoria de 16 bytes en hexadecimal
+        function makeSalt() {
+            let s = "";
+            try {
+                const buf = new Uint8Array(16);
+                if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(buf);
+                else for (let i = 0; i < 16; i++) buf[i] = Math.floor(Math.random() * 256);
+                for (let i = 0; i < 16; i++) s += buf[i].toString(16).padStart(2, "0");
+            } catch (e) {
+                for (let i = 0; i < 16; i++) s += Math.floor(Math.random() * 16).toString(16);
+            }
+            return s;
+        }
+
+        // Resumen de la contraseña: mismo código con la sal, repetido muchas
+        // veces. Ralentiza muchísimo un ataque por fuerza bruta del JSON.
+        function derivePass(pass, salt) {
+            let h = salt;
+            for (let i = 0; i < KDF_ROUNDS; i++) h = sha256hex(salt + "|" + i + "|" + pass + "|" + h);
+            return h;
+        }
+
+        // Identificador estable de la cuenta: el mismo desde cualquier equipo
+        function profileId(name) {
+            return sha256hex("perfil|" + nameKey(name)).slice(0, 32);
+        }
+
+        function num(v, max) {
+            const n = Math.floor(Number(v));
+            return (isFinite(n) && n > 0) ? Math.min(n, max) : 0;
+        }
+
+        // Datos admisibles de un perfil: tipos correctos y valores dentro de
+        // límites imposibles de superar jugando. Todo lo demás se descarta.
+        function cleanProfileData(raw) {
+            const r = (raw && typeof raw === "object") ? raw : {};
+            const rec = obj => ({
+                es: num(obj && obj.es, MAX_SCORE),
+                en: num(obj && obj.en, MAX_SCORE)
+            });
+            const recW = obj => ({
+                es: num(obj && obj.es, MAX_WORDS),
+                en: num(obj && obj.en, MAX_WORDS)
+            });
+            const list = (v, ids) => (Array.isArray(v)
+                ? v.filter(x => typeof x === "string" && ids.indexOf(x) >= 0).slice(0, 30) : []);
+
+            const st = list(r.owned, FONT_STYLES.map(s => s.id));
+            if (st.indexOf("clasico") < 0) st.push("clasico");
+            const bgs = list(r.bgs, BACKGROUNDS.map(b => b.id));
+            if (bgs.indexOf("dark") < 0) bgs.push("dark");
+            const exs = list(r.extras, EXTRAS.map(x => x.id));
+            const eq = (typeof r.equipped === "string" && st.indexOf(r.equipped) >= 0) ? r.equipped : "clasico";
+            const bg = (typeof r.bg === "string" && bgs.indexOf(r.bg) >= 0) ? r.bg : "dark";
+            const on = {};
+            EXTRAS.forEach(x => { on[x.id] = !!(r.extraOn && r.extraOn[x.id]) && exs.indexOf(x.id) >= 0; });
+
+            return {
+                coins: num(r.coins, 10000000),
+                xp: num(r.xp, 1000000000),
+                games: num(r.games, 1000000),
+                words: num(r.words, 100000000),
+                owned: st, equipped: eq,
+                bgs: bgs, bg: bg,
+                extras: exs, extraOn: on,
+                best: rec(r.best),
+                bestWords: recW(r.bestWords)
+            };
+        }
+
+        // Marca del documento de perfiles: delata ediciones hechas a mano
+        function profilesSeal(users) {
+            return hash(SEAL_SALT + "|perfiles|" + JSON.stringify(users));
+        }
+
+        function validProfile(raw) {
+            if (!raw || typeof raw !== "object") return null;
+            if (typeof raw.id !== "string" || typeof raw.n !== "string") return null;
+            if (typeof raw.salt !== "string" || typeof raw.hash !== "string") return null;
+            if (!/^[A-Za-z0-9._-]{1,64}$/.test(raw.id)) return null;
+            const n = cleanName(raw.n);
+            if (!n || !nameOk(n)) return null;
+            if (!/^[0-9a-f]{16,128}$/.test(raw.salt)) return null;
+            if (!/^[0-9a-f]{32,128}$/.test(raw.hash)) return null;
+            const d = String(raw.d || "");
+            if (d && (d.length > 30 || isNaN(new Date(d).getTime()))) return null;
+            const last = String(raw.last || "");
+            if (last && (last.length > 30 || isNaN(new Date(last).getTime()))) return null;
+            return {
+                id: raw.id, n: n, salt: raw.salt, hash: raw.hash,
+                d: d, last: last, data: cleanProfileData(raw.data)
+            };
+        }
+
+        function loadProfilesLocal() {
+            try {
+                const doc = JSON.parse(localStorage.getItem("teclear.perfiles") || "null");
+                if (!doc || !Array.isArray(doc.users)) return [];
+                return doc.users.map(validProfile).filter(Boolean);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveProfilesLocal(users) {
+            try {
+                const clean = users.map(validProfile).filter(Boolean);
+                localStorage.setItem("teclear.perfiles",
+                    JSON.stringify({ v: 1, users: clean, c: profilesSeal(clean) }));
+                return clean;
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function findProfile(users, name) {
+            const k = nameKey(name);
+            for (let i = 0; i < users.length; i++) {
+                if (nameKey(users[i].n) === k) return users[i];
+            }
+            return null;
+        }
+
+        function upsertProfile(users, rec) {
+            const next = users.slice();
+            let i = -1;
+            for (let j = 0; j < next.length; j++) if (next[j].id === rec.id) i = j;
+            if (i >= 0) next[i] = rec; else next.push(rec);
+            return saveProfilesLocal(next);
+        }
+
+        function fetchProfiles() {
+            return rankFetch(PROFILES_URL, { method: "GET" }).then(res => {
+                if (!res.ok) {
+                    const err = new Error("HTTP " + res.status);
+                    err.notFound = (res.status === 404);   // documento aún no creado
+                    throw err;
+                }
+                return res.json();
+            }).then(data => {
+                const users = (data && Array.isArray(data.users))
+                    ? data.users.map(validProfile).filter(Boolean) : [];
+                if (!data || data.c === undefined || String(data.c) !== profilesSeal(data.users || [])) {
+                    const err = new Error("sello");
+                    err.tampered = true;   // alguien editó el JSON a mano
+                    throw err;
+                }
+                return users;
+            });
+        }
+
+        function pushProfiles(users) {
+            const clean = users.map(validProfile).filter(Boolean);
+            const body = { v: 1, users: clean, c: profilesSeal(clean) };
+            return rankFetch(PROFILES_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            }).then(res => {
+                if (!res.ok) throw new Error("HTTP " + res.status);
+            });
+        }
+
+        // Lee la nube; si falla (o el documento está alterado) se usa la copia
+        // local de este dispositivo para poder seguir trabajando.
+        function profilesStage() {
+            return fetchProfiles()
+                .catch(err => {
+                    if (err && err.notFound) return [];   // aún no existe: se crea
+                    throw err;
+                })
+                .then(users => ({ users: users, offline: false }))
+                .catch(err => ({
+                    users: loadProfilesLocal(),
+                    offline: true,
+                    tampered: !!(err && err.tampered)
+                }));
+        }
+
+        // ---------- Datos que se guardan en la cuenta ----------
+        function readRec(key) {
+            try {
+                let v = localStorage.getItem(key);
+                if (v === null && key === "mejorTecleo.es") v = localStorage.getItem("mejorTecleo");
+                return parseInt(v || "0", 10) || 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function snapshotData() {
+            return cleanProfileData({
+                coins: coins, xp: xp, games: gamesPlayed, words: wordsTotal,
+                owned: owned, equipped: equipped,
+                bgs: ownedBgs, bg: bg,
+                extras: ownedExtras, extraOn: extraOn,
+                best: { es: readRec("mejorTecleo.es"), en: readRec("mejorTecleo.en") },
+                bestWords: { es: readRec("mejorPalabras.es"), en: readRec("mejorPalabras.en") }
+            });
+        }
+
+        // Carga en el juego lo que trae la cuenta (monedas, estilos, récords…)
+        function applyData(raw) {
+            const d = cleanProfileData(raw);
+            coins = d.coins;
+            xp = d.xp;
+            gamesPlayed = d.games;
+            wordsTotal = d.words;
+            owned = d.owned;
+            equipped = d.equipped;
+            ownedBgs = d.bgs;
+            bg = d.bg;
+            ownedExtras = d.extras;
+            extraOn = d.extraOn;
+            try {
+                localStorage.setItem("mejorTecleo.es", String(d.best.es));
+                localStorage.setItem("mejorTecleo.en", String(d.best.en));
+                localStorage.setItem("mejorPalabras.es", String(d.bestWords.es));
+                localStorage.setItem("mejorPalabras.en", String(d.bestWords.en));
+                localStorage.setItem("teclear.fondo", bg);
+            } catch (e) { /* sin almacenamiento disponible */ }
+            saveShop();
+            saveProfileStats();
+            applyStyle();
+            updateCoins();
+            applyLang();
+            renderAccount();
+        }
+
+        function loadProfileStats() {
+            try {
+                xp = parseInt(localStorage.getItem("teclear.xp") || "0", 10) || 0;
+                gamesPlayed = parseInt(localStorage.getItem("teclear.partidas") || "0", 10) || 0;
+                wordsTotal = parseInt(localStorage.getItem("teclear.palabras") || "0", 10) || 0;
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        function saveProfileStats() {
+            try {
+                localStorage.setItem("teclear.xp", String(xp));
+                localStorage.setItem("teclear.partidas", String(gamesPlayed));
+                localStorage.setItem("teclear.palabras", String(wordsTotal));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // ---------- Sesión ----------
+        function loadSession() {
+            try {
+                const s = JSON.parse(localStorage.getItem("teclear.sesion") || "null");
+                if (s && typeof s.id === "string" && typeof s.n === "string" && nameOk(s.n)) {
+                    return { id: s.id, n: cleanName(s.n) };
+                }
+            } catch (e) { /* sin almacenamiento disponible */ }
+            return null;
+        }
+
+        function saveSession(s) {
+            try {
+                if (s) localStorage.setItem("teclear.sesion", JSON.stringify(s));
+                else localStorage.removeItem("teclear.sesion");
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // Id con el que este jugador aparece en el ranking: el de su cuenta si
+        // tiene sesión, y en caso contrario el fijo de este dispositivo.
+        function currentPlayerId() {
+            return accSession ? accSession.id : loadPlayerId();
+        }
+
+        // Guarda los datos actuales en la cuenta: siempre en local y, si hay
+        // conexión, se suben a la nube. Se llama al terminar cada partida.
+        function saveProfile() {
+            if (!accSession) return Promise.resolve({ saved: false, local: false });
+            const data = snapshotData();
+            const local = loadProfilesLocal();
+            let i = -1;
+            for (let j = 0; j < local.length; j++) if (local[j].id === accSession.id) i = j;
+            if (i < 0) return Promise.resolve({ saved: false, local: false });
+
+            const me = Object.assign({}, local[i], { data: data, last: new Date().toISOString() });
+            saveProfilesLocal(upsertProfile(local, me));
+
+            return fetchProfiles()
+                .catch(err => {
+                    if (err && err.notFound) return [];
+                    throw err;
+                })
+                .then(remote => pushProfiles(upsertProfile(remote, me)))
+                .then(() => ({ saved: true, local: false }))
+                .catch(() => ({ saved: false, local: true }));
+        }
+
+        // ---------- Panel de cuenta ----------
+        function setAccMsg(key, warn) {
+            if (!accMsg) return;
+            accMsg.textContent = key ? t(key) : "";
+            accMsg.classList.toggle("warn", !!warn);
+        }
+
+        function renderAccount() {
+            if (!perfil) return;
+            const logged = !!accSession;
+            accForm.classList.toggle("hidden", logged);
+            accData.classList.toggle("hidden", !logged);
+            accHint.textContent = logged ? t("accDataHint") : t("accHint");
+
+            if (logged) {
+                accWho.textContent = t("accWho") + accSession.n;
+                const vals = {
+                    accVCoins: coins, accVXp: xp, accVLevel: Math.floor(xp / 500) + 1,
+                    accVGames: gamesPlayed, accVWords: wordsTotal, accVBest: best
+                };
+                Object.keys(vals).forEach(id => {
+                    const e = document.getElementById(id);
+                    if (e) e.textContent = String(vals[id]);
+                });
+                if (accCoins) accCoins.textContent = coins;
+            } else {
+                accSubmit.textContent = accMode === "reg" ? t("accSubmitReg") : t("accSubmitLogin");
+                accSwitch.textContent = accMode === "reg" ? t("accSwitchToLogin") : t("accSwitchToReg");
+                accPass2Box.classList.toggle("hidden", accMode !== "reg");
+            }
+            btnRegister.classList.toggle("active", accOpen && !logged && accMode === "reg");
+            btnLogin.classList.toggle("active", accOpen && !logged && accMode === "login");
+            // Con la sesión abierta el botón pasa a «Mi perfil» y ya no se ofrece entrar
+            btnRegister.textContent = logged ? t("btnProfile") : t("btnRegister");
+            btnLogin.classList.toggle("hidden", logged);
+            updateRankWho();   // los resultados avisan con quién se guardará
+        }
+
+        function openAccount(mode) {
+            if (state === "playing") return;
+            if (mode && mode !== accMode) {
+                accMode = mode;
+                if (accPass2) accPass2.value = "";
+                setAccMsg("", false);
+            }
+            accOpen = true;
+            perfil.classList.remove("hidden");
+            renderAccount();
+            if (perfil.scrollIntoView) perfil.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function closeAccount() {
+            accOpen = false;
+            if (perfil) perfil.classList.add("hidden");
+            if (btnRegister) btnRegister.classList.remove("active");
+            if (btnLogin) btnLogin.classList.remove("active");
+        }
+
+        function toggleAccount(mode) {
+            if (state === "playing") return;
+            if (accOpen && (!mode || mode === accMode)) closeAccount();
+            else openAccount(mode);
+        }
+
+        function closeAccountOnPlay() {
+            if (accOpen) closeAccount();
+        }
+
+        // ---------- Registrar / entrar / salir ----------
+        function finishAccount(res) {
+            accBusy = false;
+            if (accSubmit) accSubmit.disabled = false;
+            return res;
+        }
+
+        function accountFail(key) {
+            finishAccount({ ok: false, key: key });
+            setAccMsg(key, true);
+            return { ok: false, key: key };
+        }
+
+        function doRegister(name, pass, pass2) {
+            if (accBusy) return Promise.resolve({ ok: false, key: "accExists" });
+            if (!name || !nameOk(name)) return Promise.resolve(accountFail("accNameBad"));
+            if ((pass || "").length < PASS_MIN) return Promise.resolve(accountFail("accPassShort"));
+            if (pass !== pass2) return Promise.resolve(accountFail("accPassDiff"));
+
+            accBusy = true;
+            if (accSubmit) accSubmit.disabled = true;
+            setAccMsg("accSaving", false);
+
+            const id = profileId(name);
+            const salt = makeSalt();
+            const hash = derivePass(pass, salt);
+            const record = {
+                id: id, n: name, salt: salt, hash: hash,
+                d: new Date().toISOString(), last: "", data: snapshotData()
+            };
+
+            return profilesStage().then(stage => {
+                if (findProfile(stage.users, name)) throw { key: "accExists" };
+                if (findProfile(loadProfilesLocal(), name)) throw { key: "accExists" };
+                // El nombre también se reserva para el ranking: así tu puntuación
+                // y tu cuenta comparten el mismo nombre y el mismo identificador.
+                return reserveName(name, id).then(res => {
+                    if (res && res.taken) throw { key: "accExists" };
+                    if (stage.offline) {
+                        saveProfilesLocal(upsertProfile(loadProfilesLocal(), record));
+                        throw { key: "accSavedLocal", ok: true };
+                    }
+                    const next = upsertProfile(stage.users, record);
+                    return pushProfiles(next).then(() => next)
+                        .catch(() => {
+                            saveProfilesLocal(upsertProfile(loadProfilesLocal(), record));
+                            throw { key: "accSavedLocal", ok: true };
+                        });
+                });
+            }).then(() => {
+                saveProfilesLocal(upsertProfile(loadProfilesLocal(), record));
+                accSession = { id: id, n: name };
+                saveSession(accSession);
+                savePlayerName(name);
+                if (accPass) accPass.value = "";
+                if (accPass2) accPass2.value = "";
+                finishAccount({ ok: true, key: "accCreated" });
+                setAccMsg("accCreated", false);
+                renderAccount();
+                renderRanking();
+                refreshRanking();
+                return { ok: true, key: "accCreated" };
+            }).catch(err => {
+                if (err && err.ok) {   // cuenta creada solo en este dispositivo
+                    accSession = { id: id, n: name };
+                    saveSession(accSession);
+                    savePlayerName(name);
+                    if (accPass) accPass.value = "";
+                    if (accPass2) accPass2.value = "";
+                    finishAccount({ ok: true, key: err.key });
+                    setAccMsg(err.key, false);
+                    renderAccount();
+                    renderRanking();
+                    refreshRanking();
+                    return { ok: true, key: err.key };
+                }
+                return accountFail(err && err.key ? err.key : "accExists");
+            });
+        }
+
+        function doLogin(name, pass) {
+            if (accBusy) return Promise.resolve({ ok: false, key: "accNoUser" });
+            if (!name || !nameOk(name)) return Promise.resolve(accountFail("accNameBad"));
+            if (!pass) return Promise.resolve(accountFail("accPassShort"));
+
+            accBusy = true;
+            if (accSubmit) accSubmit.disabled = true;
+            setAccMsg("accSaving", false);
+
+            return profilesStage().then(stage => {
+                const u = findProfile(stage.users, name);
+                if (!u) throw { key: "accNoUser", offline: stage.offline };
+                if (derivePass(pass, u.salt) !== u.hash) throw { key: "accBadPass" };
+                // Se queda la copia local de esta cuenta para poder entrar sin internet
+                saveProfilesLocal(upsertProfile(stage.users, u));
+                accSession = { id: u.id, n: u.n };
+                saveSession(accSession);
+                savePlayerName(u.n);
+                applyData(u.data);
+                if (accPass) accPass.value = "";
+                if (accPass2) accPass2.value = "";
+                finishAccount({ ok: true, key: "accLoggedIn" });
+                setAccMsg("accLoggedIn", false);
+                renderAccount();
+                refreshRanking();
+                return { ok: true, key: "accLoggedIn", name: u.n };
+            }).catch(err => {
+                if (err && err.ok) return err;
+                return accountFail(err && err.key ? err.key : "accNoUser");
+            });
+        }
+
+        function doLogout() {
+            if (accBusy) return Promise.resolve({ ok: false });
+            // Antes de salir se guardan los datos conseguidos hasta ahora
+            return saveProfile().then(() => {
+                accSession = null;
+                saveSession(null);
+                setAccMsg("accLoggedOut", false);
+                renderAccount();
+                renderRanking();
+                refreshRanking();
+                return { ok: true, key: "accLoggedOut" };
+            });
+        }
+
+        function submitAccount() {
+            const name = cleanName(accName ? accName.value : "");
+            const pass = accPass ? accPass.value : "";
+            if (accMode === "reg") {
+                doRegister(name, pass, accPass2 ? accPass2.value : "");
+            } else {
+                doLogin(name, pass);
+            }
+        }
+
+        if (btnRegister) btnRegister.addEventListener("click", () => toggleAccount("reg"));
+        if (btnLogin) btnLogin.addEventListener("click", () => toggleAccount("login"));
+        if (accClose) accClose.addEventListener("click", closeAccount);
+        if (accClose2) accClose2.addEventListener("click", closeAccount);
+        if (accSwitch) accSwitch.addEventListener("click", () => {
+            accMode = accMode === "reg" ? "login" : "reg";
+            if (accPass2) accPass2.value = "";
+            setAccMsg("", false);
+            renderAccount();
+        });
+        if (accForm) accForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            submitAccount();
+        });
+        if (accOut) accOut.addEventListener("click", function () { doLogout(); });
+        if (accSave) accSave.addEventListener("click", function () {
+            if (!accSession) { setAccMsg("accNoSession", true); return; }
+            setAccMsg("accSaving", false);
+            saveProfile().then(res => {
+                setAccMsg(res.saved ? "accSaved" : (res.local ? "accSavedLocal" : "accNoSession"),
+                    !res.saved && !res.local);
+            });
+        });
+
         // ---------- Verificación humana antes de guardar ----------
         // Código aleatorio de 4 caracteres que hay que escribir con teclas REALES.
         // La comprobación no mira el texto del campo (eso lo rellena un script en
@@ -2201,7 +3038,7 @@
 
         function renderRanking() {
             if (!rankList) return;
-            const myId = loadPlayerId();
+            const myId = currentPlayerId();
             rankList.innerHTML = "";
 
             rankEntries.forEach((e, i) => {
@@ -2314,7 +3151,9 @@
         function updateCoins() {
             coinsEl.textContent = coins;
             shopCoins.textContent = coins;
+            if (accCoins) accCoins.textContent = coins;
             if (shopOpen) renderShop();
+            if (accOpen && accSession) renderAccount();
         }
 
         // Otorga monedas por cada palabra completada (1 por palabra)
@@ -2597,11 +3436,26 @@
             document.getElementById("rankTitle").textContent = t("rankTitle");
             document.getElementById("rankHint").textContent = t("rankHint");
             document.getElementById("rankEmpty").textContent = t("rankEmpty");
-            document.getElementById("rkNameLabel").textContent = t("rkNameLabel");
             if (verifyLabel) verifyLabel.textContent = t("verifyLabel");
             saveScoreBtn.textContent = t("rankSave");
-            playerName.placeholder = t("rankPlaceholder");
+            btnRegister.textContent = t("btnRegister");
+            btnLogin.textContent = t("btnLogin");
             renderRanking();
+            // Textos del panel de perfil
+            document.getElementById("accTitle").textContent = t("accTitle");
+            document.getElementById("accNameLabel").textContent = t("accNameLabel");
+            document.getElementById("accPassLabel").textContent = t("accPassLabel");
+            document.getElementById("accPass2Label").textContent = t("accPass2Label");
+            accClose.textContent = t("accClose");
+            accClose2.textContent = t("accClose");
+            accSave.textContent = t("accSave");
+            accOut.textContent = t("accOut");
+            accCells.forEach(c => {
+                const e = document.getElementById(c[0]);
+                if (e) e.textContent = t(c[2]);
+            });
+            document.getElementById("rkXp").textContent = t("accXpGain");
+            renderAccount();
             document.getElementById("shopTitle").textContent = t("shopTitle");
             document.getElementById("shopHint").textContent = t("shopHint");
             document.getElementById("shopFontsTitle").textContent = t("shopFontsTitle");
@@ -2654,7 +3508,16 @@
             }
 
             if (shopOpen) renderShop();
+            updateRankWho();   // quién firma la puntuación también cambia de idioma
             // Durante la partida no se cambia nada: los botones están bloqueados
+        }
+
+        // Quién aparecerá en el ranking al guardar la puntuación de esta partida
+        function updateRankWho() {
+            if (!rankWho) return;
+            rankWho.textContent = accSession
+                ? t("accRankWith") + accSession.n
+                : t("accRankNo");
         }
 
         function setLang(next) {
@@ -2999,6 +3862,7 @@
                 shop.classList.add("hidden");
                 btnShop.classList.remove("active");
             }
+            closeAccountOnPlay();   // el panel de perfil también
 
             results.classList.add("hidden");
             startBtn.textContent = t("btnRestart");
@@ -3087,6 +3951,18 @@
             rMsgEl.textContent = msg;
             rMsgEl.classList.toggle("record", newScoreRecord || newWordsRecord);
 
+            // Experiencia ganada en esta partida y totales del perfil:
+            // se suman aquí porque es cuando se da por terminada la partida
+            const xpGain = completed * 10 + Math.floor(score / 10);
+            xp += xpGain;
+            gamesPlayed += 1;
+            wordsTotal += completed;
+            saveProfileStats();
+            document.getElementById("rXp").textContent = xpGain;
+
+            // Guardado automático del perfil en cada partida terminada
+            saveProfile();
+
             // Formulario para apuntar la puntuación en el ranking global
             savedScore = false;
             rankBusy = false;
@@ -3095,7 +3971,10 @@
             saveScoreBtn.disabled = false;
             rankForm.classList.toggle("hidden", score <= 0);
             if (score > 0) newVerifyCode();   // código nuevo para cada puntuación
-            if (score > 0 && !playerName.value.trim()) playerName.value = loadPlayerName();
+            // Sin cuenta no hay nombre que escribir: se pide crear un perfil
+            if (accOpen) closeAccount();   // los resultados se ven sin el panel encima
+            updateRankWho();
+            if (accOpen) renderAccount();
 
             board.innerHTML = '<em class="hint">' + t("boardEnd") + "</em>";
             status.textContent = t("statusEnd");
@@ -3267,16 +4146,15 @@
             }
             if (score <= 0) return;
 
-            // 1) El nombre tiene que ser válido y no puede repetir el de nadie
-            const name = cleanName(playerName.value || t("rankPlaceholder"));
-            if (!name || !nameOk(name)) {
+            // 1) Sin perfil no hay nombre: se avisa y se abre el registro
+            if (!accSession) {
                 rankSaved.classList.add("off");
-                rankSaved.textContent = t("rankNameBad");
-                playerName.focus();
-                playerName.select();
+                rankSaved.textContent = t("accRankNo");
+                openAccount("reg");
+                if (accName) { accName.focus(); accName.select(); }
                 return;
             }
-            playerName.value = name;
+            const name = accSession.n;
 
             // 2) Nada de escritura automática ni puntuaciones imposibles
             const why = checkAutoPlay();
@@ -3296,7 +4174,7 @@
             }
 
             const entry = {
-                id: loadPlayerId(),   // el mismo jugador solo ocupa un puesto
+                id: currentPlayerId(),   // la cuenta (o el dispositivo) ocupa un puesto
                 n: name,
                 s: score,             // la mejor marca es la que manda
                 w: completed,
@@ -3311,13 +4189,11 @@
 
             reserveName(name, entry.id).then(res => {
                 if (res.taken) {
-                    // El nombre ya es de otro jugador: que escriba otro distinto
+                    // El nombre ya es de otro jugador: se avisa sin borrar nada
                     rankBusy = false;
                     saveScoreBtn.disabled = false;
                     rankSaved.classList.add("off");
                     rankSaved.textContent = t("rankNameTaken");
-                    playerName.focus();
-                    playerName.select();
                     newVerifyCode();
                     return;
                 }
@@ -3343,6 +4219,8 @@
 
         // ---------- Inicio ----------
         loadShop();
+        loadProfileStats();
+        accSession = loadSession();   // si hubo sesión la vez anterior, se restaura
         try {
             const savedBg = localStorage.getItem("teclear.fondo");
             if (savedBg && BACKGROUNDS.some(b => b.id === savedBg) && ownedBgs.includes(savedBg)) {
@@ -3354,7 +4232,7 @@
         applyStyle();
         updateCoins();
         applyLang();
-        playerName.value = loadPlayerName();
+        if (accName) accName.value = loadPlayerName();   // pre-rellena el nombre
         refreshRanking();   // descarga el ranking compartido (si hay internet)
 
         // ---------- Superficie de sólo lectura ----------
@@ -3372,6 +4250,10 @@
                 get lang() { return lang; },
                 get savedScore() { return savedScore; },
                 get rankResets() { return rankResets; },
+                get session() { return accSession; },
+                get xp() { return xp; },
+                get gamesPlayed() { return gamesPlayed; },
+                get wordsTotal() { return wordsTotal; },
                 // Diccionarios (solo lectura): útiles para comprobar las palabras
                 dicts: Object.freeze({
                     es: Object.freeze(WORDS.es.slice()),
@@ -3386,7 +4268,18 @@
                 sealOf: function (fila) { return sealOf(fila); },
                 reserveName: function (n, id) { return reserveName(n, id); },
                 fetchResets: function (force) { return fetchResets(force); },
-                refreshRanking: function () { return refreshRanking(); }
+                refreshRanking: function () { return refreshRanking(); },
+                // Perfiles (solo lectura de fuera: registrar/entrar/salir)
+                sha256: function (s) { return sha256hex(String(s)); },
+                derivePass: function (p, s) { return derivePass(String(p), String(s)); },
+                profileData: function () { return snapshotData(); },
+                loadProfiles: function () { return loadProfilesLocal(); },
+                register: function (n, p, p2) { return doRegister(cleanName(n), p, p2); },
+                login: function (n, p) { return doLogin(cleanName(n), p); },
+                logout: function () { return doLogout(); },
+                saveProfile: function () { return saveProfile(); },
+                openAccount: function (m) { openAccount(m); },
+                closeAccount: function () { closeAccount(); }
             }),
             writable: false,
             configurable: false
