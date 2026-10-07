@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pacifico&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <!-- Logo/icono del juego: la misma imagen para la pestaña y para el encabezado -->
+    <link rel="icon" type="image/png" href="estesoTeclea.png">
+    <link rel="apple-touch-icon" href="estesoTeclea.png">
     <style>
         /* =========================================================
            Base, variables y tipografía
@@ -117,6 +120,34 @@
             max-width: 620px;
             color: var(--muted);
             font-size: 15px;
+        }
+
+        /* ---------- Logo del juego (foto estesoTeclea) ---------- */
+        .game-logo {
+            display: block;
+            width: clamp(92px, 17vw, 124px);
+            height: clamp(92px, 17vw, 124px);
+            margin: 0 auto 14px;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 50%;
+            background-color: var(--surface-2);
+            border: 3px solid var(--accent);
+            box-shadow:
+                0 0 0 4px rgba(20, 184, 166, .22),
+                0 14px 28px rgba(0, 0, 0, .45);
+            transition: transform .2s, box-shadow .2s;
+            animation: logoIn .5s ease-out;
+        }
+        .game-logo:hover {
+            transform: scale(1.05) rotate(-2deg);
+            box-shadow:
+                0 0 0 4px rgba(20, 184, 166, .40),
+                0 16px 32px rgba(0, 0, 0, .5);
+        }
+        @keyframes logoIn {
+            from { opacity: 0; transform: scale(.6) rotate(-8deg); }
+            to   { opacity: 1; transform: scale(1) rotate(0); }
         }
 
         /* ---------- Menú de opciones ---------- */
@@ -1026,6 +1057,7 @@
 </head>
 <body>
     <header>
+        <img class="game-logo" src="estesoTeclea.png" alt="Logo de Teclea a la Velocidad">
         <h1 id="title">⌨️ Teclea a la Velocidad</h1>
         <p id="subtitle">Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!</p>
     </header>
