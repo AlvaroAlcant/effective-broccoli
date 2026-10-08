@@ -1330,6 +1330,10 @@
         // ---------- Configuración ----------
         const GAME_TIME = 60;  // segundos
         const MAX_MISSES = 5;  // fallos permitidos por palabra (modo adivinar)
+        // Segundos extra que regala la habilidad del fondo Elprico
+        const BONUS_TIME_ELPRICO = 15;
+        // Letras que la habilidad del fondo Sopa de Letras deja ya puestas
+        const SOUP_GIVEN = 2;
 
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
@@ -1345,6 +1349,9 @@
         const MAX_SCORE = 50000000;   // puntos absolutos admisibles
         const MAX_WORDS = 50000;      // palabras absolutas admisibles
         const PTS_PER_WORD = 600;     // puntos máximos alcanzables por palabra
+        // Mayor multiplicador que puede alcanzar una palabra al escribirla:
+        // la habilidad del fondo Ia triplica puntos y monedas en las largas
+        const SCORE_BOOST = 3;
         const SEAL_SALT = "teclear.v1"; // sal del sello de integridad
 
         // Perfiles de usuario: mismo almacén que el ranking, documento aparte.
@@ -1511,12 +1518,23 @@
         // price 0 = siempre disponible; el resto se compran con monedas
         // icon: emoji de la miniatura cuando no hay imagen (Sopa de Letras
         // se dibuja con el canvas animado de letras rebotando)
+        // desc*: habilidad única que da el fondo mientras está equipado
         const BACKGROUNDS = [
-            { id: "dark",    price: 0,   es: "Oscuro",            en: "Dark",             img: "" },
-            { id: "franco",  price: 120, es: "General",           en: "General",           img: "Francisco_Franco_1930.jpg" },
-            { id: "elprico", price: 60,  es: "Elprico",           en: "Elprico",          img: "Elprico.png" },
-            { id: "esteso",  price: 90,  es: "Ia",                en: "Ia",               img: "esteso.jpg" },
-            { id: "sopa",    price: 550, es: "Sopa de Letras",    en: "Letter Soup",      img: "", icon: "🔤" }
+            { id: "dark",    price: 0,   es: "Oscuro",            en: "Dark",
+              descEs: "Sin habilidad: partida normal.",            descEn: "No ability: a normal match.",
+              img: "" },
+            { id: "franco",  price: 120, es: "General",           en: "General",
+              descEs: "Habilidad: doble de monedas en cada partida.", descEn: "Ability: double coins in every match.",
+              img: "Francisco_Franco_1930.jpg" },
+            { id: "elprico", price: 60,  es: "Elprico",           en: "Elprico",
+              descEs: "Habilidad: empiezas con 15 segundos extra.",  descEn: "Ability: start with 15 extra seconds.",
+              img: "Elprico.png" },
+            { id: "esteso",  price: 90,  es: "Ia",                en: "Ia",
+              descEs: "Habilidad: las palabras de más de 7 letras dan triple de puntos y monedas.", descEn: "Ability: words over 7 letters give triple points and coins.",
+              img: "esteso.jpg" },
+            { id: "sopa",    price: 550, es: "Sopa de Letras",    en: "Letter Soup",
+              descEs: "Habilidad: cada palabra empieza con 2 letras ya puestas.", descEn: "Ability: every word starts with 2 letters already in place.",
+              img: "", icon: "🔤" }
         ];
 
         // ---------- Modo picante (+18) ----------
@@ -2134,8 +2152,10 @@
             if (["type", "guess", "murciano", "imagen"].indexOf(m) < 0) return null;
             const d = String(raw.d || "");
             if (d && (d.length > 30 || isNaN(new Date(d).getTime()))) return null;
-            // Coherencia puntos ↔ palabras: imposible de lograr jugando
-            if (s > w * PTS_PER_WORD + 2000) return null;
+            // Coherencia puntos ↔ palabras: imposible de lograr jugando.
+            // Se admite el máximo con la habilidad de la partida más ventajosa
+            // (el fondo Ia triplica los puntos de las palabras largas).
+            if (s > w * PTS_PER_WORD * SCORE_BOOST + 2000) return null;
             // Huella de integridad (las filas antiguas, sin huella, se aceptan)
             if (raw.c !== undefined && String(raw.c) !== sealOf({ id: id, n: n, s: s, w: w, m: m, d: d })) {
                 return null;
@@ -3040,6 +3060,11 @@
             const auto = (typeof es.automatizado === "boolean")
                 ? es.automatizado : automationSpotted();
 
+            // Habilidades del fondo admitidas en una partida normal: la de
+            // Elprico alarga 15 s el cronómetro y la de Ia triplica los puntos
+            const fondo = typeof es.fondo === "string" ? es.fondo : bg;
+            const extra = fondo === "elprico" ? BONUS_TIME_ELPRICO : 0;
+
             const why = [];
             if (sc <= 0) return why;
             if (auto) why.push("entorno-automatizado");
@@ -3050,13 +3075,13 @@
             // El texto cambia sin que lleguen teclas: lo escribe un programa
             if (ie >= 3 && ks.length + 2 < ie) why.push("sin-teclado");
             if (pt > 0) why.push("pegado");
-            // La partida debería durar GAME_TIME: si dura mucho más, se congeló
-            if (du > GAME_TIME + 15) why.push("partida-alargada");
-            if (cp > GAME_TIME * 4) why.push("ritmo-imposible");
+            // La partida debería durar gameTime(): si dura mucho más, se congeló
+            if (du > GAME_TIME + extra + 15) why.push("partida-alargada");
+            if (cp > (GAME_TIME + extra) * 4) why.push("ritmo-imposible");
             if (ht / GAME_TIME > 25) why.push("velocidad-imposible");
-            if (sc > cp * PTS_PER_WORD + 2000) why.push("puntuacion-imposible");
+            if (sc > cp * PTS_PER_WORD * SCORE_BOOST + 2000) why.push("puntuacion-imposible");
             // Techo absoluto: 4 palabras/sg máximo durante toda la partida
-            if (sc > GAME_TIME * 4 * PTS_PER_WORD + 2000) why.push("puntuacion-demasiada-alta");
+            if (sc > (GAME_TIME + extra) * 4 * PTS_PER_WORD * SCORE_BOOST + 2000) why.push("puntuacion-demasiada-alta");
 
             if (ks.length >= 10) {
                 const deltas = [];
@@ -3402,6 +3427,11 @@
                 price.textContent = ownedBgs.includes(b.id) ? "✓ " + t("shopOwned") : "🪙 " + b.price;
                 card.appendChild(price);
 
+                const desc = document.createElement("div");
+                desc.className = "shop-desc";
+                desc.textContent = uiLang() === "es" ? b.descEs : b.descEn;
+                card.appendChild(desc);
+
                 const btn = document.createElement("button");
                 btn.className = "chip-btn shop-btn";
                 if (b.id === bg) {
@@ -3674,7 +3704,8 @@
 
         // ---------- Fondo de pantalla ----------
         function setBg(next) {
-            if (bg === next || !ownedBgs.includes(next)) return;
+            // La habilidad del fondo no se puede cambiar a mitad de partida
+            if (state === "playing" || bg === next || !ownedBgs.includes(next)) return;
             bg = next;
             try {
                 localStorage.setItem("teclear.fondo", bg);
@@ -3923,7 +3954,7 @@
         });
 
         function setBgEquipped(id) {
-            if (!ownedBgs.includes(id)) return;
+            if (state === "playing" || !ownedBgs.includes(id)) return;
             bg = id;
             try {
                 localStorage.setItem("teclear.fondo", bg);
@@ -4024,6 +4055,54 @@
 
         function multiplier() {
             return Math.min(1 + Math.floor(streak / 4), 5);
+        }
+
+        // ---------- Habilidades de los fondos ----------
+        // Cada fondo comprado tiene una pasiva distinta que solo actúa
+        // mientras está equipado y mientras dura la partida.
+        function bgPower(id) {
+            return bg === id && ownedBgs.includes(id);
+        }
+
+        // Duración de la partida: el fondo Elprico regala 15 segundos extra
+        function gameTime() {
+            return GAME_TIME + (bgPower("elprico") ? BONUS_TIME_ELPRICO : 0);
+        }
+
+        // Habilidad de Sopa de Letras: letras que la palabra trae ya puestas
+        // (nunca tantas como para completar la palabra de golpe)
+        function soupGiven() {
+            if (!bgPower("sopa")) return 0;
+            return Math.min(SOUP_GIVEN, Math.max(0, word.length - 1));
+        }
+
+        // Texto de la habilidad del fondo equipado (vacío si no tiene ninguna)
+        function bgPowerDesc() {
+            const b = BACKGROUNDS.find(x => x.id === bg);
+            if (!b || b.id === "dark") return "";
+            return uiLang() === "es" ? b.descEs : b.descEn;
+        }
+
+        // Modo adivinar: descubre algunas letras de la palabra en cuanto sale
+        function soupReveal() {
+            const give = soupGiven();
+            if (!give) return;
+            const hidden = [];
+            for (let i = 0; i < mask.length; i++) {
+                if (mask[i] === "hidden") hidden.push(i);
+            }
+            // Se deja siempre alguna letra por descubrir: si no, la palabra
+            // no podría completarse nunca en el modo adivinar
+            const max = Math.min(give, hidden.length - 1);
+            for (let k = 0; k < max; k++) mask[hidden[k]] = "found";
+        }
+
+        // Modo tecleo: escribe por ti las primeras letras de la palabra
+        function soupPrefill() {
+            const give = soupGiven();
+            if (!give) return;
+            typing.value = word.slice(0, give);
+            prevLen = give;   // ya tecleadas: no suman golpes ni fallos
         }
 
         // Oculta letras de la palabra según el nivel:
@@ -4168,7 +4247,10 @@
                 mask = makeMask(word);
                 misses = 0;
                 wrongLetters = [];
+                soupReveal();    // letras que deja Sopa de Letras
                 renderMisses();
+            } else if (mode === "type") {
+                soupPrefill();   // letras que deja Sopa de Letras
             }
             renderCurrent();
             updateHud();
@@ -4178,13 +4260,19 @@
             completed++;
             streak++;
             const mult = multiplier();
-            const points = word.length * 10 * mult;
+            // Habilidades del fondo: Ia triplica puntos y monedas en las
+            // palabras largas (más de 7 letras) y General dobla las monedas
+            const largo = word.length > 7;
+            const triple = bgPower("esteso") && largo;
+            const points = word.length * 10 * mult * (triple ? SCORE_BOOST : 1);
             score += points;
             showPoints(points);
             // Monedas al estilo experiencia: la racha multiplica lo que ganas.
             // Cada palabra sin errores paga 1 moneda por cada nivel de racha
             // (x1 al principio y hasta x5 con la racha larga).
-            const coinGain = mult;
+            const coinGain = mult *
+                (triple ? SCORE_BOOST : 1) *
+                (bgPower("franco") ? 2 : 1);
             giveCoins(coinGain);
             showCoin(coinGain);
             newWord();
@@ -4202,7 +4290,7 @@
             prevLen = 0;
             misses = 0;
             wrongLetters = [];
-            timeLeft = GAME_TIME;
+            timeLeft = gameTime();   // Elprico suma aquí sus 15 segundos extra
             coinsRun = 0;
             // Telemetría anti-automatización: se reinicia en cada partida
             keyStamps = [];
@@ -4230,6 +4318,9 @@
                 mode === "imagen" ? t("statusPlayI") :
                 mode === "guess" ? t("statusPlayG") :
                 (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
+            // Aviso de la habilidad que aporta el fondo equipado
+            const poder = bgPowerDesc();
+            if (poder) status.textContent += " · " + poder;
             lastTick = performance.now();
 
             newWord();
@@ -4258,7 +4349,7 @@
             clearInterval(timerId);
             // Duración real de la partida: si alguien congeló el cronómetro
             // para alargarla y sumar puntos, esto lo delata.
-            gameDuration = gameStartAt > 0 ? (Date.now() - gameStartAt) / 1000 : GAME_TIME;
+            gameDuration = gameStartAt > 0 ? (Date.now() - gameStartAt) / 1000 : gameTime();
             state = "over";
             typing.disabled = true;
             selBtns.forEach(b => { b.disabled = false; });
@@ -4266,7 +4357,7 @@
 
             const total = hits + errors;
             const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
-            const ppm = completed / (GAME_TIME / 60);
+            const ppm = completed / (gameTime() / 60);
 
             document.getElementById("rScore").textContent = score;
             document.getElementById("rWords").textContent = completed;
