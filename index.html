@@ -901,7 +901,23 @@
             box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .45);
         }
 
-        /* ---------- Ranking global ---------- */
+        /* ---------- Ranking global y de Aventura ---------- */
+        /* Los dos rankings se muestran uno bajo otro; el de la partida que
+           acaba de guardarse se resalta con un borde de color */
+        .rank-tab {
+            padding: 12px 6px;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            transition: border-color .2s, background .2s;
+        }
+        .rank-tab + .rank-tab {
+            margin-top: 16px;
+            border-top: 1px dashed var(--line-soft);
+        }
+        .rank-tab.rank-focus {
+            border-color: var(--accent-2);
+            background: rgba(46, 204, 164, .05);
+        }
         .rank-hint {
             color: var(--muted);
             font-size: 14px;
@@ -1452,11 +1468,20 @@
     </div>
 
     <section class="ranking hidden" id="ranking">
-        <h2 id="rankTitle">🏆 Ranking global</h2>
-        <p class="rank-hint" id="rankHint">Las mejores puntuaciones de todos los jugadores (Top 10).</p>
-        <ol class="rank-list" id="rankList"></ol>
-        <p class="rank-empty" id="rankEmpty">Todavía no hay puntuaciones en el ranking. ¡Sé el primero! 🚀</p>
-        <p class="rank-status" id="rankStatus"></p>
+        <div class="rank-tab" id="rankTabNormal">
+            <h2 id="rankTitle">🏆 Ranking global</h2>
+            <p class="rank-hint" id="rankHint">Las mejores puntuaciones de todos los jugadores (Top 10).</p>
+            <ol class="rank-list" id="rankList"></ol>
+            <p class="rank-empty" id="rankEmpty">Todavía no hay puntuaciones en el ranking. ¡Sé el primero! 🚀</p>
+            <p class="rank-status" id="rankStatus"></p>
+        </div>
+        <div class="rank-tab" id="rankTabAventura">
+            <h2 id="rankTitleAdv">🗺️ Ranking de Aventura</h2>
+            <p class="rank-hint" id="rankHintAdv">Las mejores puntuaciones de la aventura: aquí solo cuenta el modo Aventura (Top 10).</p>
+            <ol class="rank-list" id="rankListAdv"></ol>
+            <p class="rank-empty" id="rankEmptyAdv">Todavía no hay puntuaciones en la aventura. ¡Sé el primero! 🚀</p>
+            <p class="rank-status" id="rankStatusAdv"></p>
+        </div>
     </section>
 
     <footer>
@@ -1479,14 +1504,24 @@
         // ---------- Modo Aventura ----------
         // Segundos con los que se empieza: cada palabra escrita suma más
         const ADV_TIME = 50;
-        // Palabras escritas entre parada y parada para elegir una ventaja
+        // Palabras escritas entre parada y parada para elegir una ventaja.
+        // Cada parada celebrada alarga el hueco siguiente una palabra más
+        // (hasta ADV_EVERY_MAX): las ventajas van saliendo cada vez menos
         const ADV_EVERY = 5;
+        const ADV_EVERY_MAX = 14;
+        // El reloj de Aventura se acelera con el nivel: por cada nivel pasa
+        // un ADV_SPEED_STEP más deprisa, hasta doble velocidad (solo allí)
+        const ADV_SPEED_STEP = 0.05;
+        const ADV_SPEED_MAX = 2;
         // Margen extra que admite el ranking por la ventaja "puntos x2"
         const ADV_SCORE_SLACK = 8000;
 
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
         const RANK_URL = "https://mantledb.sh/v2/teclear-ranking/ranking";
+        // Ranking del modo Aventura: documento aparte, MISMO formato que el
+        // global (mismas columnas, mismos límites, mismas huellas y Top 10).
+        const RANK_ADV_URL = "https://mantledb.sh/v2/teclear-ranking/aventura";
         const NAMES_URL = "https://mantledb.sh/v2/teclear-ranking/nombres"; // nombres ya reservados
         const RESETS_URL = "https://mantledb.sh/v2/teclear-ranking/resetos"; // reinicios de puntuación
         const RANK_MAX = 10;       // puntuaciones que se guardan/muestran
@@ -1749,7 +1784,7 @@
                 subtitleG: "Adivina la palabra con letras ocultas: escribe solo una letra cada vez. ¡Los fallos quitan vidas!",
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
                 subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
-                subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada 5 eliges una ventaja. ¡La dificultad sube a cada palabra!",
+                subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada cierto número de palabras paras a elegir una ventaja. ¡El reloj acelera y las ventajas salen cada vez más lejos!",
                 modeLabel: "Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
@@ -1821,6 +1856,9 @@
                 rankTitle: "🏆 Ranking global",
                 rankHint: "Las mejores puntuaciones de todos los jugadores (Top 10).",
                 rankEmpty: "Todavía no hay puntuaciones en el ranking. ¡Sé el primero! 🚀",
+                rankTitleAdv: "🗺️ Ranking de Aventura",
+                rankHintAdv: "Las mejores puntuaciones de la aventura: aquí solo cuenta el modo Aventura (Top 10).",
+                rankEmptyAdv: "Todavía no hay puntuaciones en la aventura. ¡Sé el primero! 🚀",
                 rankSync: "🌍 En línea: tu puntuación se comparte con todos los jugadores.",
                 rankLocal: "⚠️ Sin conexión: se muestran las puntuaciones guardadas en este dispositivo.",
                 rankSave: "🏆 Guardar puntuación",
@@ -1878,7 +1916,7 @@
                 subtitleG: "Guess the word with hidden letters: type only one letter at a time. Misses cost lives!",
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
                 subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
-                subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every 5 words you pick an advantage. The words get harder as you go!",
+                subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every few words you stop to pick an advantage. The clock speeds up and advantages come further apart!",
                 modeLabel: "Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
@@ -1950,6 +1988,9 @@
                 rankTitle: "🏆 Global leaderboard",
                 rankHint: "The best scores from every player (Top 10).",
                 rankEmpty: "No scores on the leaderboard yet. Be the first one! 🚀",
+                rankTitleAdv: "🗺️ Adventure leaderboard",
+                rankHintAdv: "The best adventure scores: only Adventure mode counts here (Top 10).",
+                rankEmptyAdv: "No adventure scores yet. Be the first one! 🚀",
                 rankSync: "🌍 Online: your score is shared with every player.",
                 rankLocal: "⚠️ Offline: showing the scores saved on this device.",
                 rankSave: "🏆 Save score",
@@ -2035,10 +2076,7 @@
         };
         let shopOpen = false;
         let rankOpen = false;      // panel de ranking abierto
-        let rankEntries = [];      // puntuaciones del ranking (top)
-        let rankOnline = false;    // último acceso al ranking global correcto
         let rankBusy = false;      // evita guardar la puntuación dos veces
-        let rankLoaded = false;    // se ha intentado descargar el ranking
         let playerId = "";         // identificador del jugador en este dispositivo
         let savedScore = false;    // la puntuación de esta partida ya se ha guardado
         // Telemetría de la partida: sirve para detectar escritura automática
@@ -2047,8 +2085,36 @@
         let trustedInput = 0;      // ... de ellos, llegados del teclado de verdad
         let trustedKeys = 0;       // teclas reales (isTrusted) durante la partida
         let pasteTried = 0;        // intentos de pegar texto en plena partida
-        let rankTampered = false;  // el JSON del ranking venía alterado a mano
         let rankResets = null;     // id → fecha: marcas anteriores no cuentan
+
+        // ---------- Los dos rankings ----------
+        // El juego mantiene dos tableros con el MISMO formato de fila (mismas
+        // columnas, mismos límites, mismas huellas y Top 10): el global, para
+        // los modos clásicos, y el del modo Aventura. Cada tabla tiene su
+        // documento en el servidor, su copia local y su estado de conexión.
+        const RANK_TABS = ["normal", "aventura"];
+        function rankTabOf(m) {
+            return m === "aventura" ? "aventura" : "normal";
+        }
+        const RANK_TAB_CONF = {
+            normal: {
+                url: RANK_URL, ls: "teclear.ranking", box: "rankTabNormal",
+                list: "rankList", empty: "rankEmpty", status: "rankStatus",
+                title: "rankTitle", hint: "rankHint"
+            },
+            aventura: {
+                url: RANK_ADV_URL, ls: "teclear.ranking.aventura", box: "rankTabAventura",
+                list: "rankListAdv", empty: "rankEmptyAdv", status: "rankStatusAdv",
+                title: "rankTitleAdv", hint: "rankHintAdv"
+            }
+        };
+        // Tabla destacada del panel: al guardar una marca se resalta la suya
+        let rankFocus = "normal";
+        // Estado de cada tabla: filas válidas, conexión, aviso de alteración
+        const rankData = {
+            normal: { entries: [], online: false, loaded: false, tampered: false },
+            aventura: { entries: [], online: false, loaded: false, tampered: false }
+        };
         let gameStartAt = 0;       // instante en que empezó la partida
         let gameDuration = 0;      // duración real de la partida (segundos)
         let verifyCode = "";       // código aleatorio de verificación humana
@@ -2072,6 +2138,8 @@
         let advReliefFrom = 0;     // completed en el momento del "remanso"
         let advPicks = 1;          // ventajas que se pueden elegir en esta parada
         let advExtraPick = 0;      // paradas dobles pendientes ("doble elección")
+        let advStops = 0;          // paradas de ventaja ya celebradas
+        let advNextPerk = ADV_EVERY;  // palabras escritas en las que toca parar
 
         // ---------- Perfil de usuario ----------
         let accOpen = false;       // panel de perfil abierto
@@ -2142,9 +2210,6 @@
         const accWho = document.getElementById("accWho");
         const accCoins = document.getElementById("accCoins");
         const ranking = document.getElementById("ranking");
-        const rankList = document.getElementById("rankList");
-        const rankEmpty = document.getElementById("rankEmpty");
-        const rankStatus = document.getElementById("rankStatus");
         const rankForm = document.getElementById("rankForm");
         const rankSaved = document.getElementById("rankSaved");
         const rankWho = document.getElementById("rankWho");
@@ -2260,18 +2325,20 @@
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
-        function loadLocalRanking() {
+        function loadLocalRanking(tab) {
             try {
-                const data = JSON.parse(localStorage.getItem("teclear.ranking") || "null");
+                const data = JSON.parse(
+                    localStorage.getItem(RANK_TAB_CONF[tab].ls) || "null");
                 return (data && Array.isArray(data.entries)) ? data.entries : [];
             } catch (e) {
                 return [];
             }
         }
 
-        function saveLocalRanking(entries) {
+        function saveLocalRanking(entries, tab) {
             try {
-                localStorage.setItem("teclear.ranking", JSON.stringify({ v: 1, entries: entries }));
+                localStorage.setItem(RANK_TAB_CONF[tab].ls,
+                    JSON.stringify({ v: 1, entries: entries }));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -2369,12 +2436,17 @@
         // "resets" contiene las puntuaciones reiniciadas: cualquier marca de ese
         // jugador anterior a la fecha del reinicio se ignora (aunque esté guardada
         // en la copia local de su equipo).
-        function normalizeRank(list, resets) {
+        // "tab" separa los dos rankings: la tabla "normal" ignora las marcas de
+        // Aventura (que son mucho más altas) y la de Aventura solo las suyas,
+        // así cada tablero lleva sus propias partidas.
+        function normalizeRank(list, resets, tab) {
             const cortes = resets || rankResets || {};
+            const soloAventura = tab === "aventura";
             const byId = {};
             (Array.isArray(list) ? list : []).forEach(raw => {
                 const e = validEntry(raw);
                 if (!e) return;                    // fila manipulada o corrupta
+                if (soloAventura !== (e.m === "aventura")) return;   // otra tabla
                 const lim = cortes[e.id] !== undefined ? cortes[e.id] : cortes["*"];
                 if (lim) {
                     const dd = e.d ? new Date(e.d).getTime() : NaN;
@@ -2392,8 +2464,8 @@
                 .slice(0, RANK_MAX);
         }
 
-        function fetchRanking() {
-            return rankFetch(RANK_URL, { method: "GET" }).then(res => {
+        function fetchRanking(tab) {
+            return rankFetch(RANK_TAB_CONF[tab].url, { method: "GET" }).then(res => {
                 if (!res.ok) {
                     const err = new Error("HTTP " + res.status);
                     // 404 → el documento aún no existe: se puede recrear.
@@ -2407,17 +2479,17 @@
             }).then(data => {
                 const entries = (data && Array.isArray(data.entries)) ? data.entries : [];
                 // Comprueba la huella del documento: si no cuadra, alguien lo editó
-                rankTampered = !!(data && data.c !== undefined &&
+                rankData[tab].tampered = !!(data && data.c !== undefined &&
                     String(data.c) !== docSeal(entries));
-                if (data && data.c === undefined) rankTampered = true; // aún sin sellar
+                if (data && data.c === undefined) rankData[tab].tampered = true; // aún sin sellar
                 return entries;
             });
         }
 
-        function pushRanking(entries) {
+        function pushRanking(entries, tab) {
             const clean = sealList(entries);        // se sellan las filas al subir
             const body = { v: 1, entries: clean, c: docSeal(clean) };
-            return rankFetch(RANK_URL, {
+            return rankFetch(RANK_TAB_CONF[tab].url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
@@ -3322,35 +3394,46 @@
             return why;
         }
 
-        // Descarga el ranking de la web y lo mezcla con la copia local
-        function refreshRanking() {
-            const local = loadLocalRanking();
-            return fetchResets().then(() => fetchRanking())
+        // Descarga el ranking de la web y lo mezcla con la copia local.
+        // Sin argumento se refrescan las dos tablas (global y Aventura).
+        function refreshRanking(tab) {
+            const tabs = tab ? [tab] : RANK_TABS;
+            return Promise.all(tabs.map(refreshRankTab));
+        }
+
+        function refreshRankTab(tab) {
+            const data = rankData[tab];
+            const local = loadLocalRanking(tab);
+            return fetchResets().then(() => fetchRanking(tab))
                 .then(remote => {
-                    rankOnline = true;
-                    rankEntries = normalizeRank(remote.concat(local));
-                    saveLocalRanking(rankEntries);  // purga marcas reiniciadas
+                    data.online = true;
+                    data.entries = normalizeRank(remote.concat(local), null, tab);
+                    saveLocalRanking(data.entries, tab);  // purga marcas reiniciadas
                 })
                 .catch(() => {
-                    rankOnline = false;
-                    rankEntries = normalizeRank(local);
-                    saveLocalRanking(rankEntries);
+                    data.online = false;
+                    data.entries = normalizeRank(local, null, tab);
+                    saveLocalRanking(data.entries, tab);
                 })
                 .then(() => {
-                    rankLoaded = true;
+                    data.loaded = true;
                     renderRanking();
                 });
         }
 
         // Sube la puntuación al ranking de todos los jugadores.
         // Primero se guarda en local (nunca se pierde) y luego se reintenta la subida.
+        // La tabla es la de su modo: una marca de Aventura jamás entra en el
+        // ranking global ni al revés.
         function uploadScore(entry) {
-            rankOnline = false;
-            rankLoaded = true;
+            const tab = rankTabOf(entry.m);
+            const data = rankData[tab];
+            data.online = false;
+            data.loaded = true;
 
             function attempt(triesLeft, fusiones) {
                 const rep = fusiones || 0;
-                return fetchRanking()
+                return fetchRanking(tab)
                     .catch(err => {
                         // Solo el 404 ("todavía no hay documento") permite
                         // recrearlo con lo local. Un error de red o del servidor
@@ -3360,25 +3443,27 @@
                         throw err;
                     })
                     .then(remote => {
-                        const base = normalizeRank(remote);
-                        const merged = normalizeRank(remote.concat(loadLocalRanking(), [entry]));
+                        const base = normalizeRank(remote, null, tab);
+                        const merged = normalizeRank(
+                            remote.concat(loadLocalRanking(tab), [entry]), null, tab);
                         // Red de seguridad: la subida nunca puede perder marcas
                         // que sí estaban en el servidor (si no caben en el top
                         // 10, merged.length ya es RANK_MAX y no se cumple esto).
                         if (base.length > merged.length && merged.length < RANK_MAX) {
                             throw new Error("merge-unsafe");
                         }
-                        return pushRanking(merged).then(() => {
-                            rankEntries = merged;
-                            saveLocalRanking(merged);
-                            rankOnline = true;
+                        return pushRanking(merged, tab).then(() => {
+                            data.entries = merged;
+                            saveLocalRanking(merged, tab);
+                            data.online = true;
                             renderRanking();
                             // Si alguien subió a la vez y alguna marca del
                             // servidor ha desaparecido, se vuelve a fusionar.
                             if (rep >= 2) return undefined;
-                            return fetchRanking()
+                            return fetchRanking(tab)
                                 .then(r2 => {
-                                    const aqui = normalizeRank(Array.isArray(r2) ? r2 : []);
+                                    const aqui = normalizeRank(
+                                        Array.isArray(r2) ? r2 : [], null, tab);
                                     const perdidas = base.filter(b =>
                                         !aqui.some(x => x.id === b.id));
                                     if (perdidas.length) return attempt(2, rep + 1);
@@ -3391,14 +3476,15 @@
                             return new Promise(r => setTimeout(r, 600))
                                 .then(() => attempt(triesLeft - 1));
                         }
-                        rankOnline = false;
+                        data.online = false;
                         renderRanking();
                     });
             }
 
             return fetchResets().then(() => {
-                rankEntries = normalizeRank(loadLocalRanking().concat([entry]));
-                saveLocalRanking(rankEntries);   // purga las marcas reiniciadas
+                data.entries = normalizeRank(
+                    loadLocalRanking(tab).concat([entry]), null, tab);
+                saveLocalRanking(data.entries, tab);   // purga las marcas reiniciadas
                 renderRanking();
                 return attempt(2);
             });
@@ -3414,12 +3500,24 @@
             }
         }
 
+        // Dibuja las dos tablas: la global (modos clásicos) y la de Aventura.
+        // Ambas muestran los MISMOS datos: posición, nombre, puntos, palabras
+        // y fecha; solo cambia el documento del que salen las filas.
         function renderRanking() {
-            if (!rankList) return;
-            const myId = currentPlayerId();
-            rankList.innerHTML = "";
+            RANK_TABS.forEach(renderRankTab);
+        }
 
-            rankEntries.forEach((e, i) => {
+        function renderRankTab(tab) {
+            const conf = RANK_TAB_CONF[tab];
+            const listEl = document.getElementById(conf.list);
+            const emptyEl = document.getElementById(conf.empty);
+            const statusEl = document.getElementById(conf.status);
+            if (!listEl) return;
+            const data = rankData[tab];
+            const myId = currentPlayerId();
+            listEl.innerHTML = "";
+
+            data.entries.forEach((e, i) => {
                 const li = document.createElement("li");
                 if (e.id === myId) li.classList.add("me");
 
@@ -3444,29 +3542,55 @@
                 date.textContent = rankDate(e.d);
 
                 li.append(pos, name, pts, words, date);
-                rankList.appendChild(li);
+                listEl.appendChild(li);
             });
 
-            rankEmpty.classList.toggle("hidden", rankEntries.length > 0);
-            let st = !rankLoaded ? ""
-                : rankOnline ? t("rankSync") : t("rankLocal");
+            if (emptyEl) emptyEl.classList.toggle("hidden", data.entries.length > 0);
+            let st = !data.loaded ? ""
+                : data.online ? t("rankSync") : t("rankLocal");
             // 🔒 datos verificados con su huella · ⚠️ el JSON venía alterado
-            if (st && rankOnline) st += rankTampered ? " ⚠️" : " 🔒";
-            rankStatus.textContent = st;
+            if (st && data.online) st += data.tampered ? " ⚠️" : " 🔒";
+            if (statusEl) statusEl.textContent = st;
         }
 
-        function toggleRanking() {
+        // Cambia el texto de las dos tablas (títulos, avisos y rangos) al
+        // idioma vigente: cada ranking tiene las suyas propias.
+        function renderRankLabels() {
+            RANK_TABS.forEach(tab => {
+                const conf = RANK_TAB_CONF[tab];
+                const tit = document.getElementById(conf.title);
+                const hin = document.getElementById(conf.hint);
+                const emp = document.getElementById(conf.empty);
+                if (tit) tit.textContent = t(conf.title);
+                if (hin) hin.textContent = t(conf.hint);
+                if (emp) emp.textContent = t(conf.empty);
+            });
+        }
+
+        function toggleRanking(tab) {
             if (state === "playing") return;
             rankOpen = !rankOpen;
             ranking.classList.toggle("hidden", !rankOpen);
             btnRanking.classList.toggle("active", rankOpen);
             if (rankOpen) {
                 refreshRanking();
+                // Si se guarda una marca, su tabla se resalta (una partida de
+                // Aventura se mira en el ranking de Aventura, no en el global)
+                if (tab) rankFocus = tab;
+                renderRankFocus();
                 // El panel queda por debajo: se lleva a la vista para que se note
                 if (ranking.scrollIntoView) {
                     ranking.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 }
             }
+        }
+
+        // Tabla destacada del panel (por defecto, la global)
+        function renderRankFocus() {
+            RANK_TABS.forEach(tab => {
+                const box = document.getElementById(RANK_TAB_CONF[tab].box);
+                if (box) box.classList.toggle("rank-focus", tab === rankFocus);
+            });
         }
 
         btnRanking.addEventListener("click", toggleRanking);
@@ -3820,9 +3944,7 @@
             document.getElementById("kBestWords").textContent = t("kBestWords");
             btnShop.textContent = t("btnShop");
             btnRanking.textContent = t("btnRanking");
-            document.getElementById("rankTitle").textContent = t("rankTitle");
-            document.getElementById("rankHint").textContent = t("rankHint");
-            document.getElementById("rankEmpty").textContent = t("rankEmpty");
+            renderRankLabels();   // títulos y avisos de los dos rankings
             if (verifyLabel) verifyLabel.textContent = t("verifyLabel");
             saveScoreBtn.textContent = t("rankSave");
             btnRegister.textContent = t("btnRegister");
@@ -4247,6 +4369,24 @@
             return performance.now() < advTurbo ? base * 2 : base;
         }
 
+        // Velocidad a la que corre el reloj: en Aventura va acelerando con el
+        // nivel (hasta el doble), así que el tiempo se consume cada vez más
+        // deprisa justo cuando las palabras son más largas y valen menos.
+        // En el resto de modos el reloj siempre va a velocidad normal.
+        function tickSpeed() {
+            if (mode !== "aventura") return 1;
+            const extra = (level() - 1) * ADV_SPEED_STEP;
+            return Math.min(ADV_SPEED_MAX, 1 + extra);
+        }
+
+        // Palabras que faltan para la próxima parada de ventaja: el hueco va
+        // creciendo de dos en dos palabras cada vez que se para, hasta
+        // ADV_EVERY_MAX, de modo que las ventajas salen cada vez menos a menudo.
+        // (Las dos primeras paradas siguen siendo a las 5 y a las 10 palabras)
+        function perkEvery() {
+            return Math.min(ADV_EVERY + Math.floor(advStops / 2), ADV_EVERY_MAX);
+        }
+
         // Suma segundos al cronómetro (palabras y ventajas del modo Aventura)
         function gainTime(sec) {
             timeLeft += sec;
@@ -4489,6 +4629,12 @@
                 advBar.appendChild(s);
             };
             add("⏱️ +" + timePerWord() + "s/" + t("advWord"));
+            // Velocidad del reloj: en Aventura acelera con el nivel
+            const vel = tickSpeed();
+            if (vel > 1.001) {
+                add("⏩ x" + vel.toFixed(1).replace(".", uiLang() === "es" ? "," : "."),
+                    true);
+            }
             if (advShield > 0) add("🛡️ x" + advShield, true);
             if (advShort > 0) add("🛤️ x" + advShort, true);
             if (advRevive > 0) add("🆘 x" + advRevive, true);
@@ -4805,8 +4951,14 @@
             // Modo Aventura: cada palabra regala segundos al cronómetro
             if (mode === "aventura") gainTime(timePerWord());
             newWord();
-            // ... y cada ADV_EVERY hay una parada para elegir una ventaja
-            if (mode === "aventura" && completed % ADV_EVERY === 0) openPerkChoice();
+            // ... y llegado el momento hay una parada para elegir una ventaja.
+            // Cada parada alarga el hueco siguiente: al principio cada 5
+            // palabras y después cada vez más.
+            if (mode === "aventura" && completed >= advNextPerk) {
+                advStops++;
+                advNextPerk = completed + perkEvery();
+                openPerkChoice();
+            }
         }
 
         function startGame() {
@@ -4842,6 +4994,8 @@
             advReliefFrom = 0;
             advPicks = 1;
             advExtraPick = 0;
+            advStops = 0;             // aún no se ha parado a elegir ventaja
+            advNextPerk = ADV_EVERY;  // primera parada: a las 5 palabras
             if (perkVeil) perkVeil.classList.add("hidden");
             // Telemetría anti-automatización: se reinicia en cada partida
             keyStamps = [];
@@ -4899,7 +5053,10 @@
                 updateHud();
                 return;
             }
-            timeLeft -= (now - lastTick) / 1000;
+            // En Aventura el reloj va acelerando con el nivel: el tiempo que
+            // queda se consume cada vez más deprisa (velocidad normal en el
+            // resto de modos, donde tickSpeed() devuelve 1)
+            timeLeft -= (now - lastTick) / 1000 * tickSpeed();
             lastTick = now;
 
             // Ventaja "salvavidas": el cronómetro no muere de golpe, salta a 15 s
@@ -5287,12 +5444,13 @@
                     // botón sigue habilitado para volver a intentarlo (antes se
                     // marcaba como guardada y el segundo intento se quedaba en
                     // «ya habías guardado», así que NUNCA se podía subir).
-                    const subida = rankOnline;
+                    const subida = rankData[rankTabOf(entry.m)].online;
                     savedScore = subida;
                     rankSaved.textContent = subida ? t("rankSaved") : t("rankSavedLocal");
                     rankSaved.classList.toggle("off", !subida);
                     newVerifyCode();   // el código ya no se puede reutilizar
-                    if (!rankOpen) toggleRanking();  // se abre el ranking para ver la marca
+                    // Se abre el ranking de SU modo (Aventura va al suyo propio)
+                    if (!rankOpen) toggleRanking(rankTabOf(entry.m));
                 });
             }).catch(() => {
                 rankBusy = false;
@@ -5352,12 +5510,28 @@
                 // ¿Actúa la habilidad del fondo id? (en Aventura nunca actúa)
                 fondoActivo: function (id) { return bgPower(id); },
                 checkAutoPlay: function (est) { return checkAutoPlay(est); },
-                normalizeRank: function (lista, cortes) { return normalizeRank(lista, cortes); },
+                normalizeRank: function (lista, cortes, tab) { return normalizeRank(lista, cortes, tab); },
                 validEntry: function (fila) { return validEntry(fila); },
                 sealOf: function (fila) { return sealOf(fila); },
                 reserveName: function (n, id) { return reserveName(n, id); },
                 fetchResets: function (force) { return fetchResets(force); },
-                refreshRanking: function () { return refreshRanking(); },
+                refreshRanking: function (tab) { return refreshRanking(tab); },
+                // Los dos rankings: a qué tabla pertenece una marca y sus filas
+                rankTabDe: function (m) { return rankTabOf(m); },
+                rankDe: function (tab) {
+                    const t = (tab === "aventura") ? "aventura" : "normal";
+                    return Object.freeze({
+                        entries: Object.freeze(rankData[t].entries.slice()),
+                        online: rankData[t].online,
+                        loaded: rankData[t].loaded,
+                        tampered: rankData[t].tampered
+                    });
+                },
+                // Equilibrio de Aventura (solo lectura): velocidad del reloj y
+                // palabras que faltan para la próxima parada de ventaja
+                velocidadReloj: function () { return tickSpeed(); },
+                proximaVentaja: function () { return perkEvery(); },
+                paradasHechas: function () { return advStops; },
                 // Perfiles (solo lectura de fuera: registrar/entrar/salir)
                 sha256: function (s) { return sha256hex(String(s)); },
                 derivePass: function (p, s) { return derivePass(String(p), String(s)); },
