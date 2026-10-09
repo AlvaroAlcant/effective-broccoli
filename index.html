@@ -1806,7 +1806,7 @@
                 rankSave: "🏆 Guardar puntuación",
                 rankSaving: "Guardando tu puntuación…",
                 rankSaved: "🏆 ¡Puntuación guardada en el ranking! Ya la ven todos. 🌍",
-                rankSavedLocal: "📱 Puntuación guardada en este dispositivo (ahora mismo no hay conexión).",
+                rankSavedLocal: "📱 Guardada en este dispositivo: ahora mismo no hay conexión. Pulsa de nuevo «🏆 Guardar puntuación» cuando vuelva y se subirá.",
                 rankAlready: "✅ Ya habías guardado esta puntuación. ¡A por la siguiente! 💪",
                 rankChecking: "Comprobando que el nombre esté libre…",
                 rankNameTaken: "⚠️ Ese nombre ya lo usa otro jugador: escribe uno distinto para evitar confusiones.",
@@ -1932,7 +1932,7 @@
                 rankSave: "🏆 Save score",
                 rankSaving: "Saving your score…",
                 rankSaved: "🏆 Score saved! Everyone can see it now. 🌍",
-                rankSavedLocal: "📱 Score saved on this device (currently offline).",
+                rankSavedLocal: "📱 Saved on this device: no connection right now. Press “🏆 Save score” again when it is back and it will upload.",
                 rankAlready: "✅ You had already saved this score. Go for the next one! 💪",
                 rankChecking: "Checking that the name is free…",
                 rankNameTaken: "⚠️ That name is already used by another player: type a different one to avoid confusion.",
@@ -3181,6 +3181,14 @@
                     saveScoreBtn.click();
                 }
             });
+            // Teclados virtuales (móvil): a veces no informan de la tecla pulsada
+            // pero sí del texto que ha escrito la persona. Manda el valor real
+            // del campo, que solo puede llenarse tecleando (pegar está bloqueado).
+            verifyInput.addEventListener("input", function (e) {
+                if (e && e.isTrusted) {
+                    verifyTyped = String(verifyInput.value || "").slice(0, 8);
+                }
+            });
             // Pegar el código tampoco vale: hay que teclearlo
             verifyInput.addEventListener("paste", function (e) {
                 e.preventDefault();
@@ -3253,8 +3261,11 @@
             // Escritura con eventos sintéticos: el teclado real marca isTrusted
             if (ie >= 3 && ti / ie < 0.8) why.push("eventos-sinteticos");
             if (ks.length >= 10 && tk / ks.length < 0.8) why.push("teclas-sinteticas");
-            // El texto cambia sin que lleguen teclas: lo escribe un programa
-            if (ie >= 3 && ks.length + 2 < ie) why.push("sin-teclado");
+            // El texto cambia sin que lleguen casi teclas: lo escribe un programa.
+            // (El autocompletado, el swipe o el dictado de los teclados virtuales
+            //  mandan eventos input sin keydown: por eso solo se señala cuando las
+            //  teclas son casi inexistentes. Lo sintético ya lo cubre arriba.)
+            if (ie >= 6 && ks.length * 3 < ie) why.push("sin-teclado");
             if (pt > 0) why.push("pegado");
             // La partida debería durar gameTime(): si dura mucho más, se congeló
             if (du > total + 15) why.push("partida-alargada");
@@ -5145,16 +5156,23 @@
                 rankSaved.textContent = t("rankSaving");
                 return uploadScore(entry).then(() => {
                     rankBusy = false;
-                    savedScore = true;
                     saveScoreBtn.disabled = false;
-                    rankSaved.textContent = rankOnline ? t("rankSaved") : t("rankSavedLocal");
-                    rankSaved.classList.toggle("off", !rankOnline);
+                    // Solo se da por SUBIDA si la marca ha llegado al servidor.
+                    // Si la red falló, la puntuación queda en este equipo y el
+                    // botón sigue habilitado para volver a intentarlo (antes se
+                    // marcaba como guardada y el segundo intento se quedaba en
+                    // «ya habías guardado», así que NUNCA se podía subir).
+                    const subida = rankOnline;
+                    savedScore = subida;
+                    rankSaved.textContent = subida ? t("rankSaved") : t("rankSavedLocal");
+                    rankSaved.classList.toggle("off", !subida);
                     newVerifyCode();   // el código ya no se puede reutilizar
                     if (!rankOpen) toggleRanking();  // se abre el ranking para ver la marca
                 });
             }).catch(() => {
                 rankBusy = false;
                 saveScoreBtn.disabled = false;
+                savedScore = false;   // nada llegó al servidor: se puede reintentar
                 rankSaved.classList.add("off");
                 rankSaved.textContent = t("rankSavedLocal");
                 newVerifyCode();
