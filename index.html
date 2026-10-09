@@ -485,6 +485,117 @@
             padding: 2px 12px;
         }
 
+        /* ---------- Modo Aventura: ventajas y ventana de elección ---------- */
+        .adv-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            min-height: 30px;
+            margin-top: 12px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+        .adv-bar.is-off {
+            display: none;
+        }
+        .adv-bar .adv-chip {
+            background-color: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 3px 12px;
+        }
+        .adv-bar .adv-chip.on {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Velo con las tres ventajas entre las que se elige */
+        .perk-veil {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background-color: rgba(4, 8, 18, .80);
+            backdrop-filter: blur(3px);
+        }
+        .perk-veil.hidden {
+            display: none;
+        }
+        .perk-box {
+            width: min(720px, 100%);
+            padding: 22px;
+            text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            animation: popIn .2s ease-out;
+        }
+        .perk-box h2 {
+            margin: 0 0 6px;
+            font-size: 21px;
+            color: var(--accent);
+        }
+        .perk-hint {
+            margin: 0 0 16px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+        .perk-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .perk-opt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 16px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background-color: var(--surface-2);
+            color: var(--text);
+            cursor: pointer;
+            transition: transform .16s, border-color .16s, background-color .16s;
+        }
+        .perk-opt:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+            background-color: rgba(94, 234, 212, .10);
+        }
+        .perk-opt:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .perk-opt .perk-icon {
+            font-size: 30px;
+        }
+        .perk-opt strong {
+            font-size: 15px;
+        }
+        .perk-opt span {
+            font-size: 12.5px;
+            color: var(--muted);
+            line-height: 1.35;
+        }
+        /* Aviso de segundos ganados: en celeste para distinguirlo de los puntos */
+        .points.time {
+            color: #7dd3fc;
+        }
+        @media (max-width: 560px) {
+            .perk-grid {
+                grid-template-columns: 1fr;
+            }
+            .perk-box {
+                padding: 16px;
+            }
+        }
+
         /* ---------- Entrada, estado y botón principal ---------- */
         .controls {
             display: flex;
@@ -1166,6 +1277,7 @@
             <button class="chip-btn active" id="btnType">⌨️ Tecleo</button>
             <button class="chip-btn" id="btnGuess">🧩 Adivinar</button>
             <button class="chip-btn" id="btnImagen">🖼️ Imágenes</button>
+            <button class="chip-btn" id="btnAventura">🗺️ Aventura</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="bgLabel">Fondo de pantalla</span>
@@ -1275,6 +1387,18 @@
 
     <div class="misses is-off" id="misses"></div>
 
+    <!-- Modo Aventura: efectos activos de las ventajas elegidas -->
+    <div class="adv-bar is-off" id="advBar"></div>
+
+    <!-- Modo Aventura: elección de ventaja (mientras tanto el reloj no corre) -->
+    <div class="perk-veil hidden" id="perkVeil">
+        <div class="perk-box" role="dialog" aria-modal="true" aria-labelledby="perkTitle">
+            <h2 id="perkTitle">🎁 ¡Elige tu ventaja!</h2>
+            <p class="perk-hint" id="perkHint">Has llegado a una parada de la aventura: el cronómetro queda en pausa mientras eliges.</p>
+            <div class="perk-grid" id="perkGrid"></div>
+        </div>
+    </div>
+
     <div class="controls">
         <input id="typing" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
                placeholder="Escribe aquí..." disabled>
@@ -1334,6 +1458,14 @@
         const BONUS_TIME_ELPRICO = 15;
         // Letras que la habilidad del fondo Sopa de Letras deja ya puestas
         const SOUP_GIVEN = 2;
+
+        // ---------- Modo Aventura ----------
+        // Segundos con los que se empieza: cada palabra escrita suma más
+        const ADV_TIME = 50;
+        // Palabras escritas entre parada y parada para elegir una ventaja
+        const ADV_EVERY = 5;
+        // Margen extra que admite el ranking por la ventaja "puntos x2"
+        const ADV_SCORE_SLACK = 8000;
 
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
@@ -1600,10 +1732,12 @@
                 subtitleG: "Adivina la palabra con letras ocultas: escribe solo una letra cada vez. ¡Los fallos quitan vidas!",
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
                 subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
+                subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada 5 eliges una ventaja. ¡La dificultad sube a cada palabra!",
                 modeLabel: "Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
                 btnImagen: "🖼️ Imágenes",
+                btnAventura: "🗺️ Aventura",
                 btnMurciano: "🗣️ Murciano",
                 bgLabel: "Fondo de pantalla",
                 actLabel: "Acciones",
@@ -1639,6 +1773,14 @@
                 statusPlayG: "Adivina las letras que faltan, una por vez. ¡" + MAX_MISSES + " fallos y se acabó la palabra!",
                 statusPlayM: "Teclea la palabra murciana tal y como aparece, sin cambiarle nada. ¡Vamoh a ve!",
                 statusPlayI: "Escribe la palabra que representa la imagen. ¡A ojo de buen cubero!",
+                statusPlayA: "Cada palabra te regala tiempo y sube la dificultad. ¡Cada 5 eliges una ventaja!",
+                perkTitle: "🎁 ¡Elige tu ventaja!",
+                perkHint: "Has llegado a una parada de la aventura: el cronómetro se queda en pausa mientras eliges.",
+                perkChosen: "✅ Ventaja elegida: ",
+                statusShield: "🛡️ El escudo ha absorbido el fallo: sigues con la racha 😌",
+                statusRevive: "🆘 Salvavidas: el cronómetro salta a 15 segundos",
+                statusFreeWord: "🎁 ¡Palabra regalada! Se completa sola",
+                advWord: "palabra",
                 statusEnd: "Pulsa la barra espaciadora o el botón para volver a jugar.",
                 statusError: "¡Tecla incorrecta! -5 puntos y pierdes la racha 😵",
                 statusOk: "¡Sigue así! La racha multiplica tus puntos y tus monedas. 🚀",
@@ -1716,10 +1858,12 @@
                 subtitleG: "Guess the word with hidden letters: type only one letter at a time. Misses cost lives!",
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
                 subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
+                subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every 5 words you pick an advantage. The words get harder as you go!",
                 modeLabel: "Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
                 btnImagen: "🖼️ Pictures",
+                btnAventura: "🗺️ Adventure",
                 btnMurciano: "🗣️ Murcia dialect",
                 bgLabel: "Background",
                 actLabel: "Actions",
@@ -1755,6 +1899,14 @@
                 statusPlayG: "Guess the missing letters, one at a time. " + MAX_MISSES + " misses and the word is over!",
                 statusPlayM: "Type the Murcian word exactly as shown, letter for letter. Let's go!",
                 statusPlayI: "Type the word the image stands for. Trust your eyes!",
+                statusPlayA: "Every word gives you time and raises the difficulty. Every 5 words you pick an advantage!",
+                perkTitle: "🎁 Pick your advantage!",
+                perkHint: "You reached an adventure checkpoint: the clock stays paused while you choose.",
+                perkChosen: "✅ Advantage picked: ",
+                statusShield: "🛡️ The shield absorbed the mistake: your streak survives 😌",
+                statusRevive: "🆘 Lifeline: the clock jumps to 15 seconds",
+                statusFreeWord: "🎁 Free word! It completes itself",
+                advWord: "word",
                 statusEnd: "Press the space bar or the button to play again.",
                 statusError: "Wrong key! -5 points and you lose your streak 😵",
                 statusOk: "Keep it up! Your streak multiplies your points and your coins. 🚀",
@@ -1829,7 +1981,7 @@
 
         // ---------- Estado ----------
         let lang = "es";         // es | en | mur (murciano)
-        let mode = "type";       // type | guess | imagen
+        let mode = "type";       // type | guess | imagen | aventura
         let bg = "dark";         // dark | franco | elprico | esteso
         let state = "idle";      // idle | playing | over
         let word = "";
@@ -1878,6 +2030,19 @@
         let gameDuration = 0;      // duración real de la partida (segundos)
         let verifyCode = "";       // código aleatorio de verificación humana
         let verifyTyped = "";      // lo tecleado con teclas REALES (no se puede rellenar a mano)
+
+        // ---------- Estado del modo Aventura ----------
+        let perkOpen = false;      // hay una ventaja en pantalla (el reloj no corre)
+        let pausedTotal = 0;       // ms que el reloj ha estado en pausa (elegir ventaja)
+        let pausedAt = 0;          // instante en que empezó la pausa actual
+        let advShield = 0;         // fallos que el escudo todavía absorbe
+        let advShort = 0;          // palabras cortas que quedan por regalar
+        let advFreeze = 0;         // fin de la congelación (performance.now)
+        let advDouble = 0;         // fin del doble de puntos (performance.now)
+        let advTurbo = 0;          // fin del turbo de tiempo (performance.now)
+        let advCoins = 0;          // fin del doble de monedas (performance.now)
+        let advRevive = 0;         // salvavidas guardados para el final
+        let advTimeGained = 0;     // segundos ganados con las palabras
 
         // ---------- Perfil de usuario ----------
         let accOpen = false;       // panel de perfil abierto
@@ -1964,11 +2129,16 @@
         const btnType = document.getElementById("btnType");
         const btnGuess = document.getElementById("btnGuess");
         const btnImagen = document.getElementById("btnImagen");
+        const btnAventura = document.getElementById("btnAventura");
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
-        const selBtns = [btnEs, btnEn, btnMurciano, btnType, btnGuess, btnImagen, btnPicante, btnCaos,
-            btnShop, btnRanking, btnRegister, btnLogin];
+        const advBar = document.getElementById("advBar");
+        const perkVeil = document.getElementById("perkVeil");
+        const perkGrid = document.getElementById("perkGrid");
+        const perkHint = document.getElementById("perkHint");
+        const selBtns = [btnEs, btnEn, btnMurciano, btnType, btnGuess, btnImagen, btnAventura,
+            btnPicante, btnCaos, btnShop, btnRanking, btnRegister, btnLogin];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
             ["accKCoins", "accVCoins", "kCoins"],
@@ -2149,13 +2319,15 @@
             if (s <= 0 || w <= 0) return null;
             if (s > MAX_SCORE || w > MAX_WORDS) return null;
             const m = String(raw.m || "type");
-            if (["type", "guess", "murciano", "imagen"].indexOf(m) < 0) return null;
+            if (["type", "guess", "murciano", "imagen", "aventura"].indexOf(m) < 0) return null;
             const d = String(raw.d || "");
             if (d && (d.length > 30 || isNaN(new Date(d).getTime()))) return null;
             // Coherencia puntos ↔ palabras: imposible de lograr jugando.
             // Se admite el máximo con la habilidad de la partida más ventajosa
             // (el fondo Ia triplica los puntos de las palabras largas).
-            if (s > w * PTS_PER_WORD * SCORE_BOOST + 2000) return null;
+            // En el modo Aventura la ventaja "puntos x2" sube ese techo.
+            const margen = m === "aventura" ? ADV_SCORE_SLACK : 2000;
+            if (s > w * PTS_PER_WORD * SCORE_BOOST + margen) return null;
             // Huella de integridad (las filas antiguas, sin huella, se aceptan)
             if (raw.c !== undefined && String(raw.c) !== sealOf({ id: id, n: n, s: s, w: w, m: m, d: d })) {
                 return null;
@@ -3065,6 +3237,15 @@
             const fondo = typeof es.fondo === "string" ? es.fondo : bg;
             const extra = fondo === "elprico" ? BONUS_TIME_ELPRICO : 0;
 
+            // El modo Aventura empieza con 50 s y cada palabra regala tiempo,
+            // así que la partida dura (y puntúa) bastante más de lo normal:
+            // se admite todo el tiempo que las palabras han ido sumando.
+            const modo = typeof es.modo === "string" ? es.modo : mode;
+            const aventura = modo === "aventura";
+            const ganado = val(es.tiempoExtra, aventura ? advTimeGained : 0);
+            const margen = aventura ? ADV_SCORE_SLACK : 2000;
+            const total = GAME_TIME + extra + ganado;
+
             const why = [];
             if (sc <= 0) return why;
             if (auto) why.push("entorno-automatizado");
@@ -3076,12 +3257,12 @@
             if (ie >= 3 && ks.length + 2 < ie) why.push("sin-teclado");
             if (pt > 0) why.push("pegado");
             // La partida debería durar gameTime(): si dura mucho más, se congeló
-            if (du > GAME_TIME + extra + 15) why.push("partida-alargada");
-            if (cp > (GAME_TIME + extra) * 4) why.push("ritmo-imposible");
-            if (ht / GAME_TIME > 25) why.push("velocidad-imposible");
-            if (sc > cp * PTS_PER_WORD * SCORE_BOOST + 2000) why.push("puntuacion-imposible");
+            if (du > total + 15) why.push("partida-alargada");
+            if (cp > total * 4) why.push("ritmo-imposible");
+            if (ht / total > 25) why.push("velocidad-imposible");
+            if (sc > cp * PTS_PER_WORD * SCORE_BOOST + margen) why.push("puntuacion-imposible");
             // Techo absoluto: 4 palabras/sg máximo durante toda la partida
-            if (sc > (GAME_TIME + extra) * 4 * PTS_PER_WORD * SCORE_BOOST + 2000) why.push("puntuacion-demasiada-alta");
+            if (sc > total * 4 * PTS_PER_WORD * SCORE_BOOST + margen) why.push("puntuacion-demasiada-alta");
 
             if (ks.length >= 10) {
                 const deltas = [];
@@ -3575,11 +3756,13 @@
             document.getElementById("subtitle").textContent =
                 mode === "imagen" ? t("subtitleI") :
                 mode === "guess" ? t("subtitleG") :
+                mode === "aventura" ? t("subtitleA") :
                 lang === "mur" ? t("subtitleM") : t("subtitleT");
             document.getElementById("modeLabel").textContent = t("modeLabel");
             btnType.textContent = t("btnType");
             btnGuess.textContent = t("btnGuess");
             btnImagen.textContent = t("btnImagen");
+            if (btnAventura) btnAventura.textContent = t("btnAventura");
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent = t("bgLabel");
             document.getElementById("actLabel").textContent = t("actLabel");
@@ -3641,6 +3824,7 @@
             btnType.classList.toggle("active", mode === "type");
             btnGuess.classList.toggle("active", mode === "guess");
             btnImagen.classList.toggle("active", mode === "imagen");
+            if (btnAventura) btnAventura.classList.toggle("active", mode === "aventura");
             btnBgDark.classList.toggle("active", bg === "dark");
             // El fondo de Franco solo aparece en el selector si está desbloqueado
             const hasFranco = ownedBgs.includes("franco");
@@ -3658,6 +3842,12 @@
             bestWordsEl.textContent = bestWords;
 
             renderMisses();
+
+            // Textos de la ventana de ventajas del modo Aventura
+            if (perkHint) perkHint.textContent = t("perkHint");
+            const perkTitleEl = document.getElementById("perkTitle");
+            if (perkTitleEl) perkTitleEl.textContent = t("perkTitle");
+            renderAdvBar();
 
             // Textos según el estado actual de la partida
             if (state === "idle") {
@@ -3701,6 +3891,7 @@
         btnType.addEventListener("click", () => setMode("type"));
         btnGuess.addEventListener("click", () => setMode("guess"));
         btnImagen.addEventListener("click", () => setMode("imagen"));
+        if (btnAventura) btnAventura.addEventListener("click", () => setMode("aventura"));
 
         // ---------- Fondo de pantalla ----------
         function setBg(next) {
@@ -3988,7 +4179,208 @@
 
         // ---------- Utilidades ----------
         function level() {
+            // En el modo Aventura la dificultad sube más deprisa: con cada
+            // palabra escrita toca antes una más larga y menos pistas.
+            if (mode === "aventura") return 1 + Math.floor(completed / 3);
             return 1 + Math.floor(completed / 5);
+        }
+
+        // ---------- Modo Aventura ----------
+        // Segundos que regala cada palabra: van bajando a medida que sube el
+        // nivel, así que las palabras dan menos tiempo justo cuando son más largas.
+        function timePerWord() {
+            const base = Math.max(1, 4 - Math.floor((level() - 1) / 3));
+            // Ventaja "turbo": durante unos segundos cada palabra dobla su tiempo
+            return performance.now() < advTurbo ? base * 2 : base;
+        }
+
+        // Suma segundos al cronómetro (palabras y ventajas del modo Aventura)
+        function gainTime(sec) {
+            timeLeft += sec;
+            advTimeGained += sec;
+            showSeconds(sec);
+        }
+
+        // Aviso flotante de los segundos ganados (celeste, sobre el tablero)
+        function showSeconds(sec) {
+            const p = document.createElement("div");
+            p.className = "points time";
+            p.textContent = "+" + sec + "s";
+            stage.appendChild(p);
+            setTimeout(() => p.remove(), 900);
+        }
+
+        // Banque de ventajas (12 en total): cada ADV_EVERY palabras se sortean
+        // tres y el jugador se queda con una. El texto va en castellano y en inglés.
+        const ADVENTURE_PERKS = [
+            {
+                id: "tiempo", icon: "⏱️",
+                es: "+10 segundos", en: "+10 seconds",
+                descEs: "Diez segundos más en el cronómetro.", descEn: "Ten more seconds on the clock.",
+                apply: function () { gainTime(10); }
+            },
+            {
+                id: "escudo", icon: "🛡️",
+                es: "Escudo", en: "Shield",
+                descEs: "Absorbe tu próximo fallo: ni puntos ni racha.", descEn: "Absorbs your next mistake: no points or streak lost.",
+                apply: function () { advShield++; }
+            },
+            {
+                id: "congelar", icon: "❄️",
+                es: "Tiempo congelado", en: "Frozen clock",
+                descEs: "El cronómetro no baja durante 6 segundos.", descEn: "The clock does not tick for 6 seconds.",
+                apply: function () { advFreeze = performance.now() + 6000; }
+            },
+            {
+                id: "doble", icon: "💥",
+                es: "Puntos x2", en: "Double points",
+                descEs: "Duplica tus puntos durante 15 segundos.", descEn: "Doubles your points for 15 seconds.",
+                apply: function () { advDouble = performance.now() + 15000; }
+            },
+            {
+                id: "turbo", icon: "🏃",
+                es: "Turbo", en: "Turbo",
+                descEs: "10 segundos en los que cada palabra dobla el tiempo que regala.", descEn: "10 seconds where every word gives double time.",
+                apply: function () { advTurbo = performance.now() + 10000; }
+            },
+            {
+                id: "monedas2", icon: "🧲",
+                es: "Monedas dobles", en: "Double coins",
+                descEs: "15 segundos ganando el doble de monedas en cada palabra.", descEn: "15 seconds earning double coins on every word.",
+                apply: function () { advCoins = performance.now() + 15000; }
+            },
+            {
+                id: "salvavidas", icon: "🆘",
+                es: "Salvavidas", en: "Lifeline",
+                descEs: "Si el cronómetro llega a cero, salta a 15 segundos.", descEn: "If the clock reaches zero, it jumps to 15 seconds.",
+                apply: function () { advRevive++; }
+            },
+            {
+                id: "regalada", icon: "🎁",
+                es: "Palabra regalada", en: "Free word",
+                descEs: "La palabra de delante se completa sola si no la tocas.", descEn: "The word in front of you completes itself if you leave it alone.",
+                apply: function () {
+                    const w = word;
+                    setTimeout(function () {
+                        if (state !== "playing" || perkOpen) return;
+                        if (word !== w || typing.value.length > 0) return;
+                        status.textContent = t("statusFreeWord");
+                        completeWord();
+                    }, 600);
+                }
+            },
+            {
+                id: "suerte", icon: "🎲",
+                es: "Suerte del todo", en: "Wild card",
+                descEs: "Te toca otra ventaja al azar del banque.", descEn: "You get another random advantage from the deck.",
+                apply: function () {
+                    const otras = ADVENTURE_PERKS.filter(p => p.id !== "suerte");
+                    otras[Math.floor(Math.random() * otras.length)].apply();
+                }
+            },
+            {
+                id: "monedas", icon: "🪙",
+                es: "+25 monedas", en: "+25 coins",
+                descEs: "Te llevas 25 monedas al instante.", descEn: "You get 25 coins right away.",
+                apply: function () { giveCoins(25); showCoin(25); }
+            },
+            {
+                id: "racha", icon: "🔥",
+                es: "Racha +5", en: "Streak +5",
+                descEs: "Tu racha sube de golpe cinco palabras.", descEn: "Your streak jumps five words ahead.",
+                apply: function () { streak += 5; }
+            },
+            {
+                id: "corto", icon: "🛤️",
+                es: "Camino corto", en: "Short cut",
+                descEs: "Las próximas 3 palabras serán cortas.", descEn: "The next 3 words will be short ones.",
+                apply: function () { advShort += 3; }
+            }
+        ];
+
+        // Reparte tres ventajas distintas al azar entre las que elegir
+        function sortPerks() {
+            const pool = ADVENTURE_PERKS.slice();
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = pool[i];
+                pool[i] = pool[j];
+                pool[j] = tmp;
+            }
+            return pool.slice(0, 3);
+        }
+
+        // Abre la parada de la aventura: mientras el jugador elige, el reloj
+        // no corre y la entrada de texto queda bloqueada.
+        function openPerkChoice() {
+            const picks = sortPerks();
+            perkOpen = true;
+            pausedAt = Date.now();
+            typing.disabled = true;
+            typing.blur();
+            perkGrid.innerHTML = "";
+            const en = uiLang() === "en";
+            picks.forEach(p => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "perk-opt";
+                const icon = document.createElement("span");
+                icon.className = "perk-icon";
+                icon.textContent = p.icon;
+                const name = document.createElement("strong");
+                name.textContent = en ? p.en : p.es;
+                const desc = document.createElement("span");
+                desc.textContent = en ? p.descEn : p.descEs;
+                btn.appendChild(icon);
+                btn.appendChild(name);
+                btn.appendChild(desc);
+                btn.addEventListener("click", () => choosePerk(p));
+                perkGrid.appendChild(btn);
+            });
+            perkVeil.classList.remove("hidden");
+            status.textContent = t("perkTitle");
+            renderAdvBar();
+        }
+
+        // Aplica la ventaja elegida y devuelve el control al jugador
+        function choosePerk(p) {
+            if (!perkOpen) return;
+            perkOpen = false;
+            perkVeil.classList.add("hidden");
+            pausedTotal += Date.now() - pausedAt;   // la pausa no cuenta como partida
+            p.apply();
+            typing.disabled = false;
+            typing.focus();
+            status.textContent = t("perkChosen") + p.icon + " " +
+                (uiLang() === "en" ? p.en : p.es);
+            updateHud();   // refresca el tiempo y los efectos activos
+        }
+
+        // Efectos activos del modo Aventura, bajo el tablero
+        function renderAdvBar() {
+            if (!advBar) return;
+            if (mode !== "aventura" || state !== "playing") {
+                advBar.classList.add("is-off");
+                advBar.innerHTML = "";
+                return;
+            }
+            advBar.classList.remove("is-off");
+            advBar.innerHTML = "";
+            const add = (txt, on) => {
+                const s = document.createElement("span");
+                s.className = "adv-chip" + (on ? " on" : "");
+                s.textContent = txt;
+                advBar.appendChild(s);
+            };
+            add("⏱️ +" + timePerWord() + "s/" + t("advWord"));
+            if (advShield > 0) add("🛡️ x" + advShield, true);
+            if (advShort > 0) add("🛤️ x" + advShort, true);
+            if (advRevive > 0) add("🆘 x" + advRevive, true);
+            const ahora = performance.now();
+            if (ahora < advFreeze) add("❄️ " + Math.ceil((advFreeze - ahora) / 1000), true);
+            if (ahora < advDouble) add("💥 x2 " + Math.ceil((advDouble - ahora) / 1000), true);
+            if (ahora < advTurbo) add("🏃 x2s " + Math.ceil((advTurbo - ahora) / 1000), true);
+            if (ahora < advCoins) add("🧲 x2🪙 " + Math.ceil((advCoins - ahora) / 1000), true);
         }
 
         // Lista de la que sale la siguiente palabra. Con el modo picante
@@ -4039,7 +4431,11 @@
             const list = wordPool();
             const lvl = level();
             let pool;
-            if (lvl <= 1) pool = list.filter(w => w.length <= 5);
+            // Ventaja "camino corto" del modo Aventura: palabras cortas
+            if (mode === "aventura" && advShort > 0) {
+                advShort--;
+                pool = list.filter(w => w.length <= 5);
+            } else if (lvl <= 1) pool = list.filter(w => w.length <= 5);
             else if (lvl <= 3) pool = list.filter(w => w.length <= 7);
             else if (lvl <= 6) pool = list.filter(w => w.length >= 5);
             else pool = list.filter(w => w.length >= 6);
@@ -4130,6 +4526,7 @@
             levelEl.textContent = level();
             timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
             timeBox.classList.toggle("low", timeLeft <= 10 && state === "playing");
+            if (mode === "aventura") renderAdvBar();   // efectos y tiempo por palabra
         }
 
         // Dibuja las letras de la palabra (con el cursor y lo ya tecleado)
@@ -4249,7 +4646,7 @@
                 wrongLetters = [];
                 soupReveal();    // letras que deja Sopa de Letras
                 renderMisses();
-            } else if (mode === "type") {
+            } else if (mode === "type" || mode === "aventura") {
                 soupPrefill();   // letras que deja Sopa de Letras
             }
             renderCurrent();
@@ -4264,7 +4661,9 @@
             // palabras largas (más de 7 letras) y General dobla las monedas
             const largo = word.length > 7;
             const triple = bgPower("esteso") && largo;
-            const points = word.length * 10 * mult * (triple ? SCORE_BOOST : 1);
+            // Ventaja "puntos x2" del modo Aventura: solo durante su ventana
+            const x2 = (mode === "aventura" && performance.now() < advDouble) ? 2 : 1;
+            const points = word.length * 10 * mult * (triple ? SCORE_BOOST : 1) * x2;
             score += points;
             showPoints(points);
             // Monedas al estilo experiencia: la racha multiplica lo que ganas.
@@ -4272,10 +4671,16 @@
             // (x1 al principio y hasta x5 con la racha larga).
             const coinGain = mult *
                 (triple ? SCORE_BOOST : 1) *
-                (bgPower("franco") ? 2 : 1);
+                (bgPower("franco") ? 2 : 1) *
+                // Ventaja "monedas dobles": solo durante su ventana
+                ((mode === "aventura" && performance.now() < advCoins) ? 2 : 1);
             giveCoins(coinGain);
             showCoin(coinGain);
+            // Modo Aventura: cada palabra regala segundos al cronómetro
+            if (mode === "aventura") gainTime(timePerWord());
             newWord();
+            // ... y cada ADV_EVERY hay una parada para elegir una ventaja
+            if (mode === "aventura" && completed % ADV_EVERY === 0) openPerkChoice();
         }
 
         function startGame() {
@@ -4290,8 +4695,22 @@
             prevLen = 0;
             misses = 0;
             wrongLetters = [];
-            timeLeft = gameTime();   // Elprico suma aquí sus 15 segundos extra
+            // El modo Aventura se juega contra un cronómetro propio: 50 s
+            timeLeft = mode === "aventura" ? ADV_TIME : gameTime();
             coinsRun = 0;
+            // Estado del modo Aventura: ventajas y pausas a cero
+            perkOpen = false;
+            pausedTotal = 0;
+            pausedAt = 0;
+            advShield = 0;
+            advShort = 0;
+            advFreeze = 0;
+            advDouble = 0;
+            advTurbo = 0;
+            advCoins = 0;
+            advRevive = 0;
+            advTimeGained = 0;
+            if (perkVeil) perkVeil.classList.add("hidden");
             // Telemetría anti-automatización: se reinicia en cada partida
             keyStamps = [];
             inputEvents = 0;
@@ -4317,10 +4736,14 @@
             status.textContent =
                 mode === "imagen" ? t("statusPlayI") :
                 mode === "guess" ? t("statusPlayG") :
+                mode === "aventura" ? t("statusPlayA") :
                 (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
             // Aviso de la habilidad que aporta el fondo equipado
+            // (en Aventura la de Elprico no actúa: el reloj arranca en 50 s)
             const poder = bgPowerDesc();
-            if (poder) status.textContent += " · " + poder;
+            if (poder && !(mode === "aventura" && bg === "elprico")) {
+                status.textContent += " · " + poder;
+            }
             lastTick = performance.now();
 
             newWord();
@@ -4333,8 +4756,29 @@
 
         function tick() {
             const now = performance.now();
+            // Modo Aventura: mientras se elige ventaja el reloj no corre…
+            if (perkOpen) {
+                lastTick = now;
+                return;
+            }
+            // …y con la ventaja "tiempo congelado" tampoco baja unos segundos
+            if (now < advFreeze) {
+                lastTick = now;
+                updateHud();
+                return;
+            }
             timeLeft -= (now - lastTick) / 1000;
             lastTick = now;
+
+            // Ventaja "salvavidas": el cronómetro no muere de golpe, salta a 15 s
+            if (timeLeft <= 0 && advRevive > 0) {
+                advRevive--;
+                const salvado = Math.max(1, 15 - timeLeft);
+                timeLeft += salvado;
+                advTimeGained += salvado;
+                showSeconds(Math.round(salvado));
+                status.textContent = t("statusRevive");
+            }
 
             if (timeLeft <= 0) {
                 timeLeft = 0;
@@ -4348,16 +4792,25 @@
         function endGame() {
             clearInterval(timerId);
             // Duración real de la partida: si alguien congeló el cronómetro
-            // para alargarla y sumar puntos, esto lo delata.
-            gameDuration = gameStartAt > 0 ? (Date.now() - gameStartAt) / 1000 : gameTime();
+            // para alargarla y sumar puntos, esto lo delata. Las paradas del
+            // modo Aventura (elegir ventaja) no se cuentan como tiempo jugado.
+            gameDuration = gameStartAt > 0
+                ? Math.max(0, (Date.now() - gameStartAt - pausedTotal) / 1000)
+                : gameTime();
             state = "over";
+            // Por si se termina con la ventana de ventajas abierta
+            perkOpen = false;
+            if (perkVeil) perkVeil.classList.add("hidden");
+            renderAdvBar();
             typing.disabled = true;
             selBtns.forEach(b => { b.disabled = false; });
             startBtn.textContent = t("btnAgain");
 
             const total = hits + errors;
             const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
-            const ppm = completed / (gameTime() / 60);
+            // Los ppm se calculan sobre lo que duró de verdad la partida
+            const dur = (mode === "aventura" && gameDuration > 0) ? gameDuration : gameTime();
+            const ppm = completed / (dur / 60);
 
             document.getElementById("rScore").textContent = score;
             document.getElementById("rWords").textContent = completed;
@@ -4448,13 +4901,19 @@
             }
 
             if (bad !== -1) {
-                errors++;
-                streak = 0;
-                score = Math.max(0, score - 5);
                 val = val.slice(0, bad);
                 typing.value = val;
-                shake();
-                status.textContent = t("statusError");
+                // Ventaja "escudo" del modo Aventura: el fallo no se paga
+                if (advShield > 0) {
+                    advShield--;
+                    status.textContent = t("statusShield");
+                } else {
+                    errors++;
+                    streak = 0;
+                    score = Math.max(0, score - 5);
+                    shake();
+                    status.textContent = t("statusError");
+                }
             } else {
                 if (val.length > prevLen) hits += val.length - prevLen;
                 status.textContent = t("statusOk");
@@ -4523,7 +4982,7 @@
         // Se anota cada evento de escritura para comprobar al final de la partida
         // que ha sido una persona quien ha escrito (ver checkAutoPlay)
         typing.addEventListener("input", function (e) {
-            if (state !== "playing") {
+            if (state !== "playing" || perkOpen) {
                 typing.value = "";
                 return;
             }
