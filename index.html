@@ -901,6 +901,72 @@
             box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .45);
         }
 
+        /* ---------- Efectos de tecleo (partículas de la tienda) ---------- */
+        /* El color del efecto equipado se globaliza en variables: de ahí
+           sale el resplandor del campo de entrada y de cada tarjeta */
+        body.fx-fuego        { --fx-c: #ff6a00; --fx-glow: rgba(255, 106, 0, .45); }
+        body.fx-estrellas    { --fx-c: #ffd60a; --fx-glow: rgba(255, 214, 10, .45); }
+        body.fx-artificiales { --fx-c: #c77dff; --fx-glow: rgba(199, 125, 255, .45); }
+        body.fx-hielo        { --fx-c: #7dd3fc; --fx-glow: rgba(125, 211, 252, .45); }
+        body.fx-magia        { --fx-c: #e879f9; --fx-glow: rgba(232, 121, 249, .45); }
+
+        #typing {
+            box-shadow: 0 0 18px var(--fx-glow, transparent);
+        }
+        #typing:focus {
+            border-color: var(--fx-c, var(--accent));
+            box-shadow: 0 0 0 4px rgba(94, 234, 212, .14), 0 0 20px var(--fx-glow, transparent);
+        }
+
+        /* Capa fija con las partículas: no estorba al ratón ni al teclado */
+        .fx-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .fx-p {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            line-height: 1;
+            font-style: normal;
+            color: #fff;
+            will-change: transform, opacity;
+            animation: fx-burst var(--fx-life, 800ms) ease-out forwards;
+        }
+        /* Punto de color con su propia luz (chispas, cristales, destellos) */
+        .fx-p.dot {
+            width: var(--fx-size, 9px);
+            height: var(--fx-size, 9px);
+            border-radius: 50%;
+            background-color: var(--fx-color, #fff);
+            box-shadow: 0 0 10px var(--fx-color, #fff);
+        }
+        @keyframes fx-burst {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) translate(0, 0) scale(.3) rotate(0deg);
+            }
+            70% { opacity: 1; }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%)
+                           translate(var(--fx-dx, 0px), var(--fx-dy, 0px))
+                           scale(1) rotate(var(--fx-rot, 0deg));
+            }
+        }
+        /* Cada tarjeta de efecto lleva su color y se enciende al estar en uso */
+        .shop-card.card-fx .shop-preview {
+            font-size: 34px;
+            color: var(--fx-c, #fff);
+            filter: drop-shadow(0 0 12px var(--fx-c, #fff));
+        }
+        .shop-card.card-fx.fx-on {
+            border-color: var(--fx-c);
+            box-shadow: inset 0 0 0 1px var(--fx-c);
+        }
+
         /* ---------- Ranking global y de Aventura ---------- */
         /* Los dos rankings se muestran uno bajo otro; el de la partida que
            acaba de guardarse se resalta con un borde de color */
@@ -1358,6 +1424,9 @@
         <h3 class="shop-sub" id="shopExtrasTitle">🔥 Extras de juego</h3>
         <div class="shop-grid" id="shopExtraGrid"></div>
 
+        <h3 class="shop-sub" id="shopFxTitle">✨ Efectos de tecleo</h3>
+        <div class="shop-grid" id="shopFxGrid"></div>
+
         <p class="shop-msg" id="shopMsg"></p>
     </section>
 
@@ -1775,6 +1844,76 @@
             }
         ];
 
+        // ---------- Efectos de tecleo de la tienda ----------
+        // id: se guarda en el localStorage · price: precio en monedas
+        // icon: miniatura de la tarjeta · colors: colores de las chispas
+        // glyph: emoji que sale de vez en cuando con cada letra
+        // count/power/rise: cuántas partículas, hacia dónde y cuánto trepan
+        // life: milisegundos que vive cada partícula
+        // Al comprar se desbloquean para siempre y solo uno está activo
+        const TYPE_EFFECTS = [
+            {
+                id: "fuego",
+                price: 250,
+                icon: "🔥",
+                color: "#ff6a00",
+                es: "Fuego",
+                en: "Fire",
+                descEs: "Chispas de fuego que trepan con cada letra que tecleas.",
+                descEn: "Fire sparks that climb with every letter you type.",
+                colors: ["#ff6a00", "#ff9f1c", "#ffcc33", "#ff3d00"],
+                glyph: "🔥", count: 7, power: 70, rise: -70, size: 15, life: 750
+            },
+            {
+                id: "estrellas",
+                price: 500,
+                icon: "⭐",
+                color: "#ffd60a",
+                es: "Estrellas",
+                en: "Stars",
+                descEs: "Estrellitas doradas que revolotean al escribir.",
+                descEn: "Golden stars fluttering while you type.",
+                colors: ["#ffd60a", "#ffe66d", "#fff3b0", "#ffea00"],
+                glyph: "⭐", count: 8, power: 85, rise: -35, size: 15, life: 850
+            },
+            {
+                id: "artificiales",
+                price: 670,
+                icon: "🎆",
+                color: "#c77dff",
+                es: "Fuegos artificiales",
+                en: "Fireworks",
+                descEs: "Ráfagas multicolor que estallan en todas direcciones.",
+                descEn: "Multicolour bursts exploding in every direction.",
+                colors: ["#ff4d6d", "#ffd60a", "#4cc9f0", "#b5e48c", "#c77dff"],
+                glyph: "🎆", count: 16, power: 150, rise: -25, size: 16, life: 900
+            },
+            {
+                id: "hielo",
+                price: 840,
+                icon: "❄️",
+                color: "#7dd3fc",
+                es: "Hielo",
+                en: "Ice",
+                descEs: "Cristales de hielo que caen con cada tecla.",
+                descEn: "Ice crystals falling with every key.",
+                colors: ["#7dd3fc", "#e0f2fe", "#38bdf8", "#a5f3fc"],
+                glyph: "❄️", count: 8, power: 75, rise: 70, size: 15, life: 850
+            },
+            {
+                id: "magia",
+                price: 1100,
+                icon: "🪄",
+                color: "#e879f9",
+                es: "Magia",
+                en: "Magic",
+                descEs: "Destellos mágicos rosas y violetas en cada letra.",
+                descEn: "Pink and violet magic sparkles on every letter.",
+                colors: ["#e879f9", "#c084fc", "#f0abfc", "#67e8f9"],
+                glyph: "✨", count: 10, power: 95, rise: -50, size: 16, life: 900
+            }
+        ];
+
         // ---------- Textos de la interfaz por idioma ----------
         const I18N = {
             es: {
@@ -1801,7 +1940,7 @@
                 kBestWords: "Récord palabras",
                 btnShop: "🛒 Tienda",
                 shopTitle: "🛒 Tienda de estilos",
-                shopHint: "Gana monedas por cada palabra sin errores: la racha las multiplica (hasta x5). ¡Cómpralas para desbloquear letras y fondos de pantalla!",
+                shopHint: "Gana monedas por cada palabra sin errores: la racha las multiplica (hasta x5). ¡Cómpralas para desbloquear letras, fondos de pantalla y efectos de tecleo!",
                 shopFontsTitle: "🔤 Estilos de letra",
                 shopBgsTitle: "🖼️ Fondos de pantalla",
                 extraLabel: "Extra",
@@ -1812,6 +1951,11 @@
                 shopBoughtCaos: "¡Modo Caos desbloqueado! Ya puedes activarlo cuando quieras. 🌀",
                 shopEquippedCaosMsg: "Modo Caos activado: se mezclan todos los idiomas y modos. 🌀",
                 shopDeactivatedCaosMsg: "Modo Caos desactivado. 😌",
+                shopFxTitle: "✨ Efectos de tecleo",
+                shopBoughtFx: "¡Efecto de tecleo desbloqueado! Ya puedes usarlo. ✨",
+                shopEquippedFxMsg: "Efecto de tecleo activado: cada letra estalla en el tablero. ✨",
+                shopDeactivatedFxMsg: "Efecto de tecleo desactivado. 💤",
+                shopFxOff: "Apagar",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
                 shopBought: "¡Estilo desbloqueado! Ya puedes usarlo. ✨",
@@ -1933,7 +2077,7 @@
                 kBestWords: "Words record",
                 btnShop: "🛒 Shop",
                 shopTitle: "🛒 Style Shop",
-                shopHint: "Earn coins for every word you complete without mistakes: your streak multiplies them (up to x5). Spend them to unlock fonts and wallpapers!",
+                shopHint: "Earn coins for every word you complete without mistakes: your streak multiplies them (up to x5). Spend them to unlock fonts, wallpapers and typing effects!",
                 shopFontsTitle: "🔤 Font styles",
                 shopBgsTitle: "🖼️ Wallpapers",
                 extraLabel: "Extra",
@@ -1944,6 +2088,11 @@
                 shopBoughtCaos: "Chaos mode unlocked! Turn it on whenever you want. 🌀",
                 shopEquippedCaosMsg: "Chaos mode on: every language and mode mixed together. 🌀",
                 shopDeactivatedCaosMsg: "Chaos mode off. 😌",
+                shopFxTitle: "✨ Typing effects",
+                shopBoughtFx: "Typing effect unlocked! You can use it now. ✨",
+                shopEquippedFxMsg: "Typing effect on: every letter bursts on the board. ✨",
+                shopDeactivatedFxMsg: "Typing effect off. 💤",
+                shopFxOff: "Turn off",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
                 shopNoMoney: "Not enough coins! 🪙",
                 shopBought: "Style unlocked! You can equip it now. ✨",
@@ -2074,6 +2223,8 @@
             picante: false,
             caos: false
         };
+        let ownedFx = [];          // efectos de tecleo comprados
+        let fxEquipped = "";       // efecto de tecleo en uso ("" = ninguno)
         let shopOpen = false;
         let rankOpen = false;      // panel de ranking abierto
         let rankBusy = false;      // evita guardar la puntuación dos veces
@@ -2186,6 +2337,7 @@
         const btnPicante = document.getElementById("btnPicante");
         const btnCaos = document.getElementById("btnCaos");
         const shopExtraGrid = document.getElementById("shopExtraGrid");
+        const shopFxGrid = document.getElementById("shopFxGrid");
         const shopMsg = document.getElementById("shopMsg");
         const shopCoins = document.getElementById("shopCoins");
         const btnShop = document.getElementById("btnShop");
@@ -2772,8 +2924,10 @@
             const bgs = list(r.bgs, BACKGROUNDS.map(b => b.id));
             if (bgs.indexOf("dark") < 0) bgs.push("dark");
             const exs = list(r.extras, EXTRAS.map(x => x.id));
+            const fxs = list(r.fxs, TYPE_EFFECTS.map(f => f.id));
             const eq = (typeof r.equipped === "string" && st.indexOf(r.equipped) >= 0) ? r.equipped : "clasico";
             const bg = (typeof r.bg === "string" && bgs.indexOf(r.bg) >= 0) ? r.bg : "dark";
+            const fxEq = (typeof r.fx === "string" && fxs.indexOf(r.fx) >= 0) ? r.fx : "";
             const on = {};
             EXTRAS.forEach(x => { on[x.id] = !!(r.extraOn && r.extraOn[x.id]) && exs.indexOf(x.id) >= 0; });
 
@@ -2785,6 +2939,7 @@
                 owned: st, equipped: eq,
                 bgs: bgs, bg: bg,
                 extras: exs, extraOn: on,
+                fxs: fxs, fx: fxEq,
                 best: rec(r.best),
                 bestWords: recW(r.bestWords)
             };
@@ -2916,6 +3071,7 @@
                 owned: owned, equipped: equipped,
                 bgs: ownedBgs, bg: bg,
                 extras: ownedExtras, extraOn: extraOn,
+                fxs: ownedFx, fx: fxEquipped,
                 best: { es: readRec("mejorTecleo.es"), en: readRec("mejorTecleo.en") },
                 bestWords: { es: readRec("mejorPalabras.es"), en: readRec("mejorPalabras.en") }
             });
@@ -2934,6 +3090,8 @@
             bg = d.bg;
             ownedExtras = d.extras;
             extraOn = d.extraOn;
+            ownedFx = d.fxs;
+            fxEquipped = d.fx;
             try {
                 localStorage.setItem("mejorTecleo.es", String(d.best.es));
                 localStorage.setItem("mejorTecleo.en", String(d.best.en));
@@ -2944,6 +3102,7 @@
             saveShop();
             saveProfileStats();
             applyStyle();
+            applyFx();
             updateCoins();
             applyLang();
             renderAccount();
@@ -3620,6 +3779,10 @@
                 } else if (localStorage.getItem("teclear.picante") === "1") {
                     extraOn.picante = true;   // clave antigua del modo picante
                 }
+                const fo = JSON.parse(localStorage.getItem("teclear.efectosTecleo") || "null");
+                if (Array.isArray(fo)) ownedFx = fo;
+                const feq = localStorage.getItem("teclear.efectoTecleo");
+                if (feq) fxEquipped = feq;
             } catch (e) {
                 coins = 0;
                 owned = ["clasico"];
@@ -3627,6 +3790,8 @@
                 ownedBgs = ["dark"];
                 ownedExtras = [];
                 extraOn = { picante: false, caos: false };
+                ownedFx = [];
+                fxEquipped = "";
             }
             if (!owned.includes("clasico")) owned.push("clasico");
             if (!ownedBgs.includes("dark")) ownedBgs.push("dark");
@@ -3636,6 +3801,9 @@
                 if (!ownedExtras.includes(x.id)) extraOn[x.id] = false;
                 extraOn[x.id] = !!extraOn[x.id];
             });
+            // Mismo criterio para los efectos de tecleo: solo los comprados
+            ownedFx = ownedFx.filter(id => TYPE_EFFECTS.some(f => f.id === id));
+            if (!ownedFx.includes(fxEquipped)) fxEquipped = "";
         }
 
         function saveShop() {
@@ -3647,6 +3815,8 @@
                 localStorage.setItem("teclear.extras", JSON.stringify(ownedExtras));
                 localStorage.setItem("teclear.extrasOn", JSON.stringify(extraOn));
                 localStorage.setItem("teclear.picante", extraOn.picante ? "1" : "0");
+                localStorage.setItem("teclear.efectosTecleo", JSON.stringify(ownedFx));
+                localStorage.setItem("teclear.efectoTecleo", fxEquipped);
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -3747,6 +3917,7 @@
             });
             renderBgShop();
             renderExtraShop();
+            renderFxShop();
         }
 
         function renderBgShop() {
@@ -3899,6 +4070,109 @@
             });
         }
 
+        // ---------- Efectos de tecleo (chispas con cada letra) ----------
+        function fxById(id) {
+            return TYPE_EFFECTS.find(f => f.id === id) || null;
+        }
+
+        function ownsFx(id) {
+            return !!id && ownedFx.includes(id);
+        }
+
+        // El efecto comprado y puesto en uso (null si no hay ninguno)
+        function activeFx() {
+            const f = fxById(fxEquipped);
+            return f && ownsFx(f.id) ? f : null;
+        }
+
+        // Deja el color del efecto activo en <body>: ahí lo cogen el
+        // resplandor del campo de entrada y las tarjetas de la tienda
+        function applyFx() {
+            TYPE_EFFECTS.forEach(f => {
+                document.body.classList.toggle("fx-" + f.id, !!activeFx() && fxEquipped === f.id);
+            });
+        }
+
+        // Pone un efecto en uso (id vacío lo apaga); solo uno a la vez
+        function setFx(id) {
+            if (state === "playing") return;
+            if (id && !ownsFx(id)) return;
+            fxEquipped = id || "";
+            saveShop();
+            applyFx();
+            if (shopOpen) renderFxShop();
+            shopMsg.textContent = t(fxEquipped ? "shopEquippedFxMsg" : "shopDeactivatedFxMsg");
+        }
+
+        function buyFx(f) {
+            if (ownsFx(f.id)) {
+                setFx(fxEquipped === f.id ? "" : f.id);
+                return;
+            }
+            if (coins < f.price) {
+                shopMsg.textContent = t("shopNoMoney");
+                return;
+            }
+            coins -= f.price;
+            ownedFx.push(f.id);
+            fxEquipped = f.id;    // recién comprado: sale puesto en marcha
+            saveShop();
+            applyFx();
+            updateCoins();
+            renderFxShop();
+            shopMsg.textContent = t("shopBoughtFx");
+        }
+
+        function renderFxShop() {
+            if (!shopFxGrid) return;
+            shopFxGrid.innerHTML = "";
+            TYPE_EFFECTS.forEach(f => {
+                const own = ownsFx(f.id);
+                const on = own && fxEquipped === f.id;
+
+                const card = document.createElement("div");
+                card.className = "shop-card card-fx card-fx-" + f.id;
+                if (on) card.classList.add("fx-on");
+                card.style.setProperty("--fx-c", f.color);
+
+                const prev = document.createElement("div");
+                prev.className = "shop-preview fx-preview";
+                prev.textContent = f.icon;
+                card.appendChild(prev);
+
+                const name = document.createElement("div");
+                name.className = "shop-name";
+                name.textContent = uiLang() === "es" ? f.es : f.en;
+                card.appendChild(name);
+
+                const price = document.createElement("div");
+                price.className = "shop-price";
+                price.textContent = own ? "✓ " + t("shopOwned") : "🪙 " + f.price;
+                card.appendChild(price);
+
+                const desc = document.createElement("div");
+                desc.className = "shop-desc";
+                desc.textContent = uiLang() === "es" ? f.descEs : f.descEn;
+                card.appendChild(desc);
+
+                const btn = document.createElement("button");
+                btn.className = "chip-btn shop-btn";
+                if (on) {
+                    btn.textContent = t("shopFxOff");
+                    btn.addEventListener("click", () => setFx(""));
+                } else if (own) {
+                    btn.textContent = t("shopEquip");
+                    btn.addEventListener("click", () => setFx(f.id));
+                } else {
+                    btn.textContent = t("shopBuy");
+                    if (coins < f.price) btn.classList.add("cant");
+                    btn.addEventListener("click", () => buyFx(f));
+                }
+                card.appendChild(btn);
+                shopFxGrid.appendChild(card);
+            });
+        }
+
         function toggleShop() {
             if (state === "playing") return;
             shopOpen = !shopOpen;
@@ -3971,6 +4245,7 @@
             document.getElementById("shopBgsTitle").textContent =
                 t("shopBgsTitle") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
             document.getElementById("shopExtrasTitle").textContent = t("shopExtrasTitle");
+            document.getElementById("shopFxTitle").textContent = t("shopFxTitle");
             applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent = t("rTitle");
             document.getElementById("rkScore").textContent = t("rkScore");
@@ -4907,6 +5182,78 @@
             board.classList.add("shake");
         }
 
+        // ---------- Efectos de tecleo: partículas ----------
+        // Capa fija sobre la pantalla: ahí nacen las chispas y ahí mueren
+        // solas, sin que estorben al ratón ni al resto de la interfaz
+        const fxLayer = document.createElement("div");
+        fxLayer.className = "fx-layer";
+        fxLayer.setAttribute("aria-hidden", "true");
+        document.body.appendChild(fxLayer);
+
+        const FX_MAX = 140;   // partículas vivas a la vez (no saturar el DOM)
+        let fxAlive = 0;
+
+        // Punto donde estalla la letra: la que está a punto de aparecer en el
+        // tablero (en Imágenes no hay letras, así que manda el campo de entrada)
+        function fxAnchor() {
+            let el = null;
+            if (mode === "imagen") {
+                el = null;
+            } else if (mode === "guess") {
+                el = board.querySelector(".cursor");
+                if (!el) {
+                    const ok = board.querySelectorAll(".ok");
+                    el = ok.length ? ok[ok.length - 1] : null;
+                }
+            } else if (board.children.length) {
+                const i = Math.min(prevLen, board.children.length - 1);
+                el = board.children[i < 0 ? 0 : i];
+            }
+            const r = (el || typing).getBoundingClientRect();
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        }
+
+        // Estalla el efecto equipado en el punto de la letra recién tecleada
+        function fxBurst() {
+            const fx = activeFx();
+            if (!fx || state !== "playing") return;
+            const a = fxAnchor();
+            const n = fx.count;
+            const life = fx.life || 800;
+            for (let i = 0; i < n; i++) {
+                if (fxAlive >= FX_MAX) break;
+                const p = document.createElement("i");
+                const ang = (Math.PI * 2 * i) / n + Math.random() * .8;
+                const pow = fx.power * (.55 + Math.random() * .75);
+                const dx = Math.cos(ang) * pow;
+                const dy = Math.sin(ang) * pow + fx.rise * (.6 + Math.random() * .8);
+                const emoji = fx.glyph && i % 3 === 0;   // de vez en cuando, el emoji
+                p.className = "fx-p" + (emoji ? "" : " dot");
+                p.style.left = (a.x + Math.random() * 12 - 6) + "px";
+                p.style.top = (a.y + Math.random() * 12 - 6) + "px";
+                p.style.setProperty("--fx-dx", dx.toFixed(1) + "px");
+                p.style.setProperty("--fx-dy", dy.toFixed(1) + "px");
+                p.style.setProperty("--fx-rot", (Math.random() * 360 - 180).toFixed(0) + "deg");
+                p.style.setProperty("--fx-life", life + "ms");
+                if (emoji) {
+                    p.textContent = fx.glyph;
+                    p.style.fontSize = fx.size + "px";
+                } else {
+                    p.style.setProperty("--fx-color", fx.colors[i % fx.colors.length]);
+                    // la chispa es más pequeña que el emoji para no tapar la letra
+                    p.style.setProperty("--fx-size", Math.max(6, Math.round(fx.size * .6)) + "px");
+                }
+                fxLayer.appendChild(p);
+                fxAlive++;
+                setTimeout((function (node) {
+                    return function () {
+                        node.remove();
+                        fxAlive--;
+                    };
+                })(p), life + 60);
+            }
+        }
+
         // ---------- Ciclo de juego ----------
         function newWord() {
             typing.value = "";
@@ -5299,6 +5646,10 @@
             if (state !== "playing") return;
             if (e.isTrusted) trustedKeys++;
             if (!e.repeat) keyStamps.push(performance.now()); // el auto-repetido no cuenta
+            // Efecto de tecleo comprado en la tienda: estalla con cada letra
+            if (!e.repeat && !perkOpen && e.key && e.key.length === 1 && !/\s/.test(e.key)) {
+                fxBurst();
+            }
         });
 
         // Pegar o arrastrar texto no vale: hay que teclearlo
@@ -5475,6 +5826,7 @@
             bg = "dark";
         }
         applyStyle();
+        applyFx();
         updateCoins();
         applyLang();
         if (accName) accName.value = loadPlayerName();   // pre-rellena el nombre
