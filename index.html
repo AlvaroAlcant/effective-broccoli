@@ -320,6 +320,34 @@
             opacity: .45;
             cursor: not-allowed;
         }
+        /* Menú de selección de la variante de Tecleo (extras comprados) */
+        .chip-select {
+            background-color: rgba(255, 255, 255, .03);
+            color: var(--text);
+            border: 1px solid var(--line);
+            padding: 8px 12px;
+            font-size: 14px;
+            line-height: 1.3;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: color .18s, border-color .18s, background-color .18s;
+        }
+        .chip-select:hover:not(:disabled) {
+            border-color: var(--accent);
+            background-color: rgba(94, 234, 212, .10);
+        }
+        .chip-select:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .chip-select:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+        .chip-select option {
+            background-color: #0d1117;
+            color: var(--text);
+        }
 
         /* ---------- Marcador ---------- */
         .stats {
@@ -874,27 +902,6 @@
             border-color: rgba(167, 139, 250, .7);
             box-shadow: 0 0 22px rgba(139, 92, 246, .28);
         }
-        /* Cada chip de extra lleva su color cuando está en uso */
-        .chip-btn.chip-picante {
-            color: var(--danger);
-            border-color: rgba(248, 113, 113, .55);
-        }
-        .chip-btn.chip-picante.active {
-            background: linear-gradient(180deg, #fb7185, #ef4444);
-            border-color: transparent;
-            color: #2b0a0d;
-            box-shadow: 0 6px 16px rgba(248, 113, 113, .35);
-        }
-        .chip-btn.chip-caos {
-            color: #c4b5fd;
-            border-color: rgba(167, 139, 250, .55);
-        }
-        .chip-btn.chip-caos.active {
-            background: linear-gradient(180deg, #a78bfa, #7c3aed);
-            border-color: transparent;
-            color: #160a2b;
-            box-shadow: 0 6px 16px rgba(139, 92, 246, .35);
-        }
         .shop-card.card-caos.extra-on {
             border-color: #a78bfa;
             background-color: #1a1230;
@@ -904,16 +911,6 @@
         body.php-on .board {
             border-color: rgba(121, 134, 203, .7);
             box-shadow: 0 0 22px rgba(99, 102, 241, .28);
-        }
-        .chip-btn.chip-php {
-            color: #a5b4fc;
-            border-color: rgba(129, 140, 248, .55);
-        }
-        .chip-btn.chip-php.active {
-            background: linear-gradient(180deg, #818cf8, #4f46e5);
-            border-color: transparent;
-            color: #0d0b2b;
-            box-shadow: 0 6px 16px rgba(129, 140, 248, .35);
         }
         .shop-card.card-php.extra-on {
             border-color: #818cf8;
@@ -1394,6 +1391,7 @@
         <div class="sel-row">
             <span class="sel-label" id="modeLabel">Modo de juego</span>
             <button class="chip-btn active" id="btnType">⌨️ Tecleo</button>
+            <select id="modeSelect" class="chip-select" aria-label="Variante del modo Tecleo"></select>
             <button class="chip-btn" id="btnGuess">🧩 Adivinar</button>
             <button class="chip-btn" id="btnImagen">🖼️ Imágenes</button>
             <button class="chip-btn" id="btnAventura">🗺️ Aventura</button>
@@ -1403,12 +1401,6 @@
             <button class="chip-btn active" id="btnBgDark">🌙 Oscuro</button>
             <button class="chip-btn" id="btnBgFranco">🖼️ General</button>
             <span id="bgExtra"></span>
-        </div>
-        <div class="sel-row" id="extraRow">
-            <span class="sel-label" id="extraLabel">Extra</span>
-            <button class="chip-btn chip-picante" id="btnPicante">🌶️ Modo picante</button>
-            <button class="chip-btn chip-caos" id="btnCaos">🌀 Modo Caos</button>
-            <button class="chip-btn chip-php" id="btnPhp">🐘 Modo Php</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="actLabel">Acciones</span>
@@ -2033,7 +2025,11 @@
                 shopHint: "Gana monedas por cada palabra sin errores: la racha las multiplica (hasta x5). ¡Cómpralas para desbloquear letras, fondos de pantalla y efectos de tecleo!",
                 shopFontsTitle: "🔤 Estilos de letra",
                 shopBgsTitle: "🖼️ Fondos de pantalla",
-                extraLabel: "Extra",
+                modeClassic: "⌨️ Tecleo clásico",
+                modeClassicMsg: "Tecleo clásico: sin extras, solo las palabras del idioma elegido. ⌨️",
+                modeSelectHint: "Elige la variante de Tecleo que hayas comprado en la tienda",
+                modeSelectEmpty: "Compra extras en la tienda para desbloquear más modos de Tecleo",
+                modeSelectAria: "Variante del modo Tecleo",
                 shopExtrasTitle: "🔥 Extras de juego",
                 shopBoughtExtra: "¡Modo picante desbloqueado! Ya puedes activarlo cuando quieras. 🌶️",
                 shopEquippedExtraMsg: "Modo picante activado: ahora aparecen palabras +18. 🌶️",
@@ -2173,7 +2169,12 @@
                 shopHint: "Earn coins for every word you complete without mistakes: your streak multiplies them (up to x5). Spend them to unlock fonts, wallpapers and typing effects!",
                 shopFontsTitle: "🔤 Font styles",
                 shopBgsTitle: "🖼️ Wallpapers",
-                extraLabel: "Extra",
+                modeClassic: "⌨️ Classic typing",
+                modeClassicMsg: "Classic typing: no extras, just words in the chosen language. ⌨️",
+                modeClassicMsg: "Classic typing: no extras, just words in the chosen language. ⌨️",
+                modeSelectHint: "Pick the typing variant you bought in the shop",
+                modeSelectEmpty: "Buy extras in the shop to unlock more typing modes",
+                modeSelectAria: "Typing mode variant",
                 shopExtrasTitle: "🔥 Gameplay extras",
                 shopBoughtExtra: "Spicy mode unlocked! Turn it on whenever you want. 🌶️",
                 shopEquippedExtraMsg: "Spicy mode on: +18 words from now on. 🌶️",
@@ -2429,11 +2430,7 @@
         const shopGrid = document.getElementById("shopGrid");
         const shopBgGrid = document.getElementById("shopBgGrid");
         const bgExtra = document.getElementById("bgExtra");
-        const extraRow = document.getElementById("extraRow");
-        const extraLabel = document.getElementById("extraLabel");
-        const btnPicante = document.getElementById("btnPicante");
-        const btnCaos = document.getElementById("btnCaos");
-        const btnPhp = document.getElementById("btnPhp");
+        const modeSelect = document.getElementById("modeSelect");
         const shopExtraGrid = document.getElementById("shopExtraGrid");
         const shopFxGrid = document.getElementById("shopFxGrid");
         const shopMsg = document.getElementById("shopMsg");
@@ -2481,8 +2478,8 @@
         const perkVeil = document.getElementById("perkVeil");
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
-        const selBtns = [btnEs, btnEn, btnMurciano, btnType, btnGuess, btnImagen, btnAventura,
-            btnPicante, btnCaos, btnPhp, btnShop, btnRanking, btnRegister, btnLogin];
+        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura,
+            btnShop, btnRanking, btnRegister, btnLogin];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
             ["accKCoins", "accVCoins", "kCoins"],
@@ -4065,10 +4062,9 @@
             });
         }
 
-        // ---------- Extras de juego (picante, caos…) ----------
-        // Chip del selector asociado a cada extra
-        const EXTRA_CHIPS = { picante: btnPicante, caos: btnCaos, php: btnPhp };
-
+        // ---------- Extras de juego (picante, caos, php…) ----------
+        // Cada extra comprado pasa a ser una variante del modo Tecleo y se
+        // elige en el menú desplegable de al lado del botón "⌨️ Tecleo".
         function ownsExtra(id) {
             return ownedExtras.includes(id);
         }
@@ -4077,27 +4073,71 @@
             return ownsExtra(id) && !!extraOn[id];
         }
 
-        // Refresca el chip del selector, la fila de extras y el tablero
-        function applyExtras() {
-            if (extraRow) extraRow.style.display = ownedExtras.length ? "" : "none";
+        // Extra elegido en el desplegable ("", si se juega al Tecleo clásico)
+        function activeExtraId() {
+            const x = EXTRAS.find(e => extraActive(e.id));
+            return x ? x.id : "";
+        }
+
+        // Rellena el menú de variante de Tecleo con los modos comprados
+        function renderModeSelect() {
+            if (!modeSelect) return;
+            const chosen = activeExtraId();
+            modeSelect.innerHTML = "";
+
+            const opt = (val, txt) => {
+                const o = document.createElement("option");
+                o.value = val;
+                o.textContent = txt;
+                modeSelect.appendChild(o);
+            };
+
+            opt("", t("modeClassic"));
             EXTRAS.forEach(x => {
-                const chip = EXTRA_CHIPS[x.id];
-                if (!chip) return;
-                chip.style.display = ownsExtra(x.id) ? "" : "none";
-                chip.textContent = x.icon + " " + (uiLang() === "es" ? x.es : x.en);
-                chip.classList.toggle("active", extraActive(x.id));
+                if (!ownsExtra(x.id)) return;   // solo los comprados
+                opt(x.id, x.icon + " " + (uiLang() === "es" ? x.es : x.en));
+            });
+
+            modeSelect.value = chosen;
+            // Sin nada comprado el menú no tiene más opción que el clásico
+            const sinExtras = EXTRAS.every(x => !ownsExtra(x.id));
+            modeSelect.disabled = sinExtras || state === "playing";
+            modeSelect.title = sinExtras ? t("modeSelectEmpty") : t("modeSelectHint");
+        }
+
+        // Refresca el desplegable, la fila de extras y el tablero
+        function applyExtras() {
+            EXTRAS.forEach(x => {
                 document.body.classList.toggle(x.id + "-on", extraActive(x.id));
             });
+            renderModeSelect();
         }
 
         function setExtra(id, on) {
             if (!ownsExtra(id) || state === "playing") return;
-            extraOn[id] = !!on;
+            // Solo una variante activa: usar una apaga las demás
+            if (on) {
+                EXTRAS.forEach(x => extraOn[x.id] = (x.id === id));
+            } else {
+                extraOn[id] = false;
+            }
             saveShop();
             applyExtras();
             if (shopOpen) renderExtraShop();
             const x = EXTRAS.find(e => e.id === id);
             if (x) shopMsg.textContent = t(on ? x.msgOn : x.msgOff);
+        }
+
+        // Solo puede haber una variante de Tecleo activa a la vez: al elegir
+        // una en el menú se apagan las demás
+        function chooseExtra(id) {
+            if (state === "playing") return;
+            EXTRAS.forEach(x => extraOn[x.id] = (x.id === id));
+            saveShop();
+            applyExtras();
+            if (shopOpen) renderExtraShop();
+            const x = EXTRAS.find(e => e.id === id);
+            shopMsg.textContent = x ? t(x.msgOn) : t("modeClassicMsg");
         }
 
         function buyExtra(x) {
@@ -4111,7 +4151,8 @@
             }
             coins -= x.price;
             ownedExtras.push(x.id);
-            extraOn[x.id] = true;
+            // Al comprarla se activa sola y se apagan las demás variantes
+            EXTRAS.forEach(e => extraOn[e.id] = (e.id === x.id));
             saveShop();
             applyExtras();
             updateCoins();
@@ -4304,7 +4345,7 @@
             document.getElementById("bgLabel").textContent =
                 t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
             document.getElementById("actLabel").textContent = t("actLabel");
-            if (extraLabel) extraLabel.textContent = t("extraLabel");
+            if (modeSelect) modeSelect.setAttribute("aria-label", t("modeSelectAria"));
             btnBgDark.textContent = t("bgDark");
             btnBgFranco.textContent = t("bgFranco");
             document.getElementById("kScore").textContent = t("kScore");
@@ -4451,10 +4492,10 @@
         btnBgDark.addEventListener("click", () => setBg("dark"));
         btnBgFranco.addEventListener("click", () => setBg("franco"));
 
-        // Cada extra se activa y desactiva desde su chip del selector
-        if (btnPicante) btnPicante.addEventListener("click", () => setExtra("picante", !extraOn.picante));
-        if (btnCaos) btnCaos.addEventListener("click", () => setExtra("caos", !extraOn.caos));
-        if (btnPhp) btnPhp.addEventListener("click", () => setExtra("php", !extraOn.php));
+        // La variante de Tecleo se cambia en el menú desplegable
+        if (modeSelect) {
+            modeSelect.addEventListener("change", () => chooseExtra(modeSelect.value));
+        }
 
         // Añade al selector los fondos comprados en la tienda
         function renderBgChips() {
@@ -5552,6 +5593,7 @@
             renderAdvBar();
             typing.disabled = true;
             selBtns.forEach(b => { b.disabled = false; });
+            renderModeSelect();   // el menú se vuelve a dejar como toca
             startBtn.textContent = t("btnAgain");
 
             const total = hits + errors;
