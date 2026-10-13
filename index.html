@@ -1883,6 +1883,45 @@
             "pdo", "sql", "select_from", "insert_into", "prepared"
         ];
 
+        // ---------- Palabras del modo Andaluz ----------
+        // Vocabulario y giros típicos del dialecto andaluz, tecleados tal
+        // y como se escriben (sin espacios, para que quepan en el tablero)
+        const ANDALUZ_WORDS = [
+            "jarta", "quillo", "illo", "usté", "vaina", "chiquero", "paje",
+            "morapio", "alelí", "caló", "fainá", "tirilla", "peirón",
+            "manco", "arreo", "majo", "ché", "ñaño", "choco", "gazpacho",
+            "porrón", "pincho", "tapá", "caña", "merendú", "fritillanga",
+            "tortas", "chorizo", "jamón", "migas", "zarangollo", "pipirrana",
+            "caldero", "pimentón", "atún", "mojama", "salazón", "huerta",
+            "sequía", "azeite", "vinagre", "pimiento", "sandía", "almejas",
+            "gambas", "pulpo", "sepia", "chopos", "palmeras", "carretero",
+            "venera", "alhucema", "azahar", "jara", "esparto", "almagra",
+            "rejura", "chirigüela", "jipio", "cacharro", "madrugá",
+            "sobremesa", "puchero", "berenjena", "almóndiga", "fritán"
+        ];
+
+        // ---------- Palabras del modo Cúbico (Minecraft) ----------
+        // Mobes, bloques, objetos y dimensiones del juego de Mojang
+        const MINECRAFT_WORDS = [
+            "minecraft", "creeper", "enderman", "esqueleto", "zombi",
+            "araña", "blaze", "ghast", "wither", "enderdragon", "dragón",
+            "nether", "overworld", "slime", "piedra", "madera", "tierra",
+            "arena", "obsidiana", "diamante", "esmeralda", "hierro",
+            "carbón", "redstone", "cuarzo", "cobre", "granito", "bloque",
+            "espada", "pico", "pala", "hacha", "arco", "flecha",
+            "armadura", "yunque", "fragua", "horno", "baúl", "siembra",
+            "cosecha", "granja", "aldea", "mina", "túnel", "antorcha",
+            "lava", "bedrock", "bioma", "desierto", "taiga", "selva",
+            "nieve", "océano", "isla", "montaña", "torre", "mazmorra",
+            "templo", "encantamiento", "poción", "mena", "cantera",
+            "crafting", "receta", "trigo", "zanahoria", "sandía",
+            "calabaza", "melón", "luminas", "colocar", "romper",
+            "construir", "explorar", "supervivencia", "creativo",
+            "dificultad", "espantajo", "strider", "phantom", "hoglin",
+            "axolotl", "abeja", "lobo", "gato", "pollo", "vaca", "cerdo",
+            "oveja", "cabra", "conejo", "zorro", "oso", "llama", "tortuga"
+        ];
+
         // ---------- Extras de la tienda ----------
         // id: identificador guardado en localStorage · price: precio en monedas
         // icon: vista previa de la tarjeta · desc*: texto de la tarjeta
@@ -1923,8 +1962,60 @@
                 msgBuy: "shopBoughtPhp",
                 msgOn: "shopEquippedPhpMsg",
                 msgOff: "shopDeactivatedPhpMsg"
+            },
+            {
+                id: "espejo",
+                price: 321,
+                icon: "🪞",
+                es: "Modo Espejo",
+                en: "Mirror mode",
+                descEs: "Las palabras aparecen del revés: tienes que escribirlas al revés, letra por letra.",
+                descEn: "Words come out backwards: you must type them reversed, letter by letter.",
+                msgBuy: "shopBoughtEspejo",
+                msgOn: "shopEquippedEspejoMsg",
+                msgOff: "shopDeactivatedEspejoMsg"
+            },
+            {
+                id: "andaluz",
+                price: 540,
+                icon: "🫒",
+                es: "Modo Andaluz",
+                en: "Andalusian mode",
+                descEs: "Palabras y expresiones típicas del dialecto andaluz: ¡sin apurar, que hay jartá!",
+                descEn: "Words and sayings from the Andalusian dialect: watch out, they're tricky!",
+                msgBuy: "shopBoughtAndaluz",
+                msgOn: "shopEquippedAndaluzMsg",
+                msgOff: "shopDeactivatedAndaluzMsg"
+            },
+            {
+                id: "azar",
+                price: 777,
+                icon: "🎲",
+                es: "Modo Al azar",
+                en: "Random mode",
+                descEs: "Cada partida elige uno o varios modos comprados al azar: nunca sabes qué te toca.",
+                descEn: "Every match randomly picks one or more modes you own: you never know what's coming.",
+                msgBuy: "shopBoughtAzar",
+                msgOn: "shopEquippedAzarMsg",
+                msgOff: "shopDeactivatedAzarMsg"
+            },
+            {
+                id: "cubico",
+                price: 2009,
+                icon: "⛏️",
+                es: "Modo Cúbico",
+                en: "Cubic mode",
+                descEs: "Palabras sacadas de Minecraft: mobes, bloques, objetos y dimensiones del juego.",
+                descEn: "Words taken from Minecraft: mobs, blocks, items and game dimensions.",
+                msgBuy: "shopBoughtCubico",
+                msgOn: "shopEquippedCubicoMsg",
+                msgOff: "shopDeactivatedCubicoMsg"
             }
         ];
+
+        // La tienda enseña los modos de juego ordenados por precio,
+        // del más barato al más caro
+        EXTRAS.sort((a, b) => a.price - b.price);
 
         // ---------- Efectos de tecleo de la tienda ----------
         // id: se guarda en el localStorage · price: precio en monedas
@@ -2040,6 +2131,20 @@
                 shopBoughtPhp: "¡Modo Php desbloqueado! Ya puedes activarlo cuando quieras. 🐘",
                 shopEquippedPhpMsg: "Modo Php activado: a escribir funciones, formularios y clases de PHP. 🐘",
                 shopDeactivatedPhpMsg: "Modo Php desactivado. 😌",
+                shopBoughtEspejo: "¡Modo Espejo desbloqueado! Ya puedes activarlo cuando quieras. 🪞",
+                shopEquippedEspejoMsg: "Modo Espejo activado: las palabras salen del revés. 🪞",
+                shopDeactivatedEspejoMsg: "Modo Espejo desactivado. 😌",
+                shopBoughtAndaluz: "¡Modo Andaluz desbloqueado! Ya puedes activarlo cuando quieras. 🫒",
+                shopEquippedAndaluzMsg: "Modo Andaluz activado: vocabulario de la tierra, illo. 🫒",
+                shopDeactivatedAndaluzMsg: "Modo Andaluz desactivado. 😌",
+                shopBoughtAzar: "¡Modo Al azar desbloqueado! Ya puedes activarlo cuando quieras. 🎲",
+                shopEquippedAzarMsg: "Modo Al azar activado: cada partida sortea los modos. 🎲",
+                shopDeactivatedAzarMsg: "Modo Al azar desactivado. 😌",
+                shopBoughtCubico: "¡Modo Cúbico desbloqueado! Ya puedes activarlo cuando quieras. ⛏️",
+                shopEquippedCubicoMsg: "Modo Cúbico activado: palabras de Minecraft. ⛏️",
+                shopDeactivatedCubicoMsg: "Modo Cúbico desactivado. 😌",
+                statusAzar: "🎲 El modo Al azar ha elegido: ",
+                statusAzarNone: "🎲 Modo Al azar: sin otros modos comprados, se juega al clásico.",
                 shopFxTitle: "✨ Efectos de tecleo",
                 shopBoughtFx: "¡Efecto de tecleo desbloqueado! Ya puedes usarlo. ✨",
                 shopEquippedFxMsg: "Efecto de tecleo activado: cada letra estalla en el tablero. ✨",
@@ -2185,6 +2290,20 @@
                 shopBoughtPhp: "Php mode unlocked! Turn it on whenever you want. 🐘",
                 shopEquippedPhpMsg: "Php mode on: type PHP functions, forms and classes. 🐘",
                 shopDeactivatedPhpMsg: "Php mode off. 😌",
+                shopBoughtEspejo: "Mirror mode unlocked! Turn it on whenever you want. 🪞",
+                shopEquippedEspejoMsg: "Mirror mode on: words come out backwards. 🪞",
+                shopDeactivatedEspejoMsg: "Mirror mode off. 😌",
+                shopBoughtAndaluz: "Andalusian mode unlocked! Turn it on whenever you want. 🫒",
+                shopEquippedAndaluzMsg: "Andalusian mode on: local dialect words, pal. 🫒",
+                shopDeactivatedAndaluzMsg: "Andalusian mode off. 😌",
+                shopBoughtAzar: "Random mode unlocked! Turn it on whenever you want. 🎲",
+                shopEquippedAzarMsg: "Random mode on: every match rolls new modes. 🎲",
+                shopDeactivatedAzarMsg: "Random mode off. 😌",
+                shopBoughtCubico: "Cubic mode unlocked! Turn it on whenever you want. ⛏️",
+                shopEquippedCubicoMsg: "Cubic mode on: Minecraft words. ⛏️",
+                shopDeactivatedCubicoMsg: "Cubic mode off. 😌",
+                statusAzar: "🎲 Random mode picked: ",
+                statusAzarNone: "🎲 Random mode: no other modes owned, playing classic.",
                 shopFxTitle: "✨ Typing effects",
                 shopBoughtFx: "Typing effect unlocked! You can use it now. ✨",
                 shopEquippedFxMsg: "Typing effect on: every letter bursts on the board. ✨",
@@ -2319,8 +2438,15 @@
         let extraOn = {            // extras activos en este momento
             picante: false,
             caos: false,
-            php: false
+            php: false,
+            espejo: false,
+            andaluz: false,
+            azar: false,
+            cubico: false
         };
+        // Extras elegidos SOLO para la partida en curso (Modo Al azar):
+        // null = se usa lo que haya en extraOn
+        let extraRun = null;
         let ownedFx = [];          // efectos de tecleo comprados
         let fxEquipped = "";       // efecto de tecleo en uso ("" = ninguno)
         let shopOpen = false;
@@ -3884,7 +4010,8 @@
                 equipped = "clasico";
                 ownedBgs = ["dark"];
                 ownedExtras = [];
-                extraOn = { picante: false, caos: false, php: false };
+                extraOn = { picante: false, caos: false, php: false, espejo: false, andaluz: false, azar: false, cubico: false };
+                extraRun = null;
                 ownedFx = [];
                 fxEquipped = "";
             }
@@ -4070,7 +4197,10 @@
         }
 
         function extraActive(id) {
-            return ownsExtra(id) && !!extraOn[id];
+            if (!ownsExtra(id)) return false;
+            // Durante una partida el Modo Al azar manda sobre extraOn
+            if (extraRun) return !!extraRun[id];
+            return !!extraOn[id];
         }
 
         // Extra elegido en el desplegable ("", si se juega al Tecleo clásico)
@@ -5069,26 +5199,69 @@
         // activado, aproximadamente la mitad de las palabras de la partida
         // salen de la lista subida de tono (+18) del idioma en juego.
         // Con el modo Caos se mezclan todos los idiomas y modos a la vez.
-        // Con el modo Php activo, la partida se juega con palabras y
-        // funciones de PHP (formularios, peticiones y POO) en cualquier idioma.
+        // Con el modo Php, Andaluz o Cúbico activo, su lista se usa sola
+        // (o se mezcla con la del idioma si también están picante/caos).
+        // Con el modo Espejo, cada palabra se da del revés: hay que escribirla
+        // al revés, letra por letra.
+        // Con el modo Al azar, la lista sale de los extras que la partida
+        // haya elegido al empezar (extraRun).
         // (El modo Imágenes no usa estas listas: la palabra es la de la imagen.)
         function wordPool() {
-            if (extraActive("php")) {
-                // El idioma da igual: PHP se escribe igual en español que en inglés
-                let pool = PHP_WORDS.slice();
-                if (extraActive("caos")) pool = pool.concat(WORDS.es, WORDS.en, MURCIANO_WORDS);
-                if (extraActive("picante")) pool = pool.concat(PICANTE.es, PICANTE.en);
-                return pool;
-            }
+            // Palabras que aportan los extras con lista propia (php, andaluz, cubico)
+            const propias = [];
+            if (extraActive("php")) propias.push(PHP_WORDS);
+            if (extraActive("andaluz")) propias.push(ANDALUZ_WORDS);
+            if (extraActive("cubico")) propias.push(MINECRAFT_WORDS);
+
+            let pool;
             if (extraActive("caos")) {
-                let pool = WORDS.es.concat(WORDS.en, MURCIANO_WORDS);
+                // Caos: todo mezclado, listas propias incluidas
+                pool = WORDS.es.concat(WORDS.en, MURCIANO_WORDS);
                 if (extraActive("picante")) pool = pool.concat(PICANTE.es, PICANTE.en);
+                propias.forEach(l => { pool = pool.concat(l); });
                 return pool;
             }
             const base = lang === "mur" ? MURCIANO_WORDS : WORDS[lang];
+            // Si hay alguna lista propia, la partida se juega con ella (y con
+            // el idioma, para dar variedad), salvo que solo esté la lista propia
+            if (propias.length) {
+                // Si el Al azar sortea dos modos con lista propia, se juega con las dos
+                pool = [];
+                propias.forEach(l => { pool = pool.concat(l); });
+                // Se añade algo del idioma para no repetir siempre lo mismo
+                for (let i = 0; i < Math.min(10, base.length); i++) {
+                    if (Math.random() < 0.35) pool.push(base[i]);
+                }
+                return pool;
+            }
             if (!extraActive("picante")) return base;
             const spicy = lang === "mur" ? PICANTE.es : PICANTE[lang];
             return Math.random() < 0.5 ? spicy : base;
+        }
+
+        // Modo Espejo: la palabra se muestra y se pide del revés
+        function mirrorWord(w) {
+            return w.split("").reverse().join("");
+        }
+
+        // Modo Al azar: al empezar la partida se elige uno o varios extras
+        // comprados (nunca el propio azar) y se aplican solo durante ese juego
+        function rollRandomExtras() {
+            const candidatos = EXTRAS.filter(x => x.id !== "azar" && ownsExtra(x.id));
+            extraRun = { azar: true };
+            if (candidatos.length === 0) return [];
+            // Un tercio de las veces, dos extras a la vez
+            const dobles = candidatos.length > 1 && Math.random() < 0.34;
+            const elegidos = [];
+            const copia = candidatos.slice();
+            const n = dobles ? 2 : 1;
+            for (let k = 0; k < n && copia.length; k++) {
+                const i = Math.floor(Math.random() * copia.length);
+                elegidos.push(copia[i].id);
+                extraRun[copia[i].id] = true;
+                copia.splice(i, 1);
+            }
+            return elegidos;
         }
 
         // ---------- Modo Imágenes ----------
@@ -5137,7 +5310,8 @@
             do {
                 w = pool[Math.floor(Math.random() * pool.length)];
             } while (w === word && pool.length > 1);
-            return w;
+            // Modo Espejo: la palabra se pide del revés
+            return extraActive("espejo") ? mirrorWord(w) : w;
         }
 
         function multiplier() {
@@ -5514,6 +5688,24 @@
             results.classList.add("hidden");
             startBtn.textContent = t("btnRestart");
             selBtns.forEach(b => { b.disabled = true; });
+
+            // Modo Al azar: se sortean los extras de ESTA partida y se
+            // muestran en el tablero antes de que salga la primera palabra
+            let azarTxt = "";
+            if (extraActive("azar")) {
+                const elegidos = rollRandomExtras();
+                applyExtras();   // el tablero se ilumina con los modos elegidos
+                if (elegidos.length === 0) {
+                    azarTxt = t("statusAzarNone");
+                } else {
+                    const nombres = elegidos.map(id => {
+                        const x = EXTRAS.find(e => e.id === id);
+                        return x ? x.icon + " " + (uiLang() === "es" ? x.es : x.en) : id;
+                    });
+                    azarTxt = t("statusAzar") + nombres.join(" + ");
+                }
+            }
+
             typing.disabled = false;
             typing.value = "";
             typing.focus();
@@ -5522,6 +5714,7 @@
                 mode === "guess" ? t("statusPlayG") :
                 mode === "aventura" ? t("statusPlayA") :
                 (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
+            if (azarTxt) status.textContent = azarTxt;
             // Aviso de la habilidad que aporta el fondo equipado
             // (en Aventura no actúa ningún fondo: el modo lleva el suyo)
             const poder = bgPowerDesc();
@@ -5593,6 +5786,11 @@
             renderAdvBar();
             typing.disabled = true;
             selBtns.forEach(b => { b.disabled = false; });
+            // Modo Al azar: al acabar se olvida lo sorteado en esta partida
+            if (extraRun) {
+                extraRun = null;
+                applyExtras();
+            }
             renderModeSelect();   // el menú se vuelve a dejar como toca
             startBtn.textContent = t("btnAgain");
 
