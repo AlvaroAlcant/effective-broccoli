@@ -900,6 +900,26 @@
             background-color: #1a1230;
             box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .45);
         }
+        /* Modo Php: palabras y funciones del lenguaje en el tablero */
+        body.php-on .board {
+            border-color: rgba(121, 134, 203, .7);
+            box-shadow: 0 0 22px rgba(99, 102, 241, .28);
+        }
+        .chip-btn.chip-php {
+            color: #a5b4fc;
+            border-color: rgba(129, 140, 248, .55);
+        }
+        .chip-btn.chip-php.active {
+            background: linear-gradient(180deg, #818cf8, #4f46e5);
+            border-color: transparent;
+            color: #0d0b2b;
+            box-shadow: 0 6px 16px rgba(129, 140, 248, .35);
+        }
+        .shop-card.card-php.extra-on {
+            border-color: #818cf8;
+            background-color: #12122b;
+            box-shadow: inset 0 0 0 1px rgba(129, 140, 248, .45);
+        }
 
         /* ---------- Efectos de tecleo (partículas de la tienda) ---------- */
         /* El color del efecto equipado se globaliza en variables: de ahí
@@ -1388,6 +1408,7 @@
             <span class="sel-label" id="extraLabel">Extra</span>
             <button class="chip-btn chip-picante" id="btnPicante">🌶️ Modo picante</button>
             <button class="chip-btn chip-caos" id="btnCaos">🌀 Modo Caos</button>
+            <button class="chip-btn chip-php" id="btnPhp">🐘 Modo Php</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="actLabel">Acciones</span>
@@ -1813,6 +1834,63 @@
             ]
         };
 
+        // ---------- Palabras del modo Php ----------
+        // Con el extra "Modo Php" comprado y activado, la partida se juega
+        // con palabras y funciones típicas de PHP: formularios, funciones
+        // del lenguaje y programación orientada a objetos.
+        // Solo letras minúsculas y guiones bajos: así se pueden teclear
+        // tanto en el modo Tecleo como en el modo Adivinar.
+        const PHP_WORDS = [
+            // Palabras clave y estructura del lenguaje
+            "echo", "print", "php", "function", "return", "class", "public",
+            "private", "protected", "static", "extends", "implements",
+            "interface", "abstract", "final", "instanceof", "namespace",
+            "require", "require_once", "include", "include_once", "isset",
+            "unset", "empty", "define", "defined", "const",
+            "global", "declare", "strict_types", "match", "fn", "yield",
+            "foreach", "while", "break", "continue", "switch", "default",
+            "throw", "try", "catch", "finally", "trait", "enum", "clone",
+            "array", "string", "integer", "boolean", "float", "callable",
+            "object", "null", "true", "false", "var", "exit", "die", "eval",
+            "list", "as", "do", "for", "if", "else", "elseif", "use", "new",
+            // Programación orientada a objetos
+            "constructor", "destructor", "method", "property", "attribute",
+            "getter", "setter", "inheritance", "polymorphism",
+            "encapsulation", "abstraction", "override", "singleton",
+            "factory", "adapter", "strategy", "observer", "autoload",
+            "composer", "reflection", "anonymous", "closure", "abstracto",
+            "instance", "subclass", "superclass", "overriding", "magic",
+            "autoload_register", "to_string", "clone_object", "dynamic",
+            // Formularios y peticiones web
+            "form", "method", "action", "get", "post", "request", "response",
+            "session", "session_start", "session_destroy", "cookie",
+            "header", "headers", "input", "submit", "button", "name",
+            "value", "type", "placeholder", "required", "textarea", "select",
+            "option", "options", "checkbox", "radio", "label", "fieldset",
+            "enctype", "multipart", "upload", "file", "files",
+            "move_uploaded_file", "is_uploaded_file", "htmlspecialchars",
+            "htmlentities", "strip_tags", "filter_var", "filter_input",
+            "urlencode", "urldecode", "http_build_query", "parse_str",
+            "setcookie", "token", "csrf", "validation", "sanitizing",
+            // Funciones típicas
+            "strlen", "strpos", "substr", "str_replace", "str_repeat",
+            "strtoupper", "strtolower", "ucfirst", "ucwords", "trim",
+            "explode", "implode", "count", "array_map", "array_filter",
+            "array_reduce", "array_merge", "array_keys", "array_values",
+            "array_slice", "array_sort", "in_array", "usort", "preg_match",
+            "preg_replace", "date", "time", "rand", "max", "min", "abs",
+            "round", "floor", "ceil", "number_format", "md5", "sha1",
+            "password_hash", "password_verify", "getenv", "gettype",
+            "is_array", "is_string", "is_numeric", "var_dump", "print_r",
+            "error_log", "sleep", "file_get_contents", "file_put_contents",
+            "fopen", "fwrite", "fclose", "curl_init", "json_encode",
+            "json_decode", "serialize", "unserialize", "base64_encode",
+            "base64_decode", "addslashes", "stripslashes", "nl2br",
+            "similar_text", "levenshtein", "mysqli_connect", "prepare",
+            "execute", "fetch", "bind_param", "query", "database", "mysql",
+            "pdo", "sql", "select_from", "insert_into", "prepared"
+        ];
+
         // ---------- Extras de la tienda ----------
         // id: identificador guardado en localStorage · price: precio en monedas
         // icon: vista previa de la tarjeta · desc*: texto de la tarjeta
@@ -1841,6 +1919,18 @@
                 msgBuy: "shopBoughtCaos",
                 msgOn: "shopEquippedCaosMsg",
                 msgOff: "shopDeactivatedCaosMsg"
+            },
+            {
+                id: "php",
+                price: 199,
+                icon: "🐘",
+                es: "Modo Php",
+                en: "Php mode",
+                descEs: "Escribe palabras y funciones de PHP: formularios, peticiones web y programación orientada a objetos.",
+                descEn: "Type PHP words and functions: forms, web requests and object-oriented programming.",
+                msgBuy: "shopBoughtPhp",
+                msgOn: "shopEquippedPhpMsg",
+                msgOff: "shopDeactivatedPhpMsg"
             }
         ];
 
@@ -1951,6 +2041,9 @@
                 shopBoughtCaos: "¡Modo Caos desbloqueado! Ya puedes activarlo cuando quieras. 🌀",
                 shopEquippedCaosMsg: "Modo Caos activado: se mezclan todos los idiomas y modos. 🌀",
                 shopDeactivatedCaosMsg: "Modo Caos desactivado. 😌",
+                shopBoughtPhp: "¡Modo Php desbloqueado! Ya puedes activarlo cuando quieras. 🐘",
+                shopEquippedPhpMsg: "Modo Php activado: a escribir funciones, formularios y clases de PHP. 🐘",
+                shopDeactivatedPhpMsg: "Modo Php desactivado. 😌",
                 shopFxTitle: "✨ Efectos de tecleo",
                 shopBoughtFx: "¡Efecto de tecleo desbloqueado! Ya puedes usarlo. ✨",
                 shopEquippedFxMsg: "Efecto de tecleo activado: cada letra estalla en el tablero. ✨",
@@ -2088,6 +2181,9 @@
                 shopBoughtCaos: "Chaos mode unlocked! Turn it on whenever you want. 🌀",
                 shopEquippedCaosMsg: "Chaos mode on: every language and mode mixed together. 🌀",
                 shopDeactivatedCaosMsg: "Chaos mode off. 😌",
+                shopBoughtPhp: "Php mode unlocked! Turn it on whenever you want. 🐘",
+                shopEquippedPhpMsg: "Php mode on: type PHP functions, forms and classes. 🐘",
+                shopDeactivatedPhpMsg: "Php mode off. 😌",
                 shopFxTitle: "✨ Typing effects",
                 shopBoughtFx: "Typing effect unlocked! You can use it now. ✨",
                 shopEquippedFxMsg: "Typing effect on: every letter bursts on the board. ✨",
@@ -2221,7 +2317,8 @@
         let ownedExtras = [];      // extras comprados (picante, caos…)
         let extraOn = {            // extras activos en este momento
             picante: false,
-            caos: false
+            caos: false,
+            php: false
         };
         let ownedFx = [];          // efectos de tecleo comprados
         let fxEquipped = "";       // efecto de tecleo en uso ("" = ninguno)
@@ -2336,6 +2433,7 @@
         const extraLabel = document.getElementById("extraLabel");
         const btnPicante = document.getElementById("btnPicante");
         const btnCaos = document.getElementById("btnCaos");
+        const btnPhp = document.getElementById("btnPhp");
         const shopExtraGrid = document.getElementById("shopExtraGrid");
         const shopFxGrid = document.getElementById("shopFxGrid");
         const shopMsg = document.getElementById("shopMsg");
@@ -2384,7 +2482,7 @@
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
         const selBtns = [btnEs, btnEn, btnMurciano, btnType, btnGuess, btnImagen, btnAventura,
-            btnPicante, btnCaos, btnShop, btnRanking, btnRegister, btnLogin];
+            btnPicante, btnCaos, btnPhp, btnShop, btnRanking, btnRegister, btnLogin];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
             ["accKCoins", "accVCoins", "kCoins"],
@@ -3789,7 +3887,7 @@
                 equipped = "clasico";
                 ownedBgs = ["dark"];
                 ownedExtras = [];
-                extraOn = { picante: false, caos: false };
+                extraOn = { picante: false, caos: false, php: false };
                 ownedFx = [];
                 fxEquipped = "";
             }
@@ -3969,7 +4067,7 @@
 
         // ---------- Extras de juego (picante, caos…) ----------
         // Chip del selector asociado a cada extra
-        const EXTRA_CHIPS = { picante: btnPicante, caos: btnCaos };
+        const EXTRA_CHIPS = { picante: btnPicante, caos: btnCaos, php: btnPhp };
 
         function ownsExtra(id) {
             return ownedExtras.includes(id);
@@ -4356,6 +4454,7 @@
         // Cada extra se activa y desactiva desde su chip del selector
         if (btnPicante) btnPicante.addEventListener("click", () => setExtra("picante", !extraOn.picante));
         if (btnCaos) btnCaos.addEventListener("click", () => setExtra("caos", !extraOn.caos));
+        if (btnPhp) btnPhp.addEventListener("click", () => setExtra("php", !extraOn.php));
 
         // Añade al selector los fondos comprados en la tienda
         function renderBgChips() {
@@ -4929,8 +5028,17 @@
         // activado, aproximadamente la mitad de las palabras de la partida
         // salen de la lista subida de tono (+18) del idioma en juego.
         // Con el modo Caos se mezclan todos los idiomas y modos a la vez.
+        // Con el modo Php activo, la partida se juega con palabras y
+        // funciones de PHP (formularios, peticiones y POO) en cualquier idioma.
         // (El modo Imágenes no usa estas listas: la palabra es la de la imagen.)
         function wordPool() {
+            if (extraActive("php")) {
+                // El idioma da igual: PHP se escribe igual en español que en inglés
+                let pool = PHP_WORDS.slice();
+                if (extraActive("caos")) pool = pool.concat(WORDS.es, WORDS.en, MURCIANO_WORDS);
+                if (extraActive("picante")) pool = pool.concat(PICANTE.es, PICANTE.en);
+                return pool;
+            }
             if (extraActive("caos")) {
                 let pool = WORDS.es.concat(WORDS.en, MURCIANO_WORDS);
                 if (extraActive("picante")) pool = pool.concat(PICANTE.es, PICANTE.en);
@@ -5050,8 +5158,10 @@
 
         // Oculta letras de la palabra según el nivel:
         // nivel 1-2 → la mitad, nivel 3-5 → casi todas, nivel 6+ → todas
+        // Solo se ocultan letras: los símbolos (como el "_" de las funciones
+        // de PHP) se quedan a la vista porque no se pueden adivinar a tecla.
         function makeMask(w) {
-            const unique = [...new Set(w.split(""))];
+            const unique = [...new Set(w.split("").filter(ch => /[a-záéíóúüñ]/i.test(ch)))];
             for (let i = unique.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 const tmp = unique[i];
