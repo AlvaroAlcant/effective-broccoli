@@ -7,7 +7,7 @@
     <!-- Fuentes opcionales para la tienda (si no hay internet se usa la fuente de reserva) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pacifico&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pacifico&family=Poppins:wght@600&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <!-- Logo/icono del juego: la misma imagen para la pestaña y para el encabezado -->
     <link rel="icon" type="image/png" href="estesoTeclea.png">
     <link rel="apple-touch-icon" href="estesoTeclea.png">
@@ -127,6 +127,164 @@
             height: 100%;
             z-index: -1;
             pointer-events: none;
+        }
+
+        /* ---------- Fondo "Circuito": coches a toda velocidad ----------
+           Premio del logro «Speedrunner». Tres calzadas asfaltadas cruzan
+           la ventana y los coches pasan disparados, unos en un sentido y
+           otros en el contrario. Solo se ve con este fondo equipado. */
+        body.bg-carreras {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(255, 121, 0, .18), transparent 65%),
+                radial-gradient(760px 420px at 110% 115%, rgba(56, 130, 246, .14), transparent 60%);
+            background-size: auto, auto;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            background-attachment: fixed, fixed;
+        }
+        #raceTrack {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            display: none;
+        }
+        body.bg-carreras #raceTrack {
+            display: block;
+        }
+        /* Bandas de meta a los lados de la pista */
+        #raceTrack::before,
+        #raceTrack::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 22px;
+            opacity: .45;
+            background: repeating-conic-gradient(#ffffff 0% 25%, #12161f 0% 50%) 0 0 / 22px 22px;
+        }
+        #raceTrack::before { left: 0; }
+        #raceTrack::after  { right: 0; }
+        /* Una calzada: asfalto con su línea discontinua en el centro */
+        #raceTrack .lane {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 74px;
+            background:
+                linear-gradient(rgba(12, 16, 24, .70), rgba(12, 16, 24, .70)),
+                repeating-linear-gradient(90deg, #1b2231 0 46px, #151b28 46px 92px);
+            border-top: 2px solid rgba(255, 255, 255, .10);
+            border-bottom: 2px solid rgba(255, 255, 255, .10);
+        }
+        #raceTrack .lane::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 3px;
+            transform: translateY(-50%);
+            background: repeating-linear-gradient(90deg, rgba(255, 214, 10, .75) 0 46px, transparent 46px 96px);
+        }
+        /* El coche: la emoji casi siempre mira a la izquierda, así que el
+           que va hacia la derecha se gira con scaleX(-1) dentro del
+           fotograma (la animación manda sobre el transform) */
+        #raceTrack .race-car {
+            position: absolute;
+            top: 50%;
+            margin-top: -21px;
+            font-size: 40px;
+            line-height: 1;
+            will-change: transform;
+            animation-duration: var(--dur, 1.6s);
+            animation-delay: var(--delay, 0s);
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, .35));
+        }
+        #raceTrack .race-car.to-right {
+            left: -16vw;
+            animation-name: raceToRight;
+        }
+        #raceTrack .race-car.to-left {
+            right: -16vw;
+            animation-name: raceToLeft;
+        }
+        /* Estelas de velocidad detrás de cada coche */
+        #raceTrack .race-car::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 84px;
+            height: 4px;
+            margin-top: -2px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55));
+        }
+        #raceTrack .race-car.to-right::before { left: -80px; }
+        #raceTrack .race-car.to-left::before {
+            right: -80px;
+            background: linear-gradient(270deg, transparent, rgba(255, 255, 255, .55));
+        }
+        @keyframes raceToRight {
+            from { transform: translateX(0) scaleX(-1); }
+            to   { transform: translateX(132vw) scaleX(-1); }
+        }
+        @keyframes raceToLeft {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-132vw); }
+        }
+        /* Sin animación si el sistema pide movimiento reducido */
+        @media (prefers-reduced-motion: reduce) {
+            #raceTrack .race-car { animation: none; left: 50%; right: auto; }
+            #raceTrack .race-car.to-right { transform: translateX(-50vw) scaleX(-1); }
+            #raceTrack .race-car.to-left  { transform: translateX(-50vw); }
+        }
+
+        /* ---------- Fondo "Hacker": números binarios que cambian ----------
+           Premio del logro «Hacker». Un muro de ceros y unos verdes sobre
+           negro que no deja de parpadear (lienzo de texto con JS). */
+        body.bg-hacker {
+            background-color: #000000;
+            background-image: none;
+        }
+        #hackBg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            display: none;
+            margin: 0;
+            padding: 2px 6px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 15px;
+            line-height: 1.2;
+            letter-spacing: 2px;
+            white-space: pre;
+            color: #00ff41;
+            text-shadow: 0 0 6px rgba(0, 255, 65, .55);
+            opacity: .45;
+            user-select: none;
+        }
+        body.bg-hacker #hackBg {
+            display: block;
+        }
+        /* Viñeta: el centro se ve más claro que los bordes */
+        #hackBg::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(120% 90% at 50% 45%, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .82) 100%);
         }
 
         /* ---------- Cabecera ---------- */
@@ -1443,6 +1601,52 @@
         body.ff-manuscrito .board { font-size: 28px; }
         body.ff-comic .board { font-size: 28px; }
 
+        /* ---------- Estilo de letra "Shinyy" (logro) ----------
+        Premio del logro «Shinyy»: letras facetadas como un diamante, con un
+        destello recorriéndolas sin parar. El brillo es un degradado recortado
+        al texto (background-clip: text); las letras acertadas, falladas y el
+        cursor conservan su aspecto normal. */
+        .ff-shinyy {
+            --game-font: "Orbitron", "Segoe UI", Arial, sans-serif;
+            --game-weight: 700;
+            --game-spacing: 2px;
+            --game-color: #cdf6ff;
+            --game-shadow: 0 0 8px rgba(140, 240, 255, .8), 0 0 20px rgba(103, 232, 249, .45);
+        }
+        /* El campo de entrada se ve como hielo: no admite el degradado
+           recortado al texto (es un input), así que va con color y resplandor */
+        body.ff-shinyy #typing {
+            color: var(--game-color);
+            text-shadow: var(--game-shadow);
+            border-color: rgba(103, 232, 249, .55);
+        }
+        @supports (-webkit-background-clip: text) or (background-clip: text) {
+            body.ff-shinyy .board span:not(.ok):not(.bad):not(.blank):not(.cursor),
+            .shop-card.ff-shinyy .font-preview {
+                background-image: linear-gradient(105deg,
+                    #7df3ff 0%, #ffffff 20%, #b6f5ff 32%, #eaffff 44%,
+                    #ffffff 56%, #67e8f9 70%, #c4b5fd 86%, #7df3ff 100%);
+                background-size: 300% 100%;
+                background-color: transparent;
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                -webkit-text-fill-color: transparent;
+                text-shadow: none;
+                animation: shinyyShine 3.4s linear infinite;
+            }
+            /* El hueco de la tecla pasa a ser un marco de diamante */
+            body.ff-shinyy .board span:not(.ok):not(.bad):not(.blank):not(.cursor) {
+                box-shadow:
+                    inset 0 0 0 2px rgba(165, 243, 252, .22),
+                    0 0 12px rgba(103, 232, 249, .30);
+            }
+        }
+        @keyframes shinyyShine {
+            from { background-position: 200% 50%; }
+            to   { background-position: -100% 50%; }
+        }
+
         /* ---------- Pie de página ---------- */
         footer {
             margin-top: 30px;
@@ -1506,6 +1710,22 @@
     </style>
 </head>
 <body>
+    <!-- Fondo "Circuito" (logro Speedrunner): coches que pasan a toda velocidad.
+         Oculto por defecto: solo lo muestra body.bg-carreras. -->
+    <div id="raceTrack" aria-hidden="true">
+        <div class="lane" style="top:12%">
+            <span class="race-car to-right" style="--dur:1.5s;--delay:0s">🏎️</span>
+            <span class="race-car to-left" style="--dur:2.1s;--delay:.6s">🚗</span>
+        </div>
+        <div class="lane" style="top:50%">
+            <span class="race-car to-right" style="--dur:1.2s;--delay:.35s">🚕</span>
+            <span class="race-car to-left" style="--dur:1.8s;--delay:1.05s">🏎️</span>
+        </div>
+        <div class="lane" style="top:78%">
+            <span class="race-car to-right" style="--dur:1.7s;--delay:.8s">🏍️</span>
+            <span class="race-car to-left" style="--dur:1.35s;--delay:.2s">🚙</span>
+        </div>
+    </div>
     <header>
         <div class="logo-wrap">
             <button type="button" class="logo-btn" id="logoBtn"
@@ -1726,6 +1946,9 @@
         // ---------- Configuración ----------
         const GAME_TIME = 60;  // segundos
         const MAX_MISSES = 5;  // fallos permitidos por palabra (modo adivinar)
+        // Ventana de tiempo del logro «Speedrunner»: hay que escribir 10
+        // palabras en menos de este número de milisegundos
+        const SPEEDRUN_MS = 8000;
         // Segundos extra que regala la habilidad del fondo Elprico
         const BONUS_TIME_ELPRICO = 15;
         // Letras que la habilidad del fondo Sopa de Letras deja ya puestas
@@ -1925,7 +2148,16 @@
             { id: "comic",    price: 120, cls: "ff-comic",    es: "Cómic",    en: "Comic",    font: '"Comic Sans MS", "Comic Sans", cursive' },
             { id: "script",   price: 160, cls: "ff-manuscrito", es: "Manuscrito", en: "Script", font: '"Pacifico", "Brush Script MT", cursive' },
             { id: "neon",     price: 220, cls: "ff-neon",     es: "Neón",     en: "Neon",     font: '"Segoe UI", Arial, sans-serif' },
-            { id: "oro",      price: 300, cls: "ff-oro",      es: "Oro",      en: "Gold",     font: 'Georgia, "Times New Roman", serif' }
+            { id: "oro",      price: 300, cls: "ff-oro",      es: "Oro",      en: "Gold",     font: 'Georgia, "Times New Roman", serif' },
+            {
+                // No se compra con monedas: es la RECOMPENSA del logro
+                // "Shinyy" (price null = no está a la venta, ach = solo se
+                // gana jugando). Una letra facetada como un diamante, con un
+                // destello que la recorre sin parar.
+                id: "shinyy", price: null, ach: true,
+                cls: "ff-shinyy", es: "Shinyy", en: "Shinyy",
+                font: '"Orbitron", "Segoe UI", Arial, sans-serif'
+            }
         ];
 
         // ---------- Fondos de pantalla de la tienda ----------
@@ -1948,7 +2180,25 @@
               img: "esteso.jpg" },
             { id: "sopa",    price: 550, es: "Sopa de Letras",    en: "Letter Soup",
               descEs: "Habilidad: cada palabra empieza con 2 letras ya puestas.", descEn: "Ability: every word starts with 2 letters already in place.",
-              img: "", icon: "🔤" }
+              img: "", icon: "🔤" },
+            {
+                // No se compra con monedas: es la RECOMPENSA del logro
+                // "Speedrunner" (price null = no está a la venta, ach = solo
+                // se gana jugando). Pura estética: coches disparados.
+                id: "carreras", price: null, ach: true, decor: true,
+                es: "Circuito", en: "Race Track",
+                descEs: "Coches que cruzan la pantalla a toda velocidad. ¡Recompensa del logro «Speedrunner»!",
+                descEn: "Cars crossing the screen at full speed. Reward of the “Speedrunner” achievement!",
+                img: "", icon: "🏁"
+            },
+            {
+                // Igual que Circuito, pero con la lluvia binaria de Matrix
+                id: "hacker", price: null, ach: true, decor: true,
+                es: "Hacker", en: "Hacker",
+                descEs: "Números binarios verdes cambiando sobre fondo negro. ¡Recompensa del logro «Hacker»!",
+                descEn: "Changing green binary digits on a black background. Reward of the “Hacker” achievement!",
+                img: "", icon: "💻"
+            }
         ];
 
         // ---------- Modo picante (+18) ----------
@@ -2256,9 +2506,10 @@
 
         // ---------- Logros ----------
         // Retos que se completan jugando: cada uno otorga una recompensa
-        // (por ahora un efecto de tecleo exclusivo que no está en la tienda).
+        // (un estilo de letra, un fondo de pantalla o un efecto de tecleo
+        // exclusivo que no está en la tienda).
         // id: se guarda en localStorage · goal: veces que hay que lograrlo
-        // reward: { type: "fx", id: … } → efecto de tecleo desbloqueado
+        // reward: { type: "fx" | "font" | "bg", id: … } → recompensa desbloqueada
         const ACHIEVEMENTS = [
             {
                 id: "polvo",
@@ -2271,6 +2522,47 @@
                 reward: { type: "fx", id: "explosion" },
                 rewardEs: "Efecto de tecleo «Explosión»",
                 rewardEn: "Typing effect “Explosion”"
+            },
+            {
+                // Progreso = monedas ganadas en TOTAL (se acumula con cada
+                // palabra, ventaja o premio, sin gastar lo comprado)
+                id: "shinyy",
+                icon: "💎",
+                goal: 1000000,
+                es: "Shinyy",
+                en: "Shinyy",
+                descEs: "Gana un millón de monedas en total (suma de todas las monedas que hayas ganado jugando).",
+                descEn: "Earn one million coins in total (the sum of every coin you have ever won).",
+                reward: { type: "font", id: "shinyy" },
+                rewardEs: "Estilo de letra «Shinyy» (diamante que brilla)",
+                rewardEn: "“Shinyy” font style (a shining diamond)"
+            },
+            {
+                // Progreso = más palabras escritas en una misma ventana de
+                // 8 segundos (la marca se guarda aunque no llegues a 10)
+                id: "speed",
+                icon: "🏁",
+                goal: 10,
+                es: "Speedrunner",
+                en: "Speedrunner",
+                descEs: "Escribe 10 palabras en menos de 8 segundos, seguidas en la misma ventana de tiempo.",
+                descEn: "Type 10 words in under 8 seconds in a row.",
+                reward: { type: "bg", id: "carreras" },
+                rewardEs: "Fondo de pantalla «Circuito» (coches a toda velocidad)",
+                rewardEn: "“Race Track” background (cars at full speed)"
+            },
+            {
+                // Progreso = mejor puntuación conseguida en una sola partida
+                id: "hacker",
+                icon: "💻",
+                goal: 10000,
+                es: "Hacker",
+                en: "Hacker",
+                descEs: "Consigue 10.000 puntos en una sola partida.",
+                descEn: "Score 10,000 points in a single game.",
+                reward: { type: "bg", id: "hacker" },
+                rewardEs: "Fondo de pantalla «Hacker» (binario verde sobre negro)",
+                rewardEn: "“Hacker” background (green binary on black)"
             }
         ];
 
@@ -2660,6 +2952,8 @@
         let rankOpen = false;      // panel de ranking abierto
         let logrosOpen = false;    // panel de logros abierto
         let achData = {};          // id → { p: progreso, done: completado }
+        let srAt = 0;              // instante en que arrancó la ventana del logro Speedrunner
+        let srWords = 0;           // palabras escritas dentro de esa ventana de 8 segundos
         let rankBusy = false;      // evita guardar la puntuación dos veces
         let playerId = "";         // identificador del jugador en este dispositivo
         let savedScore = false;    // la puntuación de esta partida ya se ha guardado
@@ -3540,6 +3834,12 @@
             updateCoins();
             applyLang();
             renderAccount();
+            // Los logros completados siguen mandando su recompensa: si la
+            // cuenta trae estilos o fondos sin los ganados jugando, se
+            // vuelven a poner en su sitio
+            ACHIEVEMENTS.forEach(a => {
+                if (achData[a.id] && achData[a.id].done) grantAchReward(a, true);
+            });
         }
 
         function loadProfileStats() {
@@ -4268,6 +4568,9 @@
         function giveCoins(n) {
             coins += n;
             coinsRun += n;
+            // Logro «Shinyy»: cuenta el dinero ganado en TOTAL, sumando lo
+            // que entra (gastar en la tienda no resta del progreso)
+            achAdd("shinyy", n);
             saveShop();
             updateCoins();
         }
@@ -4295,6 +4598,11 @@
         function buyStyle(st) {
             if (owned.includes(st.id)) {
                 setEquipped(st.id);
+                return;
+            }
+            // Los estilos ganados con un logro no se compran con monedas
+            if (st.ach) {
+                shopMsg.textContent = t("achNeed");
                 return;
             }
             if (coins < st.price) {
@@ -4331,7 +4639,10 @@
 
                 const price = document.createElement("div");
                 price.className = "shop-price";
-                price.textContent = owned.includes(st.id) ? "✓ " + t("shopOwned") : "🪙 " + st.price;
+                // Los estilos de logro no se compran: o están desbloqueados
+                // o se llega a ellos jugando (nunca aparece un precio)
+                price.textContent = owned.includes(st.id) ? "✓ " + t("shopOwned")
+                    : (st.ach ? t("shopAchPrice") : "🪙 " + st.price);
                 card.appendChild(price);
 
                 const btn = document.createElement("button");
@@ -4342,6 +4653,11 @@
                 } else if (owned.includes(st.id)) {
                     btn.textContent = t("shopEquip");
                     btn.addEventListener("click", () => setEquipped(st.id));
+                } else if (st.ach) {
+                    // Bloqueado: solo se desbloquea completando su logro
+                    btn.textContent = t("achNeed");
+                    btn.disabled = true;
+                    btn.classList.add("cant");
                 } else {
                     btn.textContent = t("shopBuy");
                     if (coins < st.price) btn.classList.add("cant");
@@ -4376,7 +4692,10 @@
 
                 const price = document.createElement("div");
                 price.className = "shop-price";
-                price.textContent = ownedBgs.includes(b.id) ? "✓ " + t("shopOwned") : "🪙 " + b.price;
+                // Los fondos de logro no se compran: o están desbloqueados
+                // o se llega a ellos jugando (nunca aparece un precio)
+                price.textContent = ownedBgs.includes(b.id) ? "✓ " + t("shopOwned")
+                    : (b.ach ? t("shopAchPrice") : "🪙 " + b.price);
                 card.appendChild(price);
 
                 const desc = document.createElement("div");
@@ -4392,6 +4711,11 @@
                 } else if (ownedBgs.includes(b.id)) {
                     btn.textContent = t("shopEquip");
                     btn.addEventListener("click", () => setBgEquipped(b.id));
+                } else if (b.ach) {
+                    // Bloqueado: solo se desbloquea completando su logro
+                    btn.textContent = t("achNeed");
+                    btn.disabled = true;
+                    btn.classList.add("cant");
                 } else {
                     btn.textContent = t("shopBuy");
                     if (coins < b.price) btn.classList.add("cant");
@@ -4719,18 +5043,49 @@
             return uiLang() === "es" ? ach.rewardEs : ach.rewardEn;
         }
 
-        // Entrega la recompensa: el efecto de tecleo queda desbloqueado para
-        // siempre y sale puesto en marcha (igual que al comprarlo en la tienda)
-        function grantAchReward(ach, silent) {
-            if (!ach.reward || ach.reward.type !== "fx") return;
-            const nuevo = !ownedFx.includes(ach.reward.id);
-            if (nuevo) ownedFx.push(ach.reward.id);
-            if (nuevo || !ownsFx(fxEquipped)) {
-                fxEquipped = ach.reward.id;
-                saveShop();
-                applyFx();
-                if (shopOpen) renderFxShop();
+        // Números grandes con su separador de miles (1.000.000 / 1,000,000)
+        function fmtNum(n) {
+            try {
+                return Number(n).toLocaleString(uiLang() === "es" ? "es-ES" : "en-US");
+            } catch (e) {
+                return String(n);
             }
+        }
+
+        // Entrega la recompensa: queda desbloqueada para siempre. Un efecto
+        // de tecleo sale puesto en marcha al recibirlo; un estilo de letra
+        // se aplica al tablero; un fondo de pantalla solo se desbloquea
+        // (para no quitarte la habilidad del fondo que lleves puesto).
+        function grantAchReward(ach, silent) {
+            const r = ach.reward;
+            if (!r) return;
+
+            if (r.type === "fx") {
+                const nuevo = !ownedFx.includes(r.id);
+                if (nuevo) ownedFx.push(r.id);
+                if (nuevo || !ownsFx(fxEquipped)) {
+                    fxEquipped = r.id;
+                    saveShop();
+                    applyFx();
+                    if (shopOpen) renderFxShop();
+                }
+            } else if (r.type === "font") {
+                if (!owned.includes(r.id)) {
+                    owned.push(r.id);
+                    equipped = r.id;    // recién ganado: sale aplicado
+                    saveShop();
+                    applyStyle();
+                    if (shopOpen) renderShop();
+                }
+            } else if (r.type === "bg") {
+                if (!ownedBgs.includes(r.id)) {
+                    ownedBgs.push(r.id);
+                    saveShop();
+                    renderBgChips();    // aparece en el selector de fondos
+                    if (shopOpen) renderBgShop();
+                }
+            }
+
             if (!silent) showAchToast(ach);
         }
 
@@ -4758,7 +5113,23 @@
             const ach = ACHIEVEMENTS.find(a => a.id === id);
             const d = achData[id];
             if (!ach || !d || d.done) return;
-            d.p = Math.min(ach.goal, d.p + n);
+            achSetP(ach, d, d.p + n);
+        }
+
+        // Anota una marca (por ejemplo la mejor puntuación de una partida o
+        // las palabras escritas en 8 segundos): el progreso nunca baja, solo
+        // se guarda el mejor intento.
+        function achBest(id, p) {
+            const ach = ACHIEVEMENTS.find(a => a.id === id);
+            const d = achData[id];
+            if (!ach || !d || d.done) return;
+            if (p <= d.p) return;
+            achSetP(ach, d, p);
+        }
+
+        // Fija el progreso de un logro, lo guarda y lo completa si llega a su meta
+        function achSetP(ach, d, p) {
+            d.p = Math.max(0, Math.min(ach.goal, Math.floor(p)));
             const completo = d.p >= ach.goal;
             if (completo) d.done = true;
             achSave();
@@ -4948,6 +5319,7 @@
             document.body.classList.toggle("bg-aventura", sinFondos);
             renderBgChips();
             syncLetterSoup(!sinFondos && bg === "sopa");   // letras rebotando solo con ese fondo
+            syncHacker(!sinFondos && bg === "hacker");     // binario verde solo con ese fondo
 
             best = loadBest();
             bestEl.textContent = best;
@@ -5259,6 +5631,90 @@
             else startSoup();
         });
 
+        // ---------- Fondo "Hacker": números binarios que cambian ----------
+        // Un muro de ceros y unos verdes sobre negro. Como la lluvia de
+        // Matrix pero en horizontal: los dígitos se van cambiando solos.
+        // Solo funciona con este fondo activo (lo llama applyLang).
+        let hackBox = null;      // el <div> fijo con el binario
+        let hackTimer = 0;       // id del intervalo (0 = parado)
+        let hackOn = false;      // ¿está activo este fondo?
+        let hackChars = [];      // los dígitos de la pantalla, uno a uno
+        let hackCols = 0;
+        let hackRows = 0;
+        const HACK_W = 11.2;     // píxeles que ocupa cada carácter
+        const HACK_H = 18;       // píxeles de alto de cada fila
+
+        // Vuelve a rellenar la pantalla con dígitos al azar (al cambiar de
+        // tamaño la rejilla no cuadraría, así que se recalcula)
+        function hackBuild() {
+            if (!hackBox) return;
+            hackCols = Math.max(8, Math.ceil(window.innerWidth / HACK_W));
+            hackRows = Math.max(6, Math.ceil(window.innerHeight / HACK_H));
+            hackChars = new Array(hackCols * hackRows);
+            for (let i = 0; i < hackChars.length; i++) {
+                hackChars[i] = Math.random() < .5 ? "0" : "1";
+            }
+            hackPaint();
+        }
+
+        function hackPaint() {
+            if (!hackBox) return;
+            const filas = [];
+            for (let r = 0; r < hackRows; r++) {
+                filas.push(hackChars.slice(r * hackCols, (r + 1) * hackCols).join(""));
+            }
+            hackBox.textContent = filas.join("\n");
+        }
+
+        // Cada paso cambia un puñado de dígitos al azar
+        function hackTick() {
+            if (document.hidden || !hackOn) return;
+            const n = Math.max(1, Math.round(hackChars.length * .05));
+            for (let i = 0; i < n; i++) {
+                hackChars[Math.floor(Math.random() * hackChars.length)] =
+                    Math.random() < .5 ? "0" : "1";
+            }
+            hackPaint();
+        }
+
+        function hackStop() {
+            if (hackTimer) clearInterval(hackTimer);
+            hackTimer = 0;
+        }
+
+        // La llama applyLang() cada vez que cambia el fondo activo
+        function syncHacker(active) {
+            hackOn = !!active;
+            hackStop();
+            if (!hackOn) {
+                if (hackBox) hackBox.style.display = "none";
+                return;
+            }
+            if (!hackBox) {
+                hackBox = document.createElement("div");
+                hackBox.id = "hackBg";
+                hackBox.setAttribute("aria-hidden", "true");
+                document.body.appendChild(hackBox);
+            }
+            hackBox.style.display = "block";
+            hackBuild();
+            // Sin parpadeo si el sistema pide movimiento reducido
+            if (soupReduced() || document.hidden) return;
+            hackTimer = setInterval(hackTick, 90);
+        }
+
+        // El binario se recoloca al cambiar el tamaño de la ventana
+        window.addEventListener("resize", function () {
+            if (hackOn) hackBuild();
+        });
+
+        // Pestaña oculta: se apaga el parpadeo y al volver se reanuda
+        document.addEventListener("visibilitychange", function () {
+            if (!hackOn) return;
+            if (document.hidden) hackStop();
+            else if (!hackTimer && !soupReduced()) hackTimer = setInterval(hackTick, 90);
+        });
+
         function setBgEquipped(id) {
             if (state === "playing" || !ownedBgs.includes(id)) return;
             bg = id;
@@ -5273,6 +5729,11 @@
         function buyBg(b) {
             if (ownedBgs.includes(b.id)) {
                 setBgEquipped(b.id);
+                return;
+            }
+            // Los fondos ganados con un logro no se compran con monedas
+            if (b.ach) {
+                shopMsg.textContent = t("achNeed");
                 return;
             }
             if (coins < b.price) {
@@ -5743,7 +6204,9 @@
         // Texto de la habilidad del fondo equipado (vacío si no tiene ninguna)
         function bgPowerDesc() {
             const b = BACKGROUNDS.find(x => x.id === bg);
-            if (!b || b.id === "dark") return "";
+            // Los fondos de decoración (Circuito, Hacker) no aportan nada:
+            // son puro adorno ganado con un logro
+            if (!b || b.decor || b.id === "dark") return "";
             return uiLang() === "es" ? b.descEs : b.descEn;
         }
 
@@ -5797,6 +6260,10 @@
             timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
             timeBox.classList.toggle("low", timeLeft <= 10 && state === "playing");
             if (mode === "aventura") renderAdvBar();   // efectos y tiempo por palabra
+            // Logro «Hacker»: se anota la mejor puntuación de UNA partida.
+            // Este es el sitio donde se refleja el marcador de todos los
+            // modos, así que aquí se comprueba la meta de 10.000 puntos.
+            achBest("hacker", score);
         }
 
         // Dibuja las letras de la palabra (con el cursor y lo ya tecleado)
@@ -6010,6 +6477,16 @@
                 const w = word.toLowerCase();
                 if (w === "creeper" || w === mirrorWord("creeper")) achAdd("polvo", 1);
             }
+            // Logro «Speedrunner»: las palabras se cuentan dentro de una
+            // misma ventana de 8 segundos. Si la ventana se pasa de largo
+            // empieza otra nueva y el mejor intento queda anotado.
+            const ahoraSR = Date.now();
+            if (!srAt || ahoraSR - srAt > SPEEDRUN_MS) {
+                srAt = ahoraSR;
+                srWords = 0;
+            }
+            srWords++;
+            achBest("speed", srWords);
             const mult = multiplier();
             // Habilidades del fondo: Ia triplica puntos y monedas en las
             // palabras largas (más de 7 letras) y General dobla las monedas
@@ -6087,6 +6564,9 @@
             pasteTried = 0;
             gameStartAt = Date.now();
             gameDuration = 0;
+            // Cada partida empieza con la ventana del logro Speedrunner vacía
+            srAt = 0;
+            srWords = 0;
 
             if (shopOpen) { // la tienda se cierra al empezar
                 shopOpen = false;
