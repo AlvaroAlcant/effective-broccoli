@@ -527,6 +527,17 @@
             background-color: #0d1117;
             color: var(--text);
         }
+        /* Imagen de repuesto dentro de un chip (Modo Veyon): sustituye al
+           icono de los fondos «General» e «Ia» en el selector */
+        .chip-btn .chip-img {
+            width: 17px;
+            height: 17px;
+            margin-right: 7px;
+            vertical-align: -3px;
+            border-radius: 4px;
+            object-fit: cover;
+            border: 1px solid var(--line);
+        }
 
         /* ---------- Marcador ---------- */
         .stats {
@@ -2936,6 +2947,10 @@
         let mode = "type";       // type | guess | imagen | aventura
         let bg = "dark";         // dark | franco | elprico | esteso
         let veyon = false;       // Modo Veyon: oculta logo y fondos «General»/«Ia»
+        // Imagen de repuesto que sustituye a las de «General» e «Ia»
+        // mientras el Modo Veyon está activo (tienda y selector de fondos)
+        const VEYON_PLACEHOLDER = "repuesto.svg";
+        const VEYON_BGS = ["franco", "esteso"];
         let state = "idle";      // idle | playing | over
         let word = "";
         let currentImg = null;   // imagen en pantalla (modo Imágenes)
@@ -4707,7 +4722,10 @@
 
                 const thumb = document.createElement("div");
                 thumb.className = "shop-thumb";
-                if (b.img) thumb.style.backgroundImage = 'url("' + b.img + '")';
+                // Con el Modo Veyon activo, «General» e «Ia» muestran la
+                // imagen de repuesto en vez de la suya
+                if (veyonHiddenBg(b.id)) thumb.style.backgroundImage = 'url("' + VEYON_PLACEHOLDER + '")';
+                else if (b.img) thumb.style.backgroundImage = 'url("' + b.img + '")';
                 else thumb.textContent = b.icon || "🌙";
                 card.appendChild(thumb);
 
@@ -5268,7 +5286,7 @@
             document.getElementById("actLabel").textContent = t("actLabel");
             if (modeSelect) modeSelect.setAttribute("aria-label", t("modeSelectAria"));
             btnBgDark.textContent = t("bgDark");
-            btnBgFranco.textContent = t("bgFranco");
+            setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
             document.getElementById("kScore").textContent = t("kScore");
             document.getElementById("kTime").textContent = t("kTime");
             document.getElementById("kStreak").textContent = t("kStreak");
@@ -5424,12 +5442,37 @@
         // la cabecera) y las imágenes de los fondos «General» (franco) e
         // «Ia» (esteso): se ve el fondo liso de la página. Solo se tapa la
         // vista, así que la habilidad de cada fondo sigue actuando.
+        // ¿Este fondo se tapa con el Modo Veyon?
+        function veyonHiddenBg(id) {
+            return veyon && VEYON_BGS.includes(id);
+        }
+
+        // Contenido de un chip de fondo en el selector: con el Modo Veyon
+        // activo, «General» e «Ia» enseñan la imagen de repuesto en lugar
+        // de su icono (el nombre del fondo se queda para poder usarlo).
+        function setBgChipContent(btn, id, label) {
+            if (!btn) return;
+            const hidden = veyonHiddenBg(id);
+            btn.textContent = hidden ? label.replace(/^\S+\s+/, "") : label;
+            if (hidden) {
+                const img = document.createElement("img");
+                img.className = "chip-img";
+                img.src = VEYON_PLACEHOLDER;
+                img.alt = "";
+                btn.insertBefore(img, btn.firstChild);
+            }
+        }
+
         function applyVeyon() {
             document.body.classList.toggle("veyon-on", veyon);
             if (btnVeyon) {
                 btnVeyon.classList.toggle("active", veyon);
                 btnVeyon.setAttribute("aria-pressed", veyon ? "true" : "false");
             }
+            renderBgChips();                    // iconos del selector de fondos
+            // El chip «General» es fijo en el HTML: su contenido se repinta aquí
+            setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
+            if (shopOpen) renderBgShop();       // miniaturas de la tienda
         }
 
         function setVeyon(next) {
@@ -5457,8 +5500,9 @@
                 if (!ownedBgs.includes(b.id)) return;
                 const btn = document.createElement("button");
                 btn.className = "chip-btn";
-                btn.textContent = (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
-                    (uiLang() === "es" ? b.es : b.en);
+                setBgChipContent(btn, b.id,
+                    (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
+                    (uiLang() === "es" ? b.es : b.en));
                 btn.classList.toggle("active", bg === b.id);
                 btn.disabled = mode === "aventura";   // los fondos no actúan en Aventura
                 btn.addEventListener("click", () => setBg(b.id));
