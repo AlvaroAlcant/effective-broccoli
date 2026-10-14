@@ -712,7 +712,8 @@
         .results,
         .shop,
         .ranking,
-        .perfil {
+        .perfil,
+        .logros {
             margin-top: 20px;
             padding: 20px;
             text-align: center;
@@ -724,13 +725,15 @@
         .results.hidden,
         .shop.hidden,
         .ranking.hidden,
-        .perfil.hidden {
+        .perfil.hidden,
+        .logros.hidden {
             display: none;
         }
         .results h2,
         .shop-head h2,
         .ranking h2,
-        .perfil h2 {
+        .perfil h2,
+        .logros h2 {
             margin: 0 0 6px;
             font-size: 20px;
             color: var(--accent);
@@ -926,6 +929,7 @@
         body.fx-artificiales { --fx-c: #c77dff; --fx-glow: rgba(199, 125, 255, .45); }
         body.fx-hielo        { --fx-c: #7dd3fc; --fx-glow: rgba(125, 211, 252, .45); }
         body.fx-magia        { --fx-c: #e879f9; --fx-glow: rgba(232, 121, 249, .45); }
+        body.fx-explosion    { --fx-c: #8ff05a; --fx-glow: rgba(143, 240, 90, .45); }
 
         #typing {
             box-shadow: 0 0 18px var(--fx-glow, transparent);
@@ -959,6 +963,14 @@
             border-radius: 50%;
             background-color: var(--fx-color, #fff);
             box-shadow: 0 0 10px var(--fx-color, #fff);
+        }
+        /* Partícula en bloque (efecto Explosión): cuadrada, como los cubos */
+        .fx-p.block {
+            width: var(--fx-size, 9px);
+            height: var(--fx-size, 9px);
+            border-radius: 2px;
+            background-color: var(--fx-color, #fff);
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
         }
         @keyframes fx-burst {
             0% {
@@ -1240,6 +1252,130 @@
             color: var(--gold);
         }
 
+        /* ---------- Logros: retos con recompensa ---------- */
+        .ach-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+            text-align: left;
+        }
+        .ach-card {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            padding: 14px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            transition: border-color .18s, transform .18s, box-shadow .18s;
+        }
+        .ach-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .3);
+        }
+        .ach-card.done {
+            border-color: var(--gold);
+            background-color: #1c1a10;
+            box-shadow: inset 0 0 0 1px rgba(255, 215, 106, .32);
+        }
+        .ach-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ach-icon {
+            font-size: 26px;
+            line-height: 1;
+            filter: grayscale(1) opacity(.5);
+            transition: filter .2s, transform .2s;
+        }
+        .ach-card.done .ach-icon {
+            filter: none;
+            transform: scale(1.08);
+        }
+        .ach-name {
+            font-size: 15px;
+            color: var(--text);
+        }
+        .ach-desc {
+            font-size: 12.5px;
+            line-height: 1.45;
+            color: var(--muted);
+            min-height: 54px;
+        }
+        .ach-bar {
+            height: 8px;
+            background: var(--bg);
+            border: 1px solid var(--line-soft);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .ach-bar i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #2dd4bf, #14b8a6);
+            transition: width .3s;
+        }
+        .ach-card.done .ach-bar i {
+            background: linear-gradient(90deg, #ffd76a, #ffb020);
+        }
+        .ach-num {
+            font-size: 12px;
+            text-align: right;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .ach-reward {
+            font-size: 12.5px;
+            color: var(--gold);
+        }
+        .ach-state {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.1px;
+            color: var(--muted);
+        }
+        .ach-card.done .ach-state {
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        /* Aviso emergente de un logro recién desbloqueado */
+        .ach-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: min(92vw, 470px);
+            padding: 12px 20px;
+            background: var(--surface);
+            border: 1px solid var(--gold);
+            border-radius: 999px;
+            box-shadow: var(--shadow);
+            color: var(--text);
+            font-size: 14.5px;
+            line-height: 1.35;
+            text-align: left;
+            pointer-events: none;
+            animation: achToast 5s ease forwards;
+        }
+        .ach-toast .ach-toast-icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+        @keyframes achToast {
+            0%   { opacity: 0; transform: translate(-50%, 26px) scale(.85); }
+            8%   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            86%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -20px) scale(.95); }
+        }
+
         /* ---------- Estilos de letra comprados ---------- */
         body {
             --game-font: Consolas, "Courier New", monospace;
@@ -1351,7 +1487,8 @@
             .results,
             .shop,
             .ranking,
-            .perfil {
+            .perfil,
+            .logros {
                 padding: 16px;
             }
             .pf-field input {
@@ -1406,6 +1543,7 @@
             <span class="sel-label" id="actLabel">Acciones</span>
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
             <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
+            <button class="chip-btn" id="btnLogros">🏅 Logros</button>
             <button class="chip-btn" id="btnRegister">👤 Registrar</button>
             <button class="chip-btn" id="btnLogin">🔑 Iniciar sesión</button>
         </div>
@@ -1564,6 +1702,16 @@
             <p class="rank-empty" id="rankEmptyAdv">Todavía no hay puntuaciones en la aventura. ¡Sé el primero! 🚀</p>
             <p class="rank-status" id="rankStatusAdv"></p>
         </div>
+    </section>
+
+    <!-- Logros: retos que al completarse desbloquean una recompensa -->
+    <section class="logros hidden" id="logros">
+        <div class="shop-head">
+            <h2 id="achTitle">🏅 Logros</h2>
+            <span class="shop-coins">🏅 <span id="achCount">0/0</span></span>
+        </div>
+        <p class="shop-hint" id="achHint">Completa los retos para desbloquear recompensas. ¡El progreso se guarda en este dispositivo y se queda guardado aunque cierres la página!</p>
+        <div class="ach-grid" id="achGrid"></div>
     </section>
 
     <footer>
@@ -2084,6 +2232,45 @@
                 descEn: "Pink and violet magic sparkles on every letter.",
                 colors: ["#e879f9", "#c084fc", "#f0abfc", "#67e8f9"],
                 glyph: "✨", count: 10, power: 95, rise: -50, size: 16, life: 900
+            },
+            {
+                // No se compra con monedas: es la RECOMPENSA del logro
+                // "Un poco de pólvora" (price null = no está a la venta).
+                // Las partículas son cubos que salen despedidos como en la
+                // explosión de un creeper de Minecraft: destello blanco,
+                // humo gris y hierba verde por todos lados.
+                id: "explosion",
+                price: null,
+                ach: true,
+                icon: "💥",
+                color: "#8ff05a",
+                es: "Explosión",
+                en: "Explosion",
+                descEs: "Cubos y destellos que estallan como la explosión de un creeper de Minecraft. ¡Recompensa del logro «Un poco de pólvora»!",
+                descEn: "Blocks and flashes bursting like a Minecraft creeper explosion. Reward of the “A bit of gunpowder” achievement!",
+                colors: ["#ffffff", "#e9fff2", "#8ff05a", "#4ea52a", "#2f7a1e", "#c3cab8", "#7d8676"],
+                glyph: "💥", glyphEvery: 6, count: 18, power: 175, rise: -25, size: 16, life: 950,
+                shape: "block"
+            }
+        ];
+
+        // ---------- Logros ----------
+        // Retos que se completan jugando: cada uno otorga una recompensa
+        // (por ahora un efecto de tecleo exclusivo que no está en la tienda).
+        // id: se guarda en localStorage · goal: veces que hay que lograrlo
+        // reward: { type: "fx", id: … } → efecto de tecleo desbloqueado
+        const ACHIEVEMENTS = [
+            {
+                id: "polvo",
+                icon: "💥",
+                goal: 100,
+                es: "Un poco de pólvora",
+                en: "A bit of gunpowder",
+                descEs: "Escribe la palabra «creeper» 100 veces en total en el modo Tecleo con el Modo Cúbico activo.",
+                descEn: "Type the word “creeper” 100 times in total in Typing mode with Cubic mode turned on.",
+                reward: { type: "fx", id: "explosion" },
+                rewardEs: "Efecto de tecleo «Explosión»",
+                rewardEn: "Typing effect “Explosion”"
             }
         ];
 
@@ -2150,6 +2337,16 @@
                 shopEquippedFxMsg: "Efecto de tecleo activado: cada letra estalla en el tablero. ✨",
                 shopDeactivatedFxMsg: "Efecto de tecleo desactivado. 💤",
                 shopFxOff: "Apagar",
+                btnLogros: "🏅 Logros",
+                achTitle: "🏅 Logros",
+                achHint: "Completa los retos para desbloquear recompensas. ¡El progreso se guarda en este dispositivo y se queda guardado aunque cierres la página!",
+                achReward: "Recompensa",
+                achDone: "Completado ✓",
+                achDoing: "En curso",
+                achToast: "🏅 ¡Logro desbloqueado: ",
+                achToastEnd: " · Recompensa: ",
+                shopAchPrice: "🔒 Logro",
+                achNeed: "🔒 Requiere logro",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
                 shopBought: "¡Estilo desbloqueado! Ya puedes usarlo. ✨",
@@ -2309,6 +2506,16 @@
                 shopEquippedFxMsg: "Typing effect on: every letter bursts on the board. ✨",
                 shopDeactivatedFxMsg: "Typing effect off. 💤",
                 shopFxOff: "Turn off",
+                btnLogros: "🏅 Achievements",
+                achTitle: "🏅 Achievements",
+                achHint: "Complete the challenges to unlock rewards. Your progress is saved on this device, even if you close the page!",
+                achReward: "Reward",
+                achDone: "Completed ✓",
+                achDoing: "In progress",
+                achToast: "🏅 Achievement unlocked: ",
+                achToastEnd: " · Reward: ",
+                shopAchPrice: "🔒 Achievement",
+                achNeed: "🔒 Needs achievement",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
                 shopNoMoney: "Not enough coins! 🪙",
                 shopBought: "Style unlocked! You can equip it now. ✨",
@@ -2451,6 +2658,8 @@
         let fxEquipped = "";       // efecto de tecleo en uso ("" = ninguno)
         let shopOpen = false;
         let rankOpen = false;      // panel de ranking abierto
+        let logrosOpen = false;    // panel de logros abierto
+        let achData = {};          // id → { p: progreso, done: completado }
         let rankBusy = false;      // evita guardar la puntuación dos veces
         let playerId = "";         // identificador del jugador en este dispositivo
         let savedScore = false;    // la puntuación de esta partida ya se ha guardado
@@ -2563,6 +2772,10 @@
         const shopCoins = document.getElementById("shopCoins");
         const btnShop = document.getElementById("btnShop");
         const btnRanking = document.getElementById("btnRanking");
+        const btnLogros = document.getElementById("btnLogros");
+        const logros = document.getElementById("logros");
+        const achGrid = document.getElementById("achGrid");
+        const achCount = document.getElementById("achCount");
         const btnRegister = document.getElementById("btnRegister");
         const btnLogin = document.getElementById("btnLogin");
         const perfil = document.getElementById("perfil");
@@ -2605,7 +2818,7 @@
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
         const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura,
-            btnShop, btnRanking, btnRegister, btnLogin];
+            btnShop, btnRanking, btnLogros, btnRegister, btnLogin];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
             ["accKCoins", "accVCoins", "kCoins"],
@@ -4374,6 +4587,11 @@
         }
 
         function buyFx(f) {
+            // Los efectos ganados con un logro no se compran con monedas
+            if (f.ach) {
+                if (ownsFx(f.id)) setFx(fxEquipped === f.id ? "" : f.id);
+                return;
+            }
             if (ownsFx(f.id)) {
                 setFx(fxEquipped === f.id ? "" : f.id);
                 return;
@@ -4416,7 +4634,10 @@
 
                 const price = document.createElement("div");
                 price.className = "shop-price";
-                price.textContent = own ? "✓ " + t("shopOwned") : "🪙 " + f.price;
+                // Los efectos de logro no se compran: o están desbloqueados
+                // o se llega a ellos jugando (nunca aparece un precio)
+                price.textContent = own ? "✓ " + t("shopOwned")
+                    : (f.ach ? t("shopAchPrice") : "🪙 " + f.price);
                 card.appendChild(price);
 
                 const desc = document.createElement("div");
@@ -4432,6 +4653,11 @@
                 } else if (own) {
                     btn.textContent = t("shopEquip");
                     btn.addEventListener("click", () => setFx(f.id));
+                } else if (f.ach) {
+                    // Bloqueado: solo se desbloquea completando su logro
+                    btn.textContent = t("achNeed");
+                    btn.disabled = true;
+                    btn.classList.add("cant");
                 } else {
                     btn.textContent = t("shopBuy");
                     if (coins < f.price) btn.classList.add("cant");
@@ -4454,6 +4680,174 @@
         }
 
         btnShop.addEventListener("click", toggleShop);
+
+        // ---------- Logros: progreso, recompensas y panel ----------
+        // Cada logro lleva su propio progreso (guardado en localStorage).
+        // Al completarlo se entrega su recompensa: un efecto de tecleo que
+        // no está a la venta en la tienda, solo se gana jugando.
+        function achLoad() {
+            try {
+                const raw = JSON.parse(localStorage.getItem("teclear.logros") || "null");
+                if (raw && typeof raw === "object") achData = raw;
+            } catch (e) { /* sin almacenamiento disponible */ }
+
+            // Solo se admiten logros conocidos, con números dentro de su rango
+            const limpio = {};
+            ACHIEVEMENTS.forEach(a => {
+                const d = achData[a.id] || {};
+                const hecho = !!d.done;
+                let p = (typeof d.p === "number" && isFinite(d.p)) ? Math.floor(d.p) : 0;
+                p = Math.max(0, Math.min(a.goal, p));
+                limpio[a.id] = { p: hecho ? a.goal : p, done: hecho };
+            });
+            achData = limpio;
+            achSave();
+            // Un logro completado que hubiera perdido su recompensa la recupera
+            ACHIEVEMENTS.forEach(a => {
+                if (achData[a.id].done) grantAchReward(a, true);
+            });
+        }
+
+        function achSave() {
+            try {
+                localStorage.setItem("teclear.logros", JSON.stringify(achData));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // Nombre de la recompensa, en el idioma vigente
+        function rewardLabel(ach) {
+            return uiLang() === "es" ? ach.rewardEs : ach.rewardEn;
+        }
+
+        // Entrega la recompensa: el efecto de tecleo queda desbloqueado para
+        // siempre y sale puesto en marcha (igual que al comprarlo en la tienda)
+        function grantAchReward(ach, silent) {
+            if (!ach.reward || ach.reward.type !== "fx") return;
+            const nuevo = !ownedFx.includes(ach.reward.id);
+            if (nuevo) ownedFx.push(ach.reward.id);
+            if (nuevo || !ownsFx(fxEquipped)) {
+                fxEquipped = ach.reward.id;
+                saveShop();
+                applyFx();
+                if (shopOpen) renderFxShop();
+            }
+            if (!silent) showAchToast(ach);
+        }
+
+        // Aviso emergente de un logro recién desbloqueado
+        function showAchToast(ach) {
+            const toast = document.createElement("div");
+            toast.className = "ach-toast";
+            toast.setAttribute("role", "status");
+
+            const icon = document.createElement("span");
+            icon.className = "ach-toast-icon";
+            icon.textContent = ach.icon;
+
+            const txt = document.createElement("span");
+            txt.textContent = t("achToast") + (uiLang() === "es" ? ach.es : ach.en) +
+                t("achToastEnd") + rewardLabel(ach);
+
+            toast.append(icon, txt);
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5200);
+        }
+
+        // Sube el progreso de un logro y lo completa si llega a su meta
+        function achAdd(id, n) {
+            const ach = ACHIEVEMENTS.find(a => a.id === id);
+            const d = achData[id];
+            if (!ach || !d || d.done) return;
+            d.p = Math.min(ach.goal, d.p + n);
+            const completo = d.p >= ach.goal;
+            if (completo) d.done = true;
+            achSave();
+            if (completo) grantAchReward(ach, false);
+            if (logrosOpen) renderLogros();
+        }
+
+        // Tarjetas de los logros: icono, reto, barra de progreso y recompensa
+        function renderLogros() {
+            if (!achGrid) return;
+            achGrid.innerHTML = "";
+            let hechos = 0;
+
+            ACHIEVEMENTS.forEach(a => {
+                const d = achData[a.id] || { p: 0, done: false };
+                const done = !!d.done;
+                if (done) hechos++;
+                const pct = Math.round((d.p / a.goal) * 100);
+
+                const card = document.createElement("div");
+                card.className = "ach-card" + (done ? " done" : "");
+
+                const head = document.createElement("div");
+                head.className = "ach-head";
+                const icon = document.createElement("span");
+                icon.className = "ach-icon";
+                icon.textContent = a.icon;
+                const name = document.createElement("strong");
+                name.className = "ach-name";
+                name.textContent = uiLang() === "es" ? a.es : a.en;
+                head.append(icon, name);
+                card.appendChild(head);
+
+                const desc = document.createElement("p");
+                desc.className = "ach-desc";
+                desc.textContent = uiLang() === "es" ? a.descEs : a.descEn;
+                card.appendChild(desc);
+
+                const bar = document.createElement("div");
+                bar.className = "ach-bar";
+                const fill = document.createElement("i");
+                fill.style.width = pct + "%";
+                bar.appendChild(fill);
+                card.appendChild(bar);
+
+                const num = document.createElement("div");
+                num.className = "ach-num";
+                num.textContent = d.p + " / " + a.goal;
+                card.appendChild(num);
+
+                const reward = document.createElement("div");
+                reward.className = "ach-reward";
+                reward.textContent = "🎁 " + t("achReward") + ": " + rewardLabel(a);
+                card.appendChild(reward);
+
+                const st = document.createElement("div");
+                st.className = "ach-state";
+                st.textContent = done ? t("achDone") : t("achDoing");
+                card.appendChild(st);
+
+                achGrid.appendChild(card);
+            });
+
+            if (achCount) achCount.textContent = hechos + "/" + ACHIEVEMENTS.length;
+        }
+
+        function toggleLogros() {
+            if (state === "playing") return;
+            logrosOpen = !logrosOpen;
+            logros.classList.toggle("hidden", !logrosOpen);
+            btnLogros.classList.toggle("active", logrosOpen);
+            if (logrosOpen) {
+                renderLogros();
+                // El panel queda por debajo: se lleva a la vista para que se note
+                if (logros.scrollIntoView) {
+                    logros.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+        }
+
+        btnLogros.addEventListener("click", toggleLogros);
+
+        // El panel de logros se cierra al empezar una partida
+        function closeLogrosOnPlay() {
+            if (!logrosOpen) return;
+            logrosOpen = false;
+            logros.classList.add("hidden");
+            btnLogros.classList.remove("active");
+        }
 
         // ---------- Idioma y modo ----------
         function applyLang() {
@@ -4515,6 +4909,10 @@
                 t("shopBgsTitle") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
             document.getElementById("shopExtrasTitle").textContent = t("shopExtrasTitle");
             document.getElementById("shopFxTitle").textContent = t("shopFxTitle");
+            btnLogros.textContent = t("btnLogros");
+            document.getElementById("achTitle").textContent = t("achTitle");
+            document.getElementById("achHint").textContent = t("achHint");
+            if (logrosOpen) renderLogros();
             applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent = t("rTitle");
             document.getElementById("rkScore").textContent = t("rkScore");
@@ -5552,8 +5950,10 @@
                 const pow = fx.power * (.55 + Math.random() * .75);
                 const dx = Math.cos(ang) * pow;
                 const dy = Math.sin(ang) * pow + fx.rise * (.6 + Math.random() * .8);
-                const emoji = fx.glyph && i % 3 === 0;   // de vez en cuando, el emoji
-                p.className = "fx-p" + (emoji ? "" : " dot");
+                const cada = fx.glyphEvery || 3;   // de vez en cuando, el emoji
+                const emoji = fx.glyph && i % cada === 0;
+                // Punto redondo... o cubo, si el efecto es de bloques (Explosión)
+                p.className = "fx-p" + (emoji ? "" : (fx.shape === "block" ? " block" : " dot"));
                 p.style.left = (a.x + Math.random() * 12 - 6) + "px";
                 p.style.top = (a.y + Math.random() * 12 - 6) + "px";
                 p.style.setProperty("--fx-dx", dx.toFixed(1) + "px");
@@ -5565,8 +5965,10 @@
                     p.style.fontSize = fx.size + "px";
                 } else {
                     p.style.setProperty("--fx-color", fx.colors[i % fx.colors.length]);
-                    // la chispa es más pequeña que el emoji para no tapar la letra
-                    p.style.setProperty("--fx-size", Math.max(6, Math.round(fx.size * .6)) + "px");
+                    // la chispa es más pequeña que el emoji para no tapar la letra;
+                    // los cubos de la Explosión casi igualan al emoji (son bloques)
+                    const escala = fx.shape === "block" ? .85 : .6;
+                    p.style.setProperty("--fx-size", Math.max(6, Math.round(fx.size * escala)) + "px");
                 }
                 fxLayer.appendChild(p);
                 fxAlive++;
@@ -5600,6 +6002,14 @@
         function completeWord() {
             completed++;
             streak++;
+            // Logros: se anota la palabra recién escrita, ANTES de que
+            // newWord() la cambie por la siguiente. El reto "Un poco de
+            // pólvora" cuenta los «creeper» tecleados en el modo Tecleo
+            // con el Modo Cúbico activo (también si sale del revés).
+            if (mode === "type" && extraActive("cubico")) {
+                const w = word.toLowerCase();
+                if (w === "creeper" || w === mirrorWord("creeper")) achAdd("polvo", 1);
+            }
             const mult = multiplier();
             // Habilidades del fondo: Ia triplica puntos y monedas en las
             // palabras largas (más de 7 letras) y General dobla las monedas
@@ -5683,6 +6093,7 @@
                 shop.classList.add("hidden");
                 btnShop.classList.remove("active");
             }
+            closeLogrosOnPlay();   // el panel de logros también
             closeAccountOnPlay();   // el panel de perfil también
 
             results.classList.add("hidden");
@@ -6165,6 +6576,7 @@
 
         // ---------- Inicio ----------
         loadShop();
+        achLoad();          // progreso de los logros + recompensas ganadas
         loadProfileStats();
         accSession = loadSession();   // si hubo sesión la vez anterior, se restaura
         try {
