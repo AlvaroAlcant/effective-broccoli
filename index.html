@@ -89,6 +89,27 @@
             background-attachment: fixed, fixed, fixed;
         }
 
+        /* ---------- Modo Veyon ----------
+           Preparado para que el profe pueda mirar: el botón «Modo Veyon»
+           oculta el icono de estesoTeclea (el logo de la cabecera) y deja
+           los fondos «General» (franco) e «Ia» (esteso) sin su imagen,
+           mostrando el fondo liso de la página. Solo se tapa la vista:
+           las habilidades de esos fondos siguen actuando igual. */
+        body.veyon-on .logo-wrap {
+            display: none;
+        }
+        body.veyon-on.bg-franco,
+        body.veyon-on.bg-esteso {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
+                radial-gradient(760px 420px at 110% 115%, rgba(56, 130, 246, .12), transparent 60%);
+            background-size: auto, auto;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            background-attachment: fixed, fixed;
+        }
+
         /* ---------- Fondo "Sopa de Letras": letras que rebotan (canvas) ---------- */
         body.bg-sopa {
             background-color: var(--bg);
@@ -1766,6 +1787,7 @@
             <button class="chip-btn" id="btnLogros">🏅 Logros</button>
             <button class="chip-btn" id="btnRegister">👤 Registrar</button>
             <button class="chip-btn" id="btnLogin">🔑 Iniciar sesión</button>
+            <button class="chip-btn" id="btnVeyon">🖥️ Modo Veyon</button>
         </div>
     </div>
 
@@ -2587,6 +2609,7 @@
                 actLabel: "Acciones",
                 bgDark: "🌙 Oscuro",
                 bgFranco: "🖼️ General",
+                veyon: "🖥️ Modo Veyon",
                 kScore: "Puntos", kTime: "Tiempo", kStreak: "Racha", kLevel: "Nivel", kBest: "Récord",
                 kCoins: "Monedas",
                 kBestWords: "Récord palabras",
@@ -2755,6 +2778,7 @@
                 actLabel: "Actions",
                 bgDark: "🌙 Dark",
                 bgFranco: "🖼️ General",
+                veyon: "🖥️ Veyon mode",
                 kScore: "Points", kTime: "Time", kStreak: "Streak", kLevel: "Level", kBest: "Best",
                 kCoins: "Coins",
                 kBestWords: "Words record",
@@ -2911,6 +2935,7 @@
         let lang = "es";         // es | en | mur (murciano)
         let mode = "type";       // type | guess | imagen | aventura
         let bg = "dark";         // dark | franco | elprico | esteso
+        let veyon = false;       // Modo Veyon: oculta logo y fondos «General»/«Ia»
         let state = "idle";      // idle | playing | over
         let word = "";
         let currentImg = null;   // imagen en pantalla (modo Imágenes)
@@ -3107,12 +3132,13 @@
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
+        const btnVeyon = document.getElementById("btnVeyon");
         const advBar = document.getElementById("advBar");
         const perkVeil = document.getElementById("perkVeil");
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
         const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura,
-            btnShop, btnRanking, btnLogros, btnRegister, btnLogin];
+            btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
             ["accKCoins", "accVCoins", "kCoins"],
@@ -5257,6 +5283,7 @@
             saveScoreBtn.textContent = t("rankSave");
             btnRegister.textContent = t("btnRegister");
             btnLogin.textContent = t("btnLogin");
+            if (btnVeyon) btnVeyon.textContent = t("veyon");
             renderRanking();
             // Textos del panel de perfil
             document.getElementById("accTitle").textContent = t("accTitle");
@@ -5391,6 +5418,31 @@
 
         btnBgDark.addEventListener("click", () => setBg("dark"));
         btnBgFranco.addEventListener("click", () => setBg("franco"));
+
+        // ---------- Modo Veyon ----------
+        // El botón «Modo Veyon» oculta el icono de estesoTeclea (el logo de
+        // la cabecera) y las imágenes de los fondos «General» (franco) e
+        // «Ia» (esteso): se ve el fondo liso de la página. Solo se tapa la
+        // vista, así que la habilidad de cada fondo sigue actuando.
+        function applyVeyon() {
+            document.body.classList.toggle("veyon-on", veyon);
+            if (btnVeyon) {
+                btnVeyon.classList.toggle("active", veyon);
+                btnVeyon.setAttribute("aria-pressed", veyon ? "true" : "false");
+            }
+        }
+
+        function setVeyon(next) {
+            veyon = !!next;
+            try {
+                localStorage.setItem("teclear.veyon", veyon ? "1" : "0");
+            } catch (e) { /* sin almacenamiento disponible */ }
+            applyVeyon();
+        }
+
+        if (btnVeyon) {
+            btnVeyon.addEventListener("click", () => setVeyon(!veyon));
+        }
 
         // La variante de Tecleo se cambia en el menú desplegable
         if (modeSelect) {
@@ -7067,6 +7119,13 @@
         } catch (e) {
             bg = "dark";
         }
+        // Modo Veyon de la sesión anterior (oculta logo y fondos General/Ia)
+        try {
+            veyon = localStorage.getItem("teclear.veyon") === "1";
+        } catch (e) {
+            veyon = false;
+        }
+        applyVeyon();
         applyStyle();
         applyFx();
         updateCoins();
