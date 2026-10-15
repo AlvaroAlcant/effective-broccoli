@@ -720,25 +720,60 @@
             padding: 2px 12px;
         }
 
-        /* ---------- Modo Odisea: la palabra aparece y sus letras se disparan ---------- */
-        /* La palabra entra desde arriba y cada letra tecleada explota y queda
-           tachada; debajo, una barra marca los segundos que quedan de palabra. */
-        .odi-word {
-            flex: 1 0 100%;
+        /* ---------- Modo Supervivencia: tablero grande y palabras por todas partes ---------- */
+        /* La pantalla del juego se ensancha y el tablero crece para dar cabida
+           a varias palabras a la vez: cada una ocupa un hueco con sus letras y
+           su barra de cuenta atrás, y solo la apuntada está encendida. */
+        body.modo-supervivencia {
+            max-width: 1160px;
+        }
+        body.modo-supervivencia .board {
+            position: relative;
+            display: block;
+            min-height: 560px;
+            padding: 14px;
+            overflow: hidden;
+        }
+        /* Caja de una palabra: ocupa su hueco y se puede señalar con el ratón */
+        .sup-word {
+            position: absolute;
+            width: 45%;
             display: flex;
-            flex-wrap: wrap;
-            gap: 7px;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 6px;
+            border: 1px dashed transparent;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: border-color .15s, background-color .15s, opacity .15s;
         }
-        .odi-word.fresh {
-            animation: odiDrop .3s ease-out;
+        /* La palabra a la que apuntas: encendida. Las demás esperan su turno */
+        .sup-word.target {
+            border-color: var(--accent);
+            background-color: rgba(94, 234, 212, .07);
+            box-shadow: 0 0 0 3px rgba(94, 234, 212, .12);
         }
-        @keyframes odiDrop {
-            from { opacity: 0; transform: translateY(-20px) scale(.82); }
+        .sup-word:not(.target) {
+            opacity: .78;
+        }
+        .sup-word.fresh {
+            animation: supDrop .3s ease-out;
+        }
+        @keyframes supDrop {
+            from { opacity: 0; transform: translateY(-26px) scale(.8); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
+        /* Letras de la palabra: caben en su hueco aunque sea larga */
+        .sup-letters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+            font-size: 22px;
+        }
         /* Letra ya disparada: apagada y tachada, la destruida */
-        .odi-word span.shot {
+        .sup-word span.shot {
             background-color: #2f2a17;
             border-bottom-color: #b45309;
             color: #7a7f8c;
@@ -746,26 +781,24 @@
             opacity: .6;
         }
         /* La última letra disparada: la explosión del disparo */
-        .odi-word span.blast {
-            animation: odiBlast .32s ease-out;
+        .sup-word span.blast {
+            animation: supBlast .32s ease-out;
         }
-        @keyframes odiBlast {
+        @keyframes supBlast {
             0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, .9); }
             45%  { transform: scale(1.35) rotate(-6deg); box-shadow: 0 0 20px 7px rgba(250, 204, 21, .7); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
         }
-        /* Barra de vida de la palabra: cuánto queda antes de perder una vida */
-        .odi-bar {
-            flex: 1 0 100%;
-            width: min(440px, 92%);
-            margin: 16px auto 0;
+        /* Barra de vida de CADA palabra: cuánto queda antes de perder una vida */
+        .sup-bar {
+            width: 100%;
             padding: 2px;
             background-color: #121a2b;
             border: 1px solid var(--line);
             border-radius: 999px;
             overflow: hidden;
         }
-        .odi-fill {
+        .sup-fill {
             display: block;
             height: 100%;
             width: 100%;
@@ -773,15 +806,15 @@
             background: linear-gradient(90deg, #22c55e, #5eead4);
             transition: width .1s linear;
         }
-        .odi-fill.low {
+        .sup-fill.low {
             background: linear-gradient(90deg, #ef4444, #f97316);
-            animation: odiBlink .55s infinite;
+            animation: supBlink .55s infinite;
         }
-        @keyframes odiBlink {
+        @keyframes supBlink {
             50% { opacity: .3; }
         }
-        /* Vidas del modo Odisea: el rótulo va en su color */
-        .misses .odi-lives {
+        /* Vidas del modo Supervivencia: el rótulo va en su color */
+        .misses .sup-lives {
             font-size: 15px;
             color: var(--pink);
             margin-right: 8px;
@@ -1784,6 +1817,20 @@
                 padding: 26px 10px;
                 min-height: 104px;
             }
+            /* Supervivencia: en móvil el campo se alarga y las letras se
+               encogen para que las cuatro filas de palabras no se pisen */
+            body.modo-supervivencia .board {
+                min-height: 640px;
+                padding: 10px;
+            }
+            .sup-letters {
+                font-size: 18px;
+                gap: 3px;
+            }
+            .sup-word {
+                gap: 5px;
+                padding: 6px 4px;
+            }
             .board span {
                 min-width: 32px;
                 padding: 6px 7px;
@@ -1858,7 +1905,7 @@
             <button class="chip-btn" id="btnGuess">🧩 Adivinar</button>
             <button class="chip-btn" id="btnImagen">🖼️ Imágenes</button>
             <button class="chip-btn" id="btnAventura">🗺️ Aventura</button>
-            <button class="chip-btn" id="btnOdisea">🚀 Odisea</button>
+            <button class="chip-btn" id="btnSup">🛡️ Supervivencia</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="bgLabel">Fondo de pantalla</span>
@@ -2077,17 +2124,29 @@
         // Margen extra que admite el ranking por la ventaja "puntos x2"
         const ADV_SCORE_SLACK = 8000;
 
-        // ---------- Modo Odisea ----------
-        // Las palabras aparecen una a una y cada una tiene su propio plazo:
-        // hay que disparar todas sus letras antes de que se agote. Si no, se
-        // pierde una de las ODI_LIVES vidas; sin vidas se acaba la partida.
-        const ODI_LIVES = 5;        // vidas con las que se empieza
-        const ODI_TIME = 12;        // segundos que tiene la primera palabra
-        const ODI_TIME_MIN = 5;     // mínimo de segundos por palabra
-        const ODI_TIME_STEP = 0.8;  // segundos que se restan por nivel
-        const ODI_SPEED_STEP = 0.08;// aceleración del reloj por nivel
-        const ODI_SPEED_MAX = 2;    // el reloj nunca pasa de doble velocidad
-        const ODI_XP_WORD = 10;     // experiencia fija de cada palabra disparada
+        // ---------- Modo Supervivencia ----------
+        // El tablero se agranda y las palabras aparecen por todas partes, cada
+        // una con su propio plazo: hay que disparar todas sus letras antes de
+        // que se agote. Si una palabra se escapa, se pierde una de las
+        // SUP_LIVES vidas; sin vidas se acaba la partida. Se empieza con una
+        // sola palabra en pantalla y van apareciendo más según se escribe.
+        const SUP_LIVES = 5;        // vidas con las que se empieza
+        const SUP_TIME = 12;        // segundos que tiene la primera palabra
+        const SUP_TIME_MIN = 5;     // mínimo de segundos por palabra
+        const SUP_TIME_STEP = 0.8;  // segundos que se restan por nivel
+        const SUP_SPEED_STEP = 0.08;// aceleración del reloj por nivel
+        const SUP_SPEED_MAX = 2;    // el reloj nunca pasa de doble velocidad
+        const SUP_XP_WORD = 10;     // experiencia fija de cada palabra disparada
+        const SUP_MAX_WORDS = 6;    // palabras en pantalla a la vez (tope)
+        const SUP_EVERY = 3;        // cada cuántas escritas entra una más
+        // Huecos del tablero (porcentajes): dos columnas y cuatro filas, para
+        // que las palabras se repartan por toda la pantalla sin solaparse
+        const SUP_SLOTS = [
+            { left: "4%", top: "3%" },  { left: "51%", top: "3%" },
+            { left: "4%", top: "26%" }, { left: "51%", top: "26%" },
+            { left: "4%", top: "49%" }, { left: "51%", top: "49%" },
+            { left: "4%", top: "72%" }, { left: "51%", top: "72%" }
+        ];
 
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
@@ -2696,13 +2755,13 @@
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
                 subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
                 subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada cierto número de palabras paras a elegir una ventaja. ¡El reloj acelera y las ventajas salen cada vez más lejos!",
-                subtitleO: "Odisea: cada palabra aparece con su cuenta atrás. ¡Dispara todas sus letras antes de que se acabe o pierdes una vida! Van 5 vidas: sin ellas se acabó la partida. Cada palabra te da experiencia y monedas y va subiendo la dificultad.",
+                subtitleS: "Supervivencia: la pantalla se agranda y las palabras caen por todas partes, cada una con su cuenta atrás. ¡Dispara todas sus letras antes de que se acabe o pierdes una vida! Van " + SUP_LIVES + " vidas: sin ellas se acabó la partida. Empiezas con una sola palabra y, según escribes, van apareciendo más. Cada palabra te da experiencia y monedas y va subiendo la dificultad.",
                 modeLabel: "Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
                 btnImagen: "🖼️ Imágenes",
                 btnAventura: "🗺️ Aventura",
-                btnOdisea: "🚀 Odisea",
+                btnSup: "🛡️ Supervivencia",
                 btnMurciano: "🗣️ Murciano",
                 bgLabel: "Fondo de pantalla",
                 bgOffAventura: "no se usa en Aventura (el modo lleva el suyo)",
@@ -2777,9 +2836,9 @@
                 statusPlayM: "Teclea la palabra murciana tal y como aparece, sin cambiarle nada. ¡Vamoh a ve!",
                 statusPlayI: "Escribe la palabra que representa la imagen. ¡A ojo de buen cubero!",
                 statusPlayA: "Cada palabra te regala tiempo y sube la dificultad. ¡Cada 5 eliges una ventaja!",
-                statusPlayO: "¡Dispara todas las letras de la palabra antes de que se acabe su tiempo! Si se te escapa, pierdes una vida. " + ODI_LIVES + " vidas: ¡sin ellas, fin de la partida! 🚀",
-                odiseaFail: "⏰ ¡Se acabó el tiempo de esa palabra! Pierdes una vida ❤️‍🩹 Quedan: ",
-                odiseaFailEnd: "💔 ¡Te has quedado sin vidas! Fin de la odisea.",
+                statusPlayS: "¡Apunta a una palabra y dispara todas sus letras antes de que se acabe su tiempo! Haz clic en otra (o pulsa Tab) para cambiar de objetivo. Si se te escapa, pierdes una vida. " + SUP_LIVES + " vidas: ¡sin ellas, fin de la partida! 🛡️",
+                supFail: "⏰ ¡Se ha escapado una palabra! Pierdes una vida ❤️‍🩹 Quedan: ",
+                supFailEnd: "💔 ¡Te has quedado sin vidas! Fin de la supervivencia.",
                 kLives: "Vidas",
                 kTimeWord: "Tiempo palabra",
                 rTitleLives: "¡Te has quedado sin vidas! 💔",
@@ -2873,13 +2932,13 @@
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
                 subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
                 subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every few words you stop to pick an advantage. The clock speeds up and advantages come further apart!",
-                subtitleO: "Odyssey: every word appears with its own countdown. Shoot all its letters before time runs out or you lose a life! You have " + ODI_LIVES + " lives: no lives, no game. Every word gives you experience and coins, and the difficulty keeps rising.",
+                subtitleS: "Survival: the screen grows and words fall from everywhere, each with its own countdown. Shoot all its letters before time runs out or you lose a life! You have " + SUP_LIVES + " lives: no lives, no game. You start with a single word and more appear as you type. Every word gives you experience and coins, and the difficulty keeps rising.",
                 modeLabel: "Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
                 btnImagen: "🖼️ Pictures",
                 btnAventura: "🗺️ Adventure",
-                btnOdisea: "🚀 Odyssey",
+                btnSup: "🛡️ Survival",
                 btnMurciano: "🗣️ Murcia dialect",
                 bgLabel: "Background",
                 bgOffAventura: "not used in Adventure (that mode has its own)",
@@ -2955,9 +3014,9 @@
                 statusPlayM: "Type the Murcian word exactly as shown, letter for letter. Let's go!",
                 statusPlayI: "Type the word the image stands for. Trust your eyes!",
                 statusPlayA: "Every word gives you time and raises the difficulty. Every 5 words you pick an advantage!",
-                statusPlayO: "Shoot every letter of the word before its time runs out! Miss it and you lose a life. " + ODI_LIVES + " lives: no lives, no game! 🚀",
-                odiseaFail: "⏰ Time's up for that word! You lose a life ❤️‍🩹 Lives left: ",
-                odiseaFailEnd: "💔 You are out of lives! Odyssey over.",
+                statusPlayS: "Aim at a word and shoot every letter before its time runs out! Click another one (or press Tab) to switch targets. Miss it and you lose a life. " + SUP_LIVES + " lives: no lives, no game! 🛡️",
+                supFail: "⏰ A word got away! You lose a life ❤️‍🩹 Lives left: ",
+                supFailEnd: "💔 You are out of lives! Survival over.",
                 kLives: "Lives",
                 kTimeWord: "Word time",
                 rTitleLives: "You are out of lives! 💔",
@@ -3047,7 +3106,7 @@
 
         // ---------- Estado ----------
         let lang = "es";         // es | en | mur (murciano)
-        let mode = "type";       // type | guess | imagen | aventura | odisea
+        let mode = "type";       // type | guess | imagen | aventura | supervivencia
         let bg = "dark";         // dark | franco | elprico | esteso
         let veyon = false;       // Modo Veyon: oculta logo y fondos «General»/«Ia»
         // Imagen de repuesto que sustituye a las de «General» e «Ia»
@@ -3162,10 +3221,12 @@
         let advStops = 0;          // paradas de ventaja ya celebradas
         let advNextPerk = ADV_EVERY;  // palabras escritas en las que toca parar
 
-        // ---------- Estado del modo Odisea ----------
-        let odiseaLives = ODI_LIVES;  // vidas que quedan (5 al empezar)
-        let odiSpan = ODI_TIME;       // segundos totales que tiene la palabra en pantalla
-        let odiFill = null;           // barra de la palabra (se repinta en cada tick)
+        // ---------- Estado del modo Supervivencia ----------
+        let supLives = SUP_LIVES;  // vidas que quedan (5 al empezar)
+        // Palabras que hay ahora en pantalla. Cada una lleva lo suyo: la
+        // palabra, las letras ya disparadas, su hueco y sus segundos restantes
+        let supItems = [];
+        let supTarget = null;      // palabra a la que apunta el teclado
 
         // ---------- Perfil de usuario ----------
         let accOpen = false;       // panel de perfil abierto
@@ -3252,7 +3313,7 @@
         const btnGuess = document.getElementById("btnGuess");
         const btnImagen = document.getElementById("btnImagen");
         const btnAventura = document.getElementById("btnAventura");
-        const btnOdisea = document.getElementById("btnOdisea");
+        const btnSup = document.getElementById("btnSup");
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
@@ -3261,7 +3322,7 @@
         const perkVeil = document.getElementById("perkVeil");
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
-        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura, btnOdisea,
+        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura, btnSup,
             btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
@@ -3445,7 +3506,7 @@
             if (s <= 0 || w <= 0) return null;
             if (s > MAX_SCORE || w > MAX_WORDS) return null;
             const m = String(raw.m || "type");
-            if (["type", "guess", "murciano", "imagen", "aventura", "odisea"].indexOf(m) < 0) return null;
+            if (["type", "guess", "murciano", "imagen", "aventura", "supervivencia"].indexOf(m) < 0) return null;
             const d = String(raw.d || "");
             if (d && (d.length > 30 || isNaN(new Date(d).getTime()))) return null;
             // Coherencia puntos ↔ palabras: imposible de lograr jugando.
@@ -4390,20 +4451,20 @@
             const fondo = typeof es.fondo === "string" ? es.fondo : bg;
             const modo = typeof es.modo === "string" ? es.modo : mode;
             const aventura = modo === "aventura";
-            const odisea = modo === "odisea";
+            const supervivencia = modo === "supervivencia";
             const extra = (!aventura && fondo === "elprico") ? BONUS_TIME_ELPRICO : 0;
 
             // El modo Aventura empieza con 50 s y cada palabra regala tiempo,
             // así que la partida dura (y puntúa) bastante más de lo normal:
             // se admite todo el tiempo que las palabras han ido sumando.
-            // El modo Odisea no tiene duración fija: se juega hasta quedarse
-            // sin vidas, así que el tope es la duración REAL de la partida
-            // (mínimo un partido completo de 60 s) y los topes de ritmo se
-            // calculan sobre ese tiempo: una partida larga no es sospechosa
-            // por sí sola, lo que no puede ser es un ritmo imposible.
+            // El modo Supervivencia no tiene duración fija: se juega hasta
+            // quedarse sin vidas, así que el tope es la duración REAL de la
+            // partida (mínimo un partido completo de 60 s) y los topes de
+            // ritmo se calculan sobre ese tiempo: una partida larga no es
+            // sospechosa por sí sola, lo que no puede ser es un ritmo imposible.
             const ganado = val(es.tiempoExtra, aventura ? advTimeGained : 0);
             const margen = aventura ? ADV_SCORE_SLACK : 2000;
-            const total = odisea
+            const total = supervivencia
                 ? Math.max(GAME_TIME + extra, du)
                 : GAME_TIME + extra + ganado;
 
@@ -5391,14 +5452,14 @@
                 mode === "imagen" ? t("subtitleI") :
                 mode === "guess" ? t("subtitleG") :
                 mode === "aventura" ? t("subtitleA") :
-                mode === "odisea" ? t("subtitleO") :
+                mode === "supervivencia" ? t("subtitleS") :
                 lang === "mur" ? t("subtitleM") : t("subtitleT");
             document.getElementById("modeLabel").textContent = t("modeLabel");
             btnType.textContent = t("btnType");
             btnGuess.textContent = t("btnGuess");
             btnImagen.textContent = t("btnImagen");
             if (btnAventura) btnAventura.textContent = t("btnAventura");
-            if (btnOdisea) btnOdisea.textContent = t("btnOdisea");
+            if (btnSup) btnSup.textContent = t("btnSup");
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent =
                 t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
@@ -5407,9 +5468,9 @@
             btnBgDark.textContent = t("bgDark");
             setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
             document.getElementById("kScore").textContent = t("kScore");
-            // En Odisea el reloj marca lo que queda de la palabra actual
+            // En Supervivencia el reloj marca lo que queda de la palabra apuntada
             document.getElementById("kTime").textContent =
-                mode === "odisea" ? t("kTimeWord") : t("kTime");
+                mode === "supervivencia" ? t("kTimeWord") : t("kTime");
             document.getElementById("kStreak").textContent = t("kStreak");
             document.getElementById("kLevel").textContent = t("kLevel");
             document.getElementById("kBest").textContent = t("kBest");
@@ -5452,7 +5513,7 @@
             if (logrosOpen) renderLogros();
             applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent =
-                mode === "odisea" ? t("rTitleLives") : t("rTitle");
+                mode === "supervivencia" ? t("rTitleLives") : t("rTitle");
             document.getElementById("rkScore").textContent = t("rkScore");
             document.getElementById("rkWords").textContent =
                 mode === "guess" ? t("rkWordsG") : t("rkWords");
@@ -5470,7 +5531,7 @@
             btnGuess.classList.toggle("active", mode === "guess");
             btnImagen.classList.toggle("active", mode === "imagen");
             if (btnAventura) btnAventura.classList.toggle("active", mode === "aventura");
-            if (btnOdisea) btnOdisea.classList.toggle("active", mode === "odisea");
+            if (btnSup) btnSup.classList.toggle("active", mode === "supervivencia");
             // En Aventura no se juega con fondos: el selector queda fuera de
             // servicio y el cuerpo lleva el fondo propio del modo (sin habilidad)
             const sinFondos = mode === "aventura";
@@ -5545,7 +5606,7 @@
         btnGuess.addEventListener("click", () => setMode("guess"));
         btnImagen.addEventListener("click", () => setMode("imagen"));
         if (btnAventura) btnAventura.addEventListener("click", () => setMode("aventura"));
-        if (btnOdisea) btnOdisea.addEventListener("click", () => setMode("odisea"));
+        if (btnSup) btnSup.addEventListener("click", () => setMode("supervivencia"));
 
         // ---------- Fondo de pantalla ----------
         function setBg(next) {
@@ -5981,9 +6042,10 @@
             if (mode === "aventura") {
                 return 1 + Math.floor(Math.max(0, completed - advRelief) / 3);
             }
-            // En Odisea también sube deprisa: cada 4 palabras disparadas
-            // toca una palabra más larga con menos segundos de margen.
-            if (mode === "odisea") {
+            // En Supervivencia también sube deprisa: cada 4 palabras
+            // disparadas toca una palabra más larga con menos segundos de
+            // margen y el tablero admite más palabras a la vez.
+            if (mode === "supervivencia") {
                 return 1 + Math.floor(completed / 4);
             }
             return 1 + Math.floor(completed / 5);
@@ -6008,20 +6070,27 @@
             return Math.min(ADV_SPEED_MAX, 1 + extra);
         }
 
-        // ---------- Modo Odisea ----------
-        // Segundos que tiene la palabra que está en pantalla: van bajando con
+        // ---------- Modo Supervivencia ----------
+        // Segundos que tiene cada palabra que está en pantalla: van bajando con
         // el nivel, así que cada vez hay que disparar más deprisa.
-        function odiseaWordTime() {
-            const base = ODI_TIME - (level() - 1) * ODI_TIME_STEP;
-            return Math.max(ODI_TIME_MIN, Math.round(base * 10) / 10);
+        function supWordTime() {
+            const base = SUP_TIME - (level() - 1) * SUP_TIME_STEP;
+            return Math.max(SUP_TIME_MIN, Math.round(base * 10) / 10);
         }
 
-        // Velocidad del reloj de Odisea: como el de Aventura, acelera con el
-        // nivel hasta el doble, de modo que la barra de la palabra se vacía
+        // Velocidad del reloj de Supervivencia: como el de Aventura, acelera
+        // con el nivel hasta el doble, de modo que TODAS las barras se vacían
         // cada vez más deprisa justo cuando las palabras son más largas.
-        function odiseaSpeed() {
-            const extra = (level() - 1) * ODI_SPEED_STEP;
-            return Math.min(ODI_SPEED_MAX, 1 + extra);
+        function supSpeed() {
+            const extra = (level() - 1) * SUP_SPEED_STEP;
+            return Math.min(SUP_SPEED_MAX, 1 + extra);
+        }
+
+        // Palabras que pueden estar en pantalla a la vez: se empieza con una
+        // y cada SUP_EVERY escritas aparece otra más (hasta SUP_MAX_WORDS),
+        // así que la pantalla se va llenando según escribes.
+        function supMaxWords() {
+            return Math.min(SUP_MAX_WORDS, 1 + Math.floor(completed / SUP_EVERY));
         }
 
         // Palabras que faltan para la próxima parada de ventaja: el hueco va
@@ -6499,17 +6568,13 @@
             streakEl.textContent = streak + " (x" + multiplier() + ")";
             levelEl.textContent = level();
             timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
-            // En Odisea el "bajo" avisa de la última parte del plazo de la palabra
+            // En Supervivencia el "bajo" avisa de la última parte del plazo
+            // de la palabra a la que apuntas
             timeBox.classList.toggle("low",
                 state === "playing" &&
-                (mode === "odisea" ? timeLeft <= 4 : timeLeft <= 10));
+                (mode === "supervivencia" ? timeLeft <= 4 : timeLeft <= 10));
             if (mode === "aventura") renderAdvBar();   // efectos y tiempo por palabra
-            // Barra de la palabra en pantalla: se repinta en cada tick
-            if (mode === "odisea" && odiFill) {
-                const pct = Math.max(0, Math.min(100, (timeLeft / Math.max(0.1, odiSpan)) * 100));
-                odiFill.style.width = pct + "%";
-                odiFill.classList.toggle("low", timeLeft <= 4);
-            }
+            // (las barras de todas las palabras se repintan en cada tick)
             // Logro «Hacker»: se anota la mejor puntuación de UNA partida.
             // Este es el sitio donde se refleja el marcador de todos los
             // modos, así que aquí se comprueba la meta de 10.000 puntos.
@@ -6535,41 +6600,249 @@
             fillLetters(typed);
         }
 
-        // ---------- Modo Odisea: la palabra aparece y sus letras se disparan ----------
-        // Cada letra ya tecleada queda destruida (tachada y apagada) y la
-        // última explota; debajo, la barra cuenta los segundos que quedan de
-        // esta palabra antes de perder una vida. "fresh" es true solo cuando
-        // la palabra acaba de aparecer, para que la animación de entrada no
-        // se repita con cada tecla.
-        function renderOdisea(typed, fresh) {
-            board.innerHTML = "";
-            odiFill = null;
+        // ---------- Modo Supervivencia: palabras por todas partes ----------
+        // El tablero es un campo con varios huecos repartidos por la pantalla.
+        // Cada palabra ocupa uno libre con sus letras y su barra de cuenta
+        // atrás; solo la apuntada está encendida y es la que se teclea. Se
+        // apunta con el clic o con Tab, y las demás van con su propio reloj.
 
-            const box = document.createElement("div");
-            box.className = "odi-word" + (fresh ? " fresh" : "");
-            for (let i = 0; i < word.length; i++) {
+        // Letras de UNA palabra: disparadas (tachadas), explosión de la última
+        // y cursor donde entra la siguiente
+        function supRenderLetters(it) {
+            if (!it.letras) return;
+            it.letras.innerHTML = "";
+            for (let i = 0; i < it.w.length; i++) {
                 const s = document.createElement("span");
-                s.textContent = word[i];
-                if (i < typed.length) {
-                    s.className = "shot" + (i === typed.length - 1 ? " blast" : "");
-                } else if (i === typed.length) {
+                s.textContent = it.w[i];
+                if (i < it.typed) {
+                    s.className = "shot" + (i === it.typed - 1 ? " blast" : "");
+                } else if (i === it.typed) {
                     s.className = "cursor";
                 }
-                box.appendChild(s);
+                it.letras.appendChild(s);
             }
-            board.appendChild(box);
+        }
 
-            // Barra del plazo de la palabra (se actualiza desde updateHud)
+        // Barra de cuenta atrás de UNA palabra (se repinta en cada tick)
+        function supPaintBar(it) {
+            if (!it.fill) return;
+            const pct = Math.max(0, Math.min(100, (it.left / Math.max(0.1, it.span)) * 100));
+            it.fill.style.width = pct + "%";
+            it.fill.classList.toggle("low", it.left <= 4);
+        }
+
+        // Caja de una palabra en pantalla: letras, barra y señalamiento
+        function supRenderBox(it, fresh) {
+            const hueco = SUP_SLOTS[it.slot] || SUP_SLOTS[0];
+            const box = document.createElement("div");
+            box.className = "sup-word" + (fresh ? " fresh" : "") +
+                (it === supTarget ? " target" : "");
+            box.style.left = hueco.left;
+            box.style.top = hueco.top;
+
+            const letras = document.createElement("div");
+            letras.className = "sup-letters";
+            box.appendChild(letras);
+
             const bar = document.createElement("div");
-            bar.className = "odi-bar";
+            bar.className = "sup-bar";
             const fill = document.createElement("i");
-            fill.className = "odi-fill";
-            const pct = Math.max(0, Math.min(100, (timeLeft / Math.max(0.1, odiSpan)) * 100));
-            fill.style.width = pct + "%";
-            fill.classList.toggle("low", timeLeft <= 4);
+            fill.className = "sup-fill";
             bar.appendChild(fill);
-            board.appendChild(bar);
-            odiFill = fill;
+            box.appendChild(bar);
+
+            it.el = box;
+            it.letras = letras;
+            it.fill = fill;
+            supRenderLetters(it);
+            supPaintBar(it);
+
+            // Al señalar la caja con el ratón se apunta a esa palabra: el
+            // mousedown no quita el foco, así que las teclas siguen llegando
+            box.addEventListener("mousedown", function (e) {
+                if (e && e.preventDefault) e.preventDefault();
+            });
+            box.addEventListener("click", function () {
+                supAim(it);
+                if (typing) typing.focus();
+            });
+            return box;
+        }
+
+        // Vuelve a pintar TODO el tablero (al empezar la partida)
+        function supRenderAll(fresh) {
+            board.innerHTML = "";
+            for (const it of supItems) {
+                it.el = null; it.letras = null; it.fill = null;
+                board.appendChild(supRenderBox(it, fresh === true));
+            }
+        }
+
+        // Nueva palabra en un hueco libre: solo datos, la caja la pinta quien
+        // la llama (el tablero entero o la caja suelta de la palabra nueva)
+        function supSpawn() {
+            if (supItems.length >= supMaxWords()) return null;
+            const libres = [];
+            for (let s = 0; s < SUP_SLOTS.length; s++) {
+                if (!supItems.some(x => x.slot === s)) libres.push(s);
+            }
+            if (libres.length === 0) return null;
+
+            let w = nextWord();
+            // Se evita repetir las que ya están en pantalla
+            for (let i = 0; i < 8 && supItems.some(x => x.w === w); i++) w = nextWord();
+
+            const seg = supWordTime();
+            const it = {
+                w: w, typed: 0,
+                slot: libres[Math.floor(Math.random() * libres.length)],
+                span: seg, left: seg,
+                el: null, letras: null, fill: null
+            };
+            supItems.push(it);
+            return it;
+        }
+
+        // La caja de una palabra recién aparecida entra en el tablero
+        function supArrive(it) {
+            if (it && state === "playing" && board) board.appendChild(supRenderBox(it, true));
+        }
+
+        // Rellena el tablero hasta el tope del nivel: cada vez hay más
+        // palabras en pantalla según avanzas. Devuelve la última en entrar.
+        function supFillBoard() {
+            let nueva = null;
+            while (supItems.length < supMaxWords()) {
+                const it = supSpawn();
+                if (!it) break;
+                nueva = it;
+                supArrive(it);
+            }
+            return nueva;
+        }
+
+        // Saca una palabra del tablero (completada o escapada)
+        function supRemove(it) {
+            const i = supItems.indexOf(it);
+            if (i >= 0) supItems.splice(i, 1);
+            const el = it.el;
+            if (el) {
+                if (el.parentNode && el.parentNode.removeChild) el.parentNode.removeChild(el);
+                else if (board && board.removeChild) board.removeChild(el);
+            }
+            it.el = null; it.letras = null; it.fill = null;
+            if (supTarget === it) supTarget = null;
+        }
+
+        // Apunta a una palabra: a partir de ahí es la que se teclea. El reloj
+        // del HUD pasa a marcar SU tiempo y se recupera lo que ya se había
+        // disparado de ella antes de cambiar de objetivo.
+        function supAim(it) {
+            if (!it) return;
+            supTarget = it;
+            word = it.w;                     // las recompensas trabajan sobre `word`
+            prevLen = it.typed;
+            typing.value = it.w.slice(0, it.typed);
+            for (const x of supItems) {
+                if (x.el) x.el.classList.toggle("target", x === it);
+            }
+            supRenderLetters(it);
+            timeLeft = Math.max(0, it.left);
+            updateHud();
+        }
+
+        // La siguiente en apuntar es la que menos tiempo le queda
+        function supAimNext() {
+            let mejor = null;
+            for (const x of supItems) if (!mejor || x.left < mejor.left) mejor = x;
+            supAim(mejor);
+        }
+
+        // Tab (o un clic) para pasar a apuntar a la siguiente palabra
+        function supCycle() {
+            if (supItems.length < 2) return;
+            const i = supItems.indexOf(supTarget);
+            supAim(supItems[(i + 1) % supItems.length]);
+        }
+
+        // Palabra terminada: cobra puntos, monedas y experiencia, se va del
+        // tablero y... ¡van apareciendo más! (una más cada SUP_EVERY escritas)
+        function supComplete() {
+            const it = supTarget;
+            if (!it) return;
+            pagaPalabra();               // recompensas, racha y logros
+            supRemove(it);
+            supFillBoard();
+            supAimNext();
+            updateHud();
+        }
+
+        // Se acaba el plazo de UNA palabra: se escapa, se pierde una vida y
+        // sigue la partida con las que queden (sin vidas se acaba del todo)
+        function supEscape(it) {
+            const escapada = it.w;
+            supRemove(it);
+            supLives--;
+            shake();
+            renderMisses();
+            if (supLives <= 0) {
+                supLives = 0;
+                timeLeft = 0;
+                status.textContent = t("supFailEnd");
+                updateHud();
+                endGame();
+                return;
+            }
+            status.textContent = t("supFail") + supLives + " ❤️ · " + t("wordFailed") + escapada;
+            // El hueco no se queda vacío: entra otra y se apunta a ella
+            supFillBoard();
+            supAimNext();
+        }
+
+        // Lo que se teclea se compara con la palabra APUNTADA: la primera
+        // letra mal puesta se rechaza y penaliza, como en el modo Tecleo
+        function supInput() {
+            let val = typing.value.toLowerCase();
+            if (typing.value !== val) typing.value = val;
+
+            const tgt = supTarget;
+            if (!tgt) {
+                typing.value = "";
+                return;
+            }
+
+            if (val.length > tgt.w.length) {
+                val = val.slice(0, tgt.w.length);
+                typing.value = val;
+            }
+
+            let bad = -1;
+            for (let i = 0; i < val.length; i++) {
+                if (val[i] !== tgt.w[i]) {
+                    bad = i;
+                    break;
+                }
+            }
+
+            if (bad !== -1) {
+                val = val.slice(0, bad);
+                typing.value = val;
+                errors++;
+                streak = 0;
+                score = Math.max(0, score - 5);
+                shake();
+                status.textContent = t("statusError");
+            } else {
+                if (val.length > prevLen) hits += val.length - prevLen;
+                status.textContent = t("statusOk");
+            }
+
+            prevLen = val.length;
+            tgt.typed = val.length;
+            supRenderLetters(tgt);
+            updateHud();
+
+            if (val === tgt.w) supComplete();
         }
 
         // ---------- Modo Imágenes: SOLO la foto, sin letras en pantalla ----------
@@ -6618,19 +6891,19 @@
         function renderCurrent(fresh) {
             if (mode === "imagen") renderImage();
             else if (mode === "guess") renderGuess();
-            else if (mode === "odisea") renderOdisea(typing.value, fresh === true);
+            else if (mode === "supervivencia") supRenderAll(fresh === true);
             else renderWord(typing.value);
         }
 
         function renderMisses() {
-            // Modo Odisea: el mismo hueco sirve para las 5 vidas de la partida
-            if (mode === "odisea") {
+            // Modo Supervivencia: el mismo hueco sirve para las 5 vidas
+            if (mode === "supervivencia") {
                 missesEl.classList.remove("is-off");
                 let hearts = "";
-                for (let i = 0; i < ODI_LIVES; i++) {
-                    hearts += i < odiseaLives ? "❤️" : "🖤";
+                for (let i = 0; i < SUP_LIVES; i++) {
+                    hearts += i < supLives ? "❤️" : "🖤";
                 }
-                missesEl.innerHTML = '<span class="odi-lives">' + t("kLives") + "</span>" + hearts;
+                missesEl.innerHTML = '<span class="sup-lives">' + t("kLives") + "</span>" + hearts;
                 return;
             }
             if (mode !== "guess") {
@@ -6664,8 +6937,8 @@
             setTimeout(() => c.remove(), 900);
         }
 
-        // Aviso de experiencia ganada con la palabra (modo Odisea): la misma
-        // que se lleva al final de la partida, palabra a palabra.
+        // Aviso de experiencia ganada con la palabra (modo Supervivencia): la
+        // misma que se lleva al final de la partida, palabra a palabra.
         function showXp(n) {
             const p = document.createElement("div");
             p.className = "points xp";
@@ -6703,6 +6976,12 @@
                     const ok = board.querySelectorAll(".ok");
                     el = ok.length ? ok[ok.length - 1] : null;
                 }
+            } else if (mode === "supervivencia") {
+                // La letra es la de la palabra APUNTADA (la que acaba de
+                // recibir el disparo, o la que está a punto de recibirlo)
+                const caja = supTarget && supTarget.el;
+                el = caja ? (caja.querySelector(".shot.blast") ||
+                             caja.querySelector(".cursor")) : null;
             } else if (board.children.length) {
                 const i = Math.min(prevLen, board.children.length - 1);
                 el = board.children[i < 0 ? 0 : i];
@@ -6769,16 +7048,24 @@
                 renderMisses();
             } else if (mode === "type" || mode === "aventura") {
                 soupPrefill();   // letras que deja Sopa de Letras
-            } else if (mode === "odisea") {
-                // La palabra nueva nace con su propio plazo en la barra
-                odiSpan = odiseaWordTime();
-                timeLeft = odiSpan;
+            } else if (mode === "supervivencia") {
+                // La partida empieza con una sola palabra en pantalla: el
+                // resto van apareciendo según escribes (ya se apunta a esta)
+                supItems = [];
+                supTarget = null;
+                supSpawn();
+                supAim(supItems[0]);
             }
             renderCurrent(true);
             updateHud();
         }
 
-        function completeWord() {
+        // Recompensas de una palabra terminada: cuenta para el nivel, sube la
+        // racha, paga puntos, monedas y experiencia y anota los logros.
+        // La reclama el modo Tecleo/Imágenes/Adivinar desde completeWord() y
+        // el modo Supervivencia desde supComplete() (que en lugar de pasar a
+        // la siguiente palabra, la retira del tablero).
+        function pagaPalabra() {
             completed++;
             streak++;
             // Logros: se anota la palabra recién escrita, ANTES de que
@@ -6819,11 +7106,15 @@
                 ((mode === "aventura" && performance.now() < advCoins) ? 2 : 1);
             giveCoins(coinGain);
             showCoin(coinGain);
-            // Modo Odisea: cada palabra disparada paga su experiencia en
-            // caliente (el total se confirma al acabar la partida)
-            if (mode === "odisea") showXp(ODI_XP_WORD + Math.floor(points / 10));
+            // Modo Supervivencia: cada palabra disparada paga su experiencia
+            // en caliente (el total se confirma al acabar la partida)
+            if (mode === "supervivencia") showXp(SUP_XP_WORD + Math.floor(points / 10));
             // Modo Aventura: cada palabra regala segundos al cronómetro
             if (mode === "aventura") gainTime(timePerWord());
+        }
+
+        function completeWord() {
+            pagaPalabra();
             newWord();
             // ... y llegado el momento hay una parada para elegir una ventaja.
             // Cada parada alarga el hueco siguiente: al principio cada 5
@@ -6835,23 +7126,8 @@
             }
         }
 
-        // ---------- Modo Odisea: se acaba el plazo de una palabra ----------
-        // La palabra se escapa: se pierde una vida y sale otra en su lugar.
-        // Con la última vida perdida se acaba la partida.
-        function odiseaFail() {
-            odiseaLives--;
-            shake();
-            renderMisses();
-            if (odiseaLives <= 0) {
-                timeLeft = 0;
-                status.textContent = t("odiseaFailEnd");
-                updateHud();
-                endGame();
-                return;
-            }
-            status.textContent = t("odiseaFail") + odiseaLives + " ❤️ · " + t("wordFailed") + word;
-            newWord();   // otra palabra, con su plazo nuevo
-        }
+        // (La vida perdida cuando se escapa una palabra la resta supEscape(),
+        //  en el bloque del modo Supervivencia)
 
         function startGame() {
             if (state === "playing") return;
@@ -6866,12 +7142,17 @@
             misses = 0;
             wrongLetters = [];
             // El modo Aventura se juega contra un cronómetro propio: 50 s
-            // En Odisea el cronómetro es el plazo de la primera palabra
+            // En Supervivencia el reloj es el de la palabra apuntada
             timeLeft = mode === "aventura" ? ADV_TIME :
-                (mode === "odisea" ? odiseaWordTime() : gameTime());
+                (mode === "supervivencia" ? supWordTime() : gameTime());
             coinsRun = 0;
-            // Modo Odisea: se empieza con todas las vidas
-            odiseaLives = ODI_LIVES;
+            // Modo Supervivencia: se empieza con todas las vidas y con una
+            // sola palabra en pantalla (las demás van apareciendo) y el
+            // tablero se ensancha para el campo de juego
+            supLives = SUP_LIVES;
+            supItems = [];
+            supTarget = null;
+            document.body.classList.toggle("modo-supervivencia", mode === "supervivencia");
             // Estado del modo Aventura: ventajas y pausas a cero
             perkOpen = false;
             pausedTotal = 0;
@@ -6941,7 +7222,7 @@
                 mode === "imagen" ? t("statusPlayI") :
                 mode === "guess" ? t("statusPlayG") :
                 mode === "aventura" ? t("statusPlayA") :
-                mode === "odisea" ? t("statusPlayO") :
+                mode === "supervivencia" ? t("statusPlayS") :
                 (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
             if (azarTxt) status.textContent = azarTxt;
             // Aviso de la habilidad que aporta el fondo equipado
@@ -6973,14 +7254,28 @@
                 updateHud();
                 return;
             }
-            // En Odisea el reloj es el de la palabra que está en pantalla:
-            // se vacía cada vez más deprisa con el nivel y, al llegar a cero,
-            // la palabra se escapa y se pierde una vida (hasta acabar la partida)
-            if (mode === "odisea") {
-                timeLeft -= (now - lastTick) / 1000 * odiseaSpeed();
+            // En Supervivencia todas las barras corren a la vez: el reloj se
+            // vacía cada vez más deprisa con el nivel y la palabra que llegue
+            // a cero se escapa (una vida menos) hasta acabar la partida
+            if (mode === "supervivencia") {
+                const dt = (now - lastTick) / 1000 * supSpeed();
                 lastTick = now;
-                if (timeLeft <= 0) odiseaFail();
-                else updateHud();
+                // Se recorre una copia: al escaparse puede entrar otra palabra
+                // (con su plazo entero) y a esa no le toca todavía
+                const vivas = supItems.slice();
+                for (const it of vivas) {
+                    if (supItems.indexOf(it) < 0) continue;   // ya se escapó
+                    it.left -= dt;
+                    if (it.left <= 0) {
+                        supEscape(it);
+                        if (state !== "playing") return;      // sin vidas: fin
+                    } else {
+                        supPaintBar(it);
+                    }
+                }
+                // El reloj del HUD marca lo que le queda a la palabra apuntada
+                timeLeft = supTarget ? Math.max(0, supTarget.left) : 0;
+                updateHud();
                 return;
             }
             // En Aventura el reloj va acelerando con el nivel: el tiempo que
@@ -7016,7 +7311,11 @@
                 ? Math.max(0, (Date.now() - gameStartAt - pausedTotal) / 1000)
                 : gameTime();
             state = "over";
-            odiFill = null;   // la barra de la palabra ya no está en pantalla
+            // El tablero de Supervivencia se retira: palabras, apuntado y
+            // la pantalla grande vuelven a su sitio hasta la próxima partida
+            supItems = [];
+            supTarget = null;
+            document.body.classList.remove("modo-supervivencia");
             // Por si se termina con la ventana de ventajas abierta
             if (perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
             perkOpen = false;
@@ -7036,13 +7335,13 @@
             const total = hits + errors;
             const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
             // Los ppm se calculan sobre lo que duró de verdad la partida
-            // (Aventura y Odisea no tienen duración fija: usan la real)
-            const fija = mode === "aventura" || mode === "odisea";
+            // (Aventura y Supervivencia no tienen duración fija: usan la real)
+            const fija = mode === "aventura" || mode === "supervivencia";
             const dur = (fija && gameDuration > 0) ? gameDuration : gameTime();
             const ppm = completed / (dur / 60);
 
             document.getElementById("rTitle").textContent =
-                mode === "odisea" ? t("rTitleLives") : t("rTitle");
+                mode === "supervivencia" ? t("rTitleLives") : t("rTitle");
             document.getElementById("rScore").textContent = score;
             document.getElementById("rWords").textContent = completed;
             document.getElementById("rAcc").textContent = acc + "%";
@@ -7229,6 +7528,8 @@
                     if (state !== "playing") break;
                     guessChar(ch);
                 }
+            } else if (mode === "supervivencia") {
+                supInput();
             } else {
                 typeInput();
             }
@@ -7242,6 +7543,12 @@
             // Efecto de tecleo comprado en la tienda: estalla con cada letra
             if (!e.repeat && !perkOpen && e.key && e.key.length === 1 && !/\s/.test(e.key)) {
                 fxBurst();
+            }
+            // Supervivencia: Tab cambia el objetivo a la siguiente palabra
+            // (sin salir del campo de escritura)
+            if (mode === "supervivencia" && e.key === "Tab") {
+                e.preventDefault();
+                supCycle();
             }
         });
 
@@ -7450,7 +7757,7 @@
                 get rankResets() { return rankResets; },
                 get session() { return accSession; },
                 get xp() { return xp; },
-                get lives() { return odiseaLives; },   // vidas en el modo Odisea
+                get lives() { return supLives; },   // vidas en el modo Supervivencia
                 get gamesPlayed() { return gamesPlayed; },
                 get wordsTotal() { return wordsTotal; },
                 // Diccionarios (solo lectura): útiles para comprobar las palabras
