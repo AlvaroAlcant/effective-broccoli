@@ -720,6 +720,80 @@
             padding: 2px 12px;
         }
 
+        /* ---------- Modo Odisea: la palabra aparece y sus letras se disparan ---------- */
+        /* La palabra entra desde arriba y cada letra tecleada explota y queda
+           tachada; debajo, una barra marca los segundos que quedan de palabra. */
+        .odi-word {
+            flex: 1 0 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            justify-content: center;
+        }
+        .odi-word.fresh {
+            animation: odiDrop .3s ease-out;
+        }
+        @keyframes odiDrop {
+            from { opacity: 0; transform: translateY(-20px) scale(.82); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* Letra ya disparada: apagada y tachada, la destruida */
+        .odi-word span.shot {
+            background-color: #2f2a17;
+            border-bottom-color: #b45309;
+            color: #7a7f8c;
+            text-decoration: line-through;
+            opacity: .6;
+        }
+        /* La última letra disparada: la explosión del disparo */
+        .odi-word span.blast {
+            animation: odiBlast .32s ease-out;
+        }
+        @keyframes odiBlast {
+            0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, .9); }
+            45%  { transform: scale(1.35) rotate(-6deg); box-shadow: 0 0 20px 7px rgba(250, 204, 21, .7); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+        }
+        /* Barra de vida de la palabra: cuánto queda antes de perder una vida */
+        .odi-bar {
+            flex: 1 0 100%;
+            width: min(440px, 92%);
+            margin: 16px auto 0;
+            padding: 2px;
+            background-color: #121a2b;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .odi-fill {
+            display: block;
+            height: 100%;
+            width: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #22c55e, #5eead4);
+            transition: width .1s linear;
+        }
+        .odi-fill.low {
+            background: linear-gradient(90deg, #ef4444, #f97316);
+            animation: odiBlink .55s infinite;
+        }
+        @keyframes odiBlink {
+            50% { opacity: .3; }
+        }
+        /* Vidas del modo Odisea: el rótulo va en su color */
+        .misses .odi-lives {
+            font-size: 15px;
+            color: var(--pink);
+            margin-right: 8px;
+        }
+        /* Aviso de experiencia ganada: en violeta, a la izquierda del tablero
+           (los puntos y las monedas ocupan la esquina de la derecha) */
+        .points.xp {
+            right: auto;
+            left: 14px;
+            color: #c084fc;
+        }
+
         /* ---------- Modo Aventura: ventajas y ventana de elección ---------- */
         .adv-bar {
             display: flex;
@@ -1784,6 +1858,7 @@
             <button class="chip-btn" id="btnGuess">🧩 Adivinar</button>
             <button class="chip-btn" id="btnImagen">🖼️ Imágenes</button>
             <button class="chip-btn" id="btnAventura">🗺️ Aventura</button>
+            <button class="chip-btn" id="btnOdisea">🚀 Odisea</button>
         </div>
         <div class="sel-row">
             <span class="sel-label" id="bgLabel">Fondo de pantalla</span>
@@ -2001,6 +2076,18 @@
         const ADV_SPEED_MAX = 2;
         // Margen extra que admite el ranking por la ventaja "puntos x2"
         const ADV_SCORE_SLACK = 8000;
+
+        // ---------- Modo Odisea ----------
+        // Las palabras aparecen una a una y cada una tiene su propio plazo:
+        // hay que disparar todas sus letras antes de que se agote. Si no, se
+        // pierde una de las ODI_LIVES vidas; sin vidas se acaba la partida.
+        const ODI_LIVES = 5;        // vidas con las que se empieza
+        const ODI_TIME = 12;        // segundos que tiene la primera palabra
+        const ODI_TIME_MIN = 5;     // mínimo de segundos por palabra
+        const ODI_TIME_STEP = 0.8;  // segundos que se restan por nivel
+        const ODI_SPEED_STEP = 0.08;// aceleración del reloj por nivel
+        const ODI_SPEED_MAX = 2;    // el reloj nunca pasa de doble velocidad
+        const ODI_XP_WORD = 10;     // experiencia fija de cada palabra disparada
 
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
@@ -2609,11 +2696,13 @@
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
                 subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
                 subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada cierto número de palabras paras a elegir una ventaja. ¡El reloj acelera y las ventajas salen cada vez más lejos!",
+                subtitleO: "Odisea: cada palabra aparece con su cuenta atrás. ¡Dispara todas sus letras antes de que se acabe o pierdes una vida! Van 5 vidas: sin ellas se acabó la partida. Cada palabra te da experiencia y monedas y va subiendo la dificultad.",
                 modeLabel: "Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
                 btnImagen: "🖼️ Imágenes",
                 btnAventura: "🗺️ Aventura",
+                btnOdisea: "🚀 Odisea",
                 btnMurciano: "🗣️ Murciano",
                 bgLabel: "Fondo de pantalla",
                 bgOffAventura: "no se usa en Aventura (el modo lleva el suyo)",
@@ -2688,6 +2777,12 @@
                 statusPlayM: "Teclea la palabra murciana tal y como aparece, sin cambiarle nada. ¡Vamoh a ve!",
                 statusPlayI: "Escribe la palabra que representa la imagen. ¡A ojo de buen cubero!",
                 statusPlayA: "Cada palabra te regala tiempo y sube la dificultad. ¡Cada 5 eliges una ventaja!",
+                statusPlayO: "¡Dispara todas las letras de la palabra antes de que se acabe su tiempo! Si se te escapa, pierdes una vida. " + ODI_LIVES + " vidas: ¡sin ellas, fin de la partida! 🚀",
+                odiseaFail: "⏰ ¡Se acabó el tiempo de esa palabra! Pierdes una vida ❤️‍🩹 Quedan: ",
+                odiseaFailEnd: "💔 ¡Te has quedado sin vidas! Fin de la odisea.",
+                kLives: "Vidas",
+                kTimeWord: "Tiempo palabra",
+                rTitleLives: "¡Te has quedado sin vidas! 💔",
                 perkTitle: "🎁 ¡Elige tu ventaja!",
                 perkHint: "Has llegado a una parada de la aventura: el cronómetro se queda en pausa mientras eliges.",
                 perkChosen: "✅ Ventaja elegida: ",
@@ -2778,11 +2873,13 @@
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
                 subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
                 subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every few words you stop to pick an advantage. The clock speeds up and advantages come further apart!",
+                subtitleO: "Odyssey: every word appears with its own countdown. Shoot all its letters before time runs out or you lose a life! You have " + ODI_LIVES + " lives: no lives, no game. Every word gives you experience and coins, and the difficulty keeps rising.",
                 modeLabel: "Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
                 btnImagen: "🖼️ Pictures",
                 btnAventura: "🗺️ Adventure",
+                btnOdisea: "🚀 Odyssey",
                 btnMurciano: "🗣️ Murcia dialect",
                 bgLabel: "Background",
                 bgOffAventura: "not used in Adventure (that mode has its own)",
@@ -2858,6 +2955,12 @@
                 statusPlayM: "Type the Murcian word exactly as shown, letter for letter. Let's go!",
                 statusPlayI: "Type the word the image stands for. Trust your eyes!",
                 statusPlayA: "Every word gives you time and raises the difficulty. Every 5 words you pick an advantage!",
+                statusPlayO: "Shoot every letter of the word before its time runs out! Miss it and you lose a life. " + ODI_LIVES + " lives: no lives, no game! 🚀",
+                odiseaFail: "⏰ Time's up for that word! You lose a life ❤️‍🩹 Lives left: ",
+                odiseaFailEnd: "💔 You are out of lives! Odyssey over.",
+                kLives: "Lives",
+                kTimeWord: "Word time",
+                rTitleLives: "You are out of lives! 💔",
                 perkTitle: "🎁 Pick your advantage!",
                 perkHint: "You reached an adventure checkpoint: the clock stays paused while you choose.",
                 perkChosen: "✅ Advantage picked: ",
@@ -2944,7 +3047,7 @@
 
         // ---------- Estado ----------
         let lang = "es";         // es | en | mur (murciano)
-        let mode = "type";       // type | guess | imagen | aventura
+        let mode = "type";       // type | guess | imagen | aventura | odisea
         let bg = "dark";         // dark | franco | elprico | esteso
         let veyon = false;       // Modo Veyon: oculta logo y fondos «General»/«Ia»
         // Imagen de repuesto que sustituye a las de «General» e «Ia»
@@ -3059,6 +3162,11 @@
         let advStops = 0;          // paradas de ventaja ya celebradas
         let advNextPerk = ADV_EVERY;  // palabras escritas en las que toca parar
 
+        // ---------- Estado del modo Odisea ----------
+        let odiseaLives = ODI_LIVES;  // vidas que quedan (5 al empezar)
+        let odiSpan = ODI_TIME;       // segundos totales que tiene la palabra en pantalla
+        let odiFill = null;           // barra de la palabra (se repinta en cada tick)
+
         // ---------- Perfil de usuario ----------
         let accOpen = false;       // panel de perfil abierto
         let accMode = "reg";       // reg | login  (formulario que se está mostrando)
@@ -3144,6 +3252,7 @@
         const btnGuess = document.getElementById("btnGuess");
         const btnImagen = document.getElementById("btnImagen");
         const btnAventura = document.getElementById("btnAventura");
+        const btnOdisea = document.getElementById("btnOdisea");
         const btnMurciano = document.getElementById("btnMurciano");
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
@@ -3152,7 +3261,7 @@
         const perkVeil = document.getElementById("perkVeil");
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
-        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura,
+        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura, btnOdisea,
             btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
@@ -3336,7 +3445,7 @@
             if (s <= 0 || w <= 0) return null;
             if (s > MAX_SCORE || w > MAX_WORDS) return null;
             const m = String(raw.m || "type");
-            if (["type", "guess", "murciano", "imagen", "aventura"].indexOf(m) < 0) return null;
+            if (["type", "guess", "murciano", "imagen", "aventura", "odisea"].indexOf(m) < 0) return null;
             const d = String(raw.d || "");
             if (d && (d.length > 30 || isNaN(new Date(d).getTime()))) return null;
             // Coherencia puntos ↔ palabras: imposible de lograr jugando.
@@ -4281,14 +4390,22 @@
             const fondo = typeof es.fondo === "string" ? es.fondo : bg;
             const modo = typeof es.modo === "string" ? es.modo : mode;
             const aventura = modo === "aventura";
+            const odisea = modo === "odisea";
             const extra = (!aventura && fondo === "elprico") ? BONUS_TIME_ELPRICO : 0;
 
             // El modo Aventura empieza con 50 s y cada palabra regala tiempo,
             // así que la partida dura (y puntúa) bastante más de lo normal:
             // se admite todo el tiempo que las palabras han ido sumando.
+            // El modo Odisea no tiene duración fija: se juega hasta quedarse
+            // sin vidas, así que el tope es la duración REAL de la partida
+            // (mínimo un partido completo de 60 s) y los topes de ritmo se
+            // calculan sobre ese tiempo: una partida larga no es sospechosa
+            // por sí sola, lo que no puede ser es un ritmo imposible.
             const ganado = val(es.tiempoExtra, aventura ? advTimeGained : 0);
             const margen = aventura ? ADV_SCORE_SLACK : 2000;
-            const total = GAME_TIME + extra + ganado;
+            const total = odisea
+                ? Math.max(GAME_TIME + extra, du)
+                : GAME_TIME + extra + ganado;
 
             const why = [];
             if (sc <= 0) return why;
@@ -5274,12 +5391,14 @@
                 mode === "imagen" ? t("subtitleI") :
                 mode === "guess" ? t("subtitleG") :
                 mode === "aventura" ? t("subtitleA") :
+                mode === "odisea" ? t("subtitleO") :
                 lang === "mur" ? t("subtitleM") : t("subtitleT");
             document.getElementById("modeLabel").textContent = t("modeLabel");
             btnType.textContent = t("btnType");
             btnGuess.textContent = t("btnGuess");
             btnImagen.textContent = t("btnImagen");
             if (btnAventura) btnAventura.textContent = t("btnAventura");
+            if (btnOdisea) btnOdisea.textContent = t("btnOdisea");
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent =
                 t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
@@ -5288,7 +5407,9 @@
             btnBgDark.textContent = t("bgDark");
             setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
             document.getElementById("kScore").textContent = t("kScore");
-            document.getElementById("kTime").textContent = t("kTime");
+            // En Odisea el reloj marca lo que queda de la palabra actual
+            document.getElementById("kTime").textContent =
+                mode === "odisea" ? t("kTimeWord") : t("kTime");
             document.getElementById("kStreak").textContent = t("kStreak");
             document.getElementById("kLevel").textContent = t("kLevel");
             document.getElementById("kBest").textContent = t("kBest");
@@ -5330,7 +5451,8 @@
             document.getElementById("achHint").textContent = t("achHint");
             if (logrosOpen) renderLogros();
             applyExtras();   // chips de los extras + acento de color del tablero
-            document.getElementById("rTitle").textContent = t("rTitle");
+            document.getElementById("rTitle").textContent =
+                mode === "odisea" ? t("rTitleLives") : t("rTitle");
             document.getElementById("rkScore").textContent = t("rkScore");
             document.getElementById("rkWords").textContent =
                 mode === "guess" ? t("rkWordsG") : t("rkWords");
@@ -5348,6 +5470,7 @@
             btnGuess.classList.toggle("active", mode === "guess");
             btnImagen.classList.toggle("active", mode === "imagen");
             if (btnAventura) btnAventura.classList.toggle("active", mode === "aventura");
+            if (btnOdisea) btnOdisea.classList.toggle("active", mode === "odisea");
             // En Aventura no se juega con fondos: el selector queda fuera de
             // servicio y el cuerpo lleva el fondo propio del modo (sin habilidad)
             const sinFondos = mode === "aventura";
@@ -5422,6 +5545,7 @@
         btnGuess.addEventListener("click", () => setMode("guess"));
         btnImagen.addEventListener("click", () => setMode("imagen"));
         if (btnAventura) btnAventura.addEventListener("click", () => setMode("aventura"));
+        if (btnOdisea) btnOdisea.addEventListener("click", () => setMode("odisea"));
 
         // ---------- Fondo de pantalla ----------
         function setBg(next) {
@@ -5857,6 +5981,11 @@
             if (mode === "aventura") {
                 return 1 + Math.floor(Math.max(0, completed - advRelief) / 3);
             }
+            // En Odisea también sube deprisa: cada 4 palabras disparadas
+            // toca una palabra más larga con menos segundos de margen.
+            if (mode === "odisea") {
+                return 1 + Math.floor(completed / 4);
+            }
             return 1 + Math.floor(completed / 5);
         }
 
@@ -5877,6 +6006,22 @@
             if (mode !== "aventura") return 1;
             const extra = (level() - 1) * ADV_SPEED_STEP;
             return Math.min(ADV_SPEED_MAX, 1 + extra);
+        }
+
+        // ---------- Modo Odisea ----------
+        // Segundos que tiene la palabra que está en pantalla: van bajando con
+        // el nivel, así que cada vez hay que disparar más deprisa.
+        function odiseaWordTime() {
+            const base = ODI_TIME - (level() - 1) * ODI_TIME_STEP;
+            return Math.max(ODI_TIME_MIN, Math.round(base * 10) / 10);
+        }
+
+        // Velocidad del reloj de Odisea: como el de Aventura, acelera con el
+        // nivel hasta el doble, de modo que la barra de la palabra se vacía
+        // cada vez más deprisa justo cuando las palabras son más largas.
+        function odiseaSpeed() {
+            const extra = (level() - 1) * ODI_SPEED_STEP;
+            return Math.min(ODI_SPEED_MAX, 1 + extra);
         }
 
         // Palabras que faltan para la próxima parada de ventaja: el hueco va
@@ -6354,8 +6499,17 @@
             streakEl.textContent = streak + " (x" + multiplier() + ")";
             levelEl.textContent = level();
             timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
-            timeBox.classList.toggle("low", timeLeft <= 10 && state === "playing");
+            // En Odisea el "bajo" avisa de la última parte del plazo de la palabra
+            timeBox.classList.toggle("low",
+                state === "playing" &&
+                (mode === "odisea" ? timeLeft <= 4 : timeLeft <= 10));
             if (mode === "aventura") renderAdvBar();   // efectos y tiempo por palabra
+            // Barra de la palabra en pantalla: se repinta en cada tick
+            if (mode === "odisea" && odiFill) {
+                const pct = Math.max(0, Math.min(100, (timeLeft / Math.max(0.1, odiSpan)) * 100));
+                odiFill.style.width = pct + "%";
+                odiFill.classList.toggle("low", timeLeft <= 4);
+            }
             // Logro «Hacker»: se anota la mejor puntuación de UNA partida.
             // Este es el sitio donde se refleja el marcador de todos los
             // modos, así que aquí se comprueba la meta de 10.000 puntos.
@@ -6379,6 +6533,43 @@
         function renderWord(typed) {
             board.innerHTML = "";
             fillLetters(typed);
+        }
+
+        // ---------- Modo Odisea: la palabra aparece y sus letras se disparan ----------
+        // Cada letra ya tecleada queda destruida (tachada y apagada) y la
+        // última explota; debajo, la barra cuenta los segundos que quedan de
+        // esta palabra antes de perder una vida. "fresh" es true solo cuando
+        // la palabra acaba de aparecer, para que la animación de entrada no
+        // se repita con cada tecla.
+        function renderOdisea(typed, fresh) {
+            board.innerHTML = "";
+            odiFill = null;
+
+            const box = document.createElement("div");
+            box.className = "odi-word" + (fresh ? " fresh" : "");
+            for (let i = 0; i < word.length; i++) {
+                const s = document.createElement("span");
+                s.textContent = word[i];
+                if (i < typed.length) {
+                    s.className = "shot" + (i === typed.length - 1 ? " blast" : "");
+                } else if (i === typed.length) {
+                    s.className = "cursor";
+                }
+                box.appendChild(s);
+            }
+            board.appendChild(box);
+
+            // Barra del plazo de la palabra (se actualiza desde updateHud)
+            const bar = document.createElement("div");
+            bar.className = "odi-bar";
+            const fill = document.createElement("i");
+            fill.className = "odi-fill";
+            const pct = Math.max(0, Math.min(100, (timeLeft / Math.max(0.1, odiSpan)) * 100));
+            fill.style.width = pct + "%";
+            fill.classList.toggle("low", timeLeft <= 4);
+            bar.appendChild(fill);
+            board.appendChild(bar);
+            odiFill = fill;
         }
 
         // ---------- Modo Imágenes: SOLO la foto, sin letras en pantalla ----------
@@ -6424,13 +6615,24 @@
             }
         }
 
-        function renderCurrent() {
+        function renderCurrent(fresh) {
             if (mode === "imagen") renderImage();
             else if (mode === "guess") renderGuess();
+            else if (mode === "odisea") renderOdisea(typing.value, fresh === true);
             else renderWord(typing.value);
         }
 
         function renderMisses() {
+            // Modo Odisea: el mismo hueco sirve para las 5 vidas de la partida
+            if (mode === "odisea") {
+                missesEl.classList.remove("is-off");
+                let hearts = "";
+                for (let i = 0; i < ODI_LIVES; i++) {
+                    hearts += i < odiseaLives ? "❤️" : "🖤";
+                }
+                missesEl.innerHTML = '<span class="odi-lives">' + t("kLives") + "</span>" + hearts;
+                return;
+            }
             if (mode !== "guess") {
                 missesEl.classList.add("is-off");
                 return;
@@ -6460,6 +6662,16 @@
             c.textContent = "🪙 +" + n;
             stage.appendChild(c);
             setTimeout(() => c.remove(), 900);
+        }
+
+        // Aviso de experiencia ganada con la palabra (modo Odisea): la misma
+        // que se lleva al final de la partida, palabra a palabra.
+        function showXp(n) {
+            const p = document.createElement("div");
+            p.className = "points xp";
+            p.textContent = "✨ +" + n + " XP";
+            stage.appendChild(p);
+            setTimeout(() => p.remove(), 900);
         }
 
         function shake() {
@@ -6557,8 +6769,12 @@
                 renderMisses();
             } else if (mode === "type" || mode === "aventura") {
                 soupPrefill();   // letras que deja Sopa de Letras
+            } else if (mode === "odisea") {
+                // La palabra nueva nace con su propio plazo en la barra
+                odiSpan = odiseaWordTime();
+                timeLeft = odiSpan;
             }
-            renderCurrent();
+            renderCurrent(true);
             updateHud();
         }
 
@@ -6603,6 +6819,9 @@
                 ((mode === "aventura" && performance.now() < advCoins) ? 2 : 1);
             giveCoins(coinGain);
             showCoin(coinGain);
+            // Modo Odisea: cada palabra disparada paga su experiencia en
+            // caliente (el total se confirma al acabar la partida)
+            if (mode === "odisea") showXp(ODI_XP_WORD + Math.floor(points / 10));
             // Modo Aventura: cada palabra regala segundos al cronómetro
             if (mode === "aventura") gainTime(timePerWord());
             newWord();
@@ -6614,6 +6833,24 @@
                 advNextPerk = completed + perkEvery();
                 openPerkChoice();
             }
+        }
+
+        // ---------- Modo Odisea: se acaba el plazo de una palabra ----------
+        // La palabra se escapa: se pierde una vida y sale otra en su lugar.
+        // Con la última vida perdida se acaba la partida.
+        function odiseaFail() {
+            odiseaLives--;
+            shake();
+            renderMisses();
+            if (odiseaLives <= 0) {
+                timeLeft = 0;
+                status.textContent = t("odiseaFailEnd");
+                updateHud();
+                endGame();
+                return;
+            }
+            status.textContent = t("odiseaFail") + odiseaLives + " ❤️ · " + t("wordFailed") + word;
+            newWord();   // otra palabra, con su plazo nuevo
         }
 
         function startGame() {
@@ -6629,8 +6866,12 @@
             misses = 0;
             wrongLetters = [];
             // El modo Aventura se juega contra un cronómetro propio: 50 s
-            timeLeft = mode === "aventura" ? ADV_TIME : gameTime();
+            // En Odisea el cronómetro es el plazo de la primera palabra
+            timeLeft = mode === "aventura" ? ADV_TIME :
+                (mode === "odisea" ? odiseaWordTime() : gameTime());
             coinsRun = 0;
+            // Modo Odisea: se empieza con todas las vidas
+            odiseaLives = ODI_LIVES;
             // Estado del modo Aventura: ventajas y pausas a cero
             perkOpen = false;
             pausedTotal = 0;
@@ -6700,6 +6941,7 @@
                 mode === "imagen" ? t("statusPlayI") :
                 mode === "guess" ? t("statusPlayG") :
                 mode === "aventura" ? t("statusPlayA") :
+                mode === "odisea" ? t("statusPlayO") :
                 (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
             if (azarTxt) status.textContent = azarTxt;
             // Aviso de la habilidad que aporta el fondo equipado
@@ -6731,12 +6973,21 @@
                 updateHud();
                 return;
             }
+            // En Odisea el reloj es el de la palabra que está en pantalla:
+            // se vacía cada vez más deprisa con el nivel y, al llegar a cero,
+            // la palabra se escapa y se pierde una vida (hasta acabar la partida)
+            if (mode === "odisea") {
+                timeLeft -= (now - lastTick) / 1000 * odiseaSpeed();
+                lastTick = now;
+                if (timeLeft <= 0) odiseaFail();
+                else updateHud();
+                return;
+            }
             // En Aventura el reloj va acelerando con el nivel: el tiempo que
             // queda se consume cada vez más deprisa (velocidad normal en el
             // resto de modos, donde tickSpeed() devuelve 1)
             timeLeft -= (now - lastTick) / 1000 * tickSpeed();
             lastTick = now;
-
             // Ventaja "salvavidas": el cronómetro no muere de golpe, salta a 15 s
             if (timeLeft <= 0 && advRevive > 0) {
                 advRevive--;
@@ -6765,6 +7016,7 @@
                 ? Math.max(0, (Date.now() - gameStartAt - pausedTotal) / 1000)
                 : gameTime();
             state = "over";
+            odiFill = null;   // la barra de la palabra ya no está en pantalla
             // Por si se termina con la ventana de ventajas abierta
             if (perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
             perkOpen = false;
@@ -6784,9 +7036,13 @@
             const total = hits + errors;
             const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
             // Los ppm se calculan sobre lo que duró de verdad la partida
-            const dur = (mode === "aventura" && gameDuration > 0) ? gameDuration : gameTime();
+            // (Aventura y Odisea no tienen duración fija: usan la real)
+            const fija = mode === "aventura" || mode === "odisea";
+            const dur = (fija && gameDuration > 0) ? gameDuration : gameTime();
             const ppm = completed / (dur / 60);
 
+            document.getElementById("rTitle").textContent =
+                mode === "odisea" ? t("rTitleLives") : t("rTitle");
             document.getElementById("rScore").textContent = score;
             document.getElementById("rWords").textContent = completed;
             document.getElementById("rAcc").textContent = acc + "%";
@@ -6898,7 +7154,7 @@
 
             prevLen = val.length;
             // En el modo Imágenes no se pinta nada: en el tablero solo está la foto
-            if (mode !== "imagen") renderWord(val);
+            if (mode !== "imagen") renderCurrent(false);
             updateHud();
 
             if (val === word) {
@@ -7194,6 +7450,7 @@
                 get rankResets() { return rankResets; },
                 get session() { return accSession; },
                 get xp() { return xp; },
+                get lives() { return odiseaLives; },   // vidas en el modo Odisea
                 get gamesPlayed() { return gamesPlayed; },
                 get wordsTotal() { return wordsTotal; },
                 // Diccionarios (solo lectura): útiles para comprobar las palabras
