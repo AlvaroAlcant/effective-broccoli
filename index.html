@@ -2834,8 +2834,9 @@
                 modeClassicMsg: "Tecleo clásico: sin extras, solo las palabras del idioma elegido. ⌨️",
                 modeSelectHint: "Elige la variante de Tecleo que hayas comprado en la tienda",
                 modeSelectEmpty: "Compra extras en la tienda para desbloquear más modos de Tecleo",
+                modeSelectOff: "Los extras de la tienda solo se pueden elegir en el modo ⌨️ Tecleo",
                 modeSelectAria: "Variante del modo Tecleo",
-                shopExtrasTitle: "🔥 Extras de juego",
+                shopExtrasTitle: "🔥 Extras de juego · solo para el modo ⌨️ Tecleo",
                 shopBoughtExtra: "¡Modo picante desbloqueado! Ya puedes activarlo cuando quieras. 🌶️",
                 shopEquippedExtraMsg: "Modo picante activado: ahora aparecen palabras +18. 🌶️",
                 shopDeactivatedExtraMsg: "Modo picante desactivado. 😌",
@@ -3013,8 +3014,9 @@
                 modeClassicMsg: "Classic typing: no extras, just words in the chosen language. ⌨️",
                 modeSelectHint: "Pick the typing variant you bought in the shop",
                 modeSelectEmpty: "Buy extras in the shop to unlock more typing modes",
+                modeSelectOff: "Shop extras can only be picked in ⌨️ Typing mode",
                 modeSelectAria: "Typing mode variant",
-                shopExtrasTitle: "🔥 Gameplay extras",
+                shopExtrasTitle: "🔥 Gameplay extras · only for ⌨️ Typing mode",
                 shopBoughtExtra: "Spicy mode unlocked! Turn it on whenever you want. 🌶️",
                 shopEquippedExtraMsg: "Spicy mode on: +18 words from now on. 🌶️",
                 shopDeactivatedExtraMsg: "Spicy mode off. 😌",
@@ -5012,15 +5014,21 @@
         }
 
         function extraActive(id) {
+            // Los extras de la tienda son variantes del modo Tecleo: fuera de
+            // él no actúan (ni en Adivinar, ni en Imágenes, ni en Aventura,
+            // ni en Supervivencia), aunque sigan elegidos en el menú
+            if (mode !== "type") return false;
             if (!ownsExtra(id)) return false;
             // Durante una partida el Modo Al azar manda sobre extraOn
             if (extraRun) return !!extraRun[id];
             return !!extraOn[id];
         }
 
-        // Extra elegido en el desplegable ("", si se juega al Tecleo clásico)
+        // Extra elegido en el desplegable ("", si se juega al Tecleo clásico).
+        // Manda el gusto guardado (extraOn), no si ahora actúa: el menú sigue
+        // enseñando la variante elegida aunque el modo actual no sea Tecleo.
         function activeExtraId() {
-            const x = EXTRAS.find(e => extraActive(e.id));
+            const x = EXTRAS.find(e => ownsExtra(e.id) && extraOn[e.id]);
             return x ? x.id : "";
         }
 
@@ -5044,10 +5052,13 @@
             });
 
             modeSelect.value = chosen;
-            // Sin nada comprado el menú no tiene más opción que el clásico
+            // El menú solo se puede tocar en el modo Tecleo: los extras no
+            // están disponibles en el resto de modos de juego
+            const soloTecleo = mode !== "type";
             const sinExtras = EXTRAS.every(x => !ownsExtra(x.id));
-            modeSelect.disabled = sinExtras || state === "playing";
-            modeSelect.title = sinExtras ? t("modeSelectEmpty") : t("modeSelectHint");
+            modeSelect.disabled = sinExtras || soloTecleo || state === "playing";
+            modeSelect.title = sinExtras ? t("modeSelectEmpty") :
+                (soloTecleo ? t("modeSelectOff") : t("modeSelectHint"));
         }
 
         // Refresca el desplegable, la fila de extras y el tablero
@@ -5110,7 +5121,10 @@
             shopExtraGrid.innerHTML = "";
             EXTRAS.forEach(x => {
                 const ownedX = ownsExtra(x.id);
-                const on = extraActive(x.id);
+                // Lo que se enseña es lo ELEGIDO en el menú, no si ahora actúa:
+                // el extra puede estar puesto y jugarse en un modo donde no se
+                // aplica (los extras solo valen en el modo Tecleo)
+                const on = ownedX && !!extraOn[x.id];
 
                 const card = document.createElement("div");
                 card.className = "shop-card card-" + x.id;
