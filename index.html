@@ -720,10 +720,11 @@
             padding: 2px 12px;
         }
 
-        /* ---------- Modo Supervivencia: tablero grande y palabras por todas partes ---------- */
-        /* La pantalla del juego se ensancha y el tablero crece para dar cabida
-           a varias palabras a la vez: cada una ocupa un hueco con sus letras y
-           su barra de cuenta atrás, y solo la apuntada está encendida. */
+        /* ---------- Modo Supervivencia: palabras que bajan desde arriba ----------
+           El tablero es un campo con varias columnas: las palabras nacen arriba
+           del todo y van bajando hasta el fondo. Cada una lleva sus letras y su
+           barra de descenso; solo la apuntada está encendida y es la que se
+           teclea. Si una llega al fondo, se pierde una vida. */
         body.modo-supervivencia {
             max-width: 1160px;
         }
@@ -734,10 +735,23 @@
             padding: 14px;
             overflow: hidden;
         }
-        /* Caja de una palabra: ocupa su hueco y se puede señalar con el ratón */
+        /* Línea de peligro abajo del todo: lo que no se cruce */
+        body.modo-supervivencia .board::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 10px;
+            pointer-events: none;
+            background: repeating-linear-gradient(45deg,
+                rgba(248, 113, 113, .55) 0 12px,
+                rgba(120, 24, 24, .55) 12px 24px);
+        }
+        /* Caja de una palabra: ocupa su columna y baja al ritmo del reloj */
         .sup-word {
             position: absolute;
-            width: 45%;
+            width: 29%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -746,7 +760,8 @@
             border: 1px dashed transparent;
             border-radius: 14px;
             cursor: pointer;
-            transition: border-color .15s, background-color .15s, opacity .15s;
+            will-change: top;
+            transition: top .12s linear, border-color .15s, background-color .15s, opacity .15s;
         }
         /* La palabra a la que apuntas: encendida. Las demás esperan su turno */
         .sup-word.target {
@@ -756,6 +771,12 @@
         }
         .sup-word:not(.target) {
             opacity: .78;
+        }
+        /* La que está a punto de tocar el fondo se pone en alerta roja */
+        .sup-word.danger {
+            border-color: var(--danger);
+            background-color: rgba(248, 113, 113, .10);
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, .14);
         }
         .sup-word.fresh {
             animation: supDrop .3s ease-out;
@@ -789,7 +810,8 @@
             45%  { transform: scale(1.35) rotate(-6deg); box-shadow: 0 0 20px 7px rgba(250, 204, 21, .7); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
         }
-        /* Barra de vida de CADA palabra: cuánto queda antes de perder una vida */
+        /* Barra de descenso de CADA palabra: cuánto le queda de camino
+           antes de tocar el fondo del tablero */
         .sup-bar {
             width: 100%;
             padding: 2px;
@@ -1828,6 +1850,7 @@
                 gap: 3px;
             }
             .sup-word {
+                width: 45%;
                 gap: 5px;
                 padding: 6px 4px;
             }
@@ -2125,28 +2148,25 @@
         const ADV_SCORE_SLACK = 8000;
 
         // ---------- Modo Supervivencia ----------
-        // El tablero se agranda y las palabras aparecen por todas partes, cada
-        // una con su propio plazo: hay que disparar todas sus letras antes de
-        // que se agote. Si una palabra se escapa, se pierde una de las
-        // SUP_LIVES vidas; sin vidas se acaba la partida. Se empieza con una
-        // sola palabra en pantalla y van apareciendo más según se escribe.
+        // El tablero se agranda y las palabras NACEN ARRIBA DEL TODO y van
+        // BAJANDO por su columna hasta llegar al fondo de la pantalla. Si una
+        // palabra llega hasta abajo, se pierde una de las SUP_LIVES vidas; sin
+        // vidas se acaba la partida. Hay que disparar todas sus letras antes
+        // de que toque el fondo. Se empieza con una sola palabra en pantalla
+        // y van apareciendo más según se escribe.
         const SUP_LIVES = 5;        // vidas con las que se empieza
-        const SUP_TIME = 12;        // segundos que tiene la primera palabra
-        const SUP_TIME_MIN = 5;     // mínimo de segundos por palabra
+        const SUP_TIME = 12;        // segundos que tarda la primera palabra en bajar
+        const SUP_TIME_MIN = 5;     // mínimo de segundos de bajada por palabra
         const SUP_TIME_STEP = 0.8;  // segundos que se restan por nivel
         const SUP_SPEED_STEP = 0.08;// aceleración del reloj por nivel
         const SUP_SPEED_MAX = 2;    // el reloj nunca pasa de doble velocidad
         const SUP_XP_WORD = 10;     // experiencia fija de cada palabra disparada
         const SUP_MAX_WORDS = 6;    // palabras en pantalla a la vez (tope)
         const SUP_EVERY = 3;        // cada cuántas escritas entra una más
-        // Huecos del tablero (porcentajes): dos columnas y cuatro filas, para
-        // que las palabras se repartan por toda la pantalla sin solaparse
-        const SUP_SLOTS = [
-            { left: "4%", top: "3%" },  { left: "51%", top: "3%" },
-            { left: "4%", top: "26%" }, { left: "51%", top: "26%" },
-            { left: "4%", top: "49%" }, { left: "51%", top: "49%" },
-            { left: "4%", top: "72%" }, { left: "51%", top: "72%" }
-        ];
+        // Columnas por las que bajan las palabras (porcentajes de la
+        // izquierda): en pantallas estrechas solo caben dos
+        const SUP_LANES_WIDE = ["4%", "37%", "70%"];
+        const SUP_LANES_NARROW = ["4%", "51%"];
 
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
@@ -2755,7 +2775,7 @@
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
                 subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
                 subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada cierto número de palabras paras a elegir una ventaja. ¡El reloj acelera y las ventajas salen cada vez más lejos!",
-                subtitleS: "Supervivencia: la pantalla se agranda y las palabras caen por todas partes, cada una con su cuenta atrás. ¡Dispara todas sus letras antes de que se acabe o pierdes una vida! Van " + SUP_LIVES + " vidas: sin ellas se acabó la partida. Empiezas con una sola palabra y, según escribes, van apareciendo más. Cada palabra te da experiencia y monedas y va subiendo la dificultad.",
+                subtitleS: "Supervivencia: la pantalla se agranda y las palabras NACEN ARRIBA DEL TODO y van bajando poco a poco. ¡Dispara todas sus letras antes de que lleguen al fondo o pierdes una vida! Van " + SUP_LIVES + " vidas: sin ellas se acabó la partida. Empiezas con una sola palabra y, según escribes, van apareciendo más por arriba. Cada palabra te da experiencia y monedas y va subiendo la dificultad (bajan cada vez más deprisa).",
                 modeLabel: "Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
@@ -2836,8 +2856,9 @@
                 statusPlayM: "Teclea la palabra murciana tal y como aparece, sin cambiarle nada. ¡Vamoh a ve!",
                 statusPlayI: "Escribe la palabra que representa la imagen. ¡A ojo de buen cubero!",
                 statusPlayA: "Cada palabra te regala tiempo y sube la dificultad. ¡Cada 5 eliges una ventaja!",
-                statusPlayS: "¡Apunta a una palabra y dispara todas sus letras antes de que se acabe su tiempo! Haz clic en otra (o pulsa Tab) para cambiar de objetivo. Si se te escapa, pierdes una vida. " + SUP_LIVES + " vidas: ¡sin ellas, fin de la partida! 🛡️",
-                supFail: "⏰ ¡Se ha escapado una palabra! Pierdes una vida ❤️‍🩹 Quedan: ",
+                statusPlayS: "¡Apunta a una palabra y dispara todas sus letras antes de que llegue al fondo de la pantalla! Haz clic en otra (o pulsa Tab) para cambiar de objetivo. Si una palabra llega hasta abajo, pierdes una vida. " + SUP_LIVES + " vidas: ¡sin ellas, fin de la partida! 🛡️",
+                supFail: "⏰ ¡Una palabra ha llegado hasta el fondo! Pierdes una vida ❤️‍🩹 Quedan: ",
+                supFell: "Ha tocado el fondo. Palabra: ",
                 supFailEnd: "💔 ¡Te has quedado sin vidas! Fin de la supervivencia.",
                 kLives: "Vidas",
                 kTimeWord: "Tiempo palabra",
@@ -2932,7 +2953,7 @@
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
                 subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
                 subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every few words you stop to pick an advantage. The clock speeds up and advantages come further apart!",
-                subtitleS: "Survival: the screen grows and words fall from everywhere, each with its own countdown. Shoot all its letters before time runs out or you lose a life! You have " + SUP_LIVES + " lives: no lives, no game. You start with a single word and more appear as you type. Every word gives you experience and coins, and the difficulty keeps rising.",
+                subtitleS: "Survival: the screen grows and words are born at the very top and keep sinking down. Shoot all its letters before it reaches the bottom or you lose a life! You have " + SUP_LIVES + " lives: no lives, no game. You start with a single word and more appear up top as you type. Every word gives you experience and coins, and the difficulty keeps rising (they sink faster and faster).",
                 modeLabel: "Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
@@ -3014,8 +3035,9 @@
                 statusPlayM: "Type the Murcian word exactly as shown, letter for letter. Let's go!",
                 statusPlayI: "Type the word the image stands for. Trust your eyes!",
                 statusPlayA: "Every word gives you time and raises the difficulty. Every 5 words you pick an advantage!",
-                statusPlayS: "Aim at a word and shoot every letter before its time runs out! Click another one (or press Tab) to switch targets. Miss it and you lose a life. " + SUP_LIVES + " lives: no lives, no game! 🛡️",
-                supFail: "⏰ A word got away! You lose a life ❤️‍🩹 Lives left: ",
+                statusPlayS: "Aim at a word and shoot every letter before it sinks to the bottom! Click another one (or press Tab) to switch targets. If a word reaches the bottom, you lose a life. " + SUP_LIVES + " lives: no lives, no game! 🛡️",
+                supFail: "⏰ A word reached the bottom! You lose a life ❤️‍🩹 Lives left: ",
+                supFell: "It hit the bottom. The word was: ",
                 supFailEnd: "💔 You are out of lives! Survival over.",
                 kLives: "Lives",
                 kTimeWord: "Word time",
@@ -6071,19 +6093,25 @@
         }
 
         // ---------- Modo Supervivencia ----------
-        // Segundos que tiene cada palabra que está en pantalla: van bajando con
-        // el nivel, así que cada vez hay que disparar más deprisa.
+        // Segundos que tarda una palabra en recorrer el tablero de arriba
+        // abajo: van bajando con el nivel, así que cada vez hay que disparar
+        // sus letras más deprisa antes de que toque el fondo.
         function supWordTime() {
             const base = SUP_TIME - (level() - 1) * SUP_TIME_STEP;
             return Math.max(SUP_TIME_MIN, Math.round(base * 10) / 10);
         }
 
-        // Velocidad del reloj de Supervivencia: como el de Aventura, acelera
-        // con el nivel hasta el doble, de modo que TODAS las barras se vacían
-        // cada vez más deprisa justo cuando las palabras son más largas.
+        // Velocidad a la que bajan las palabras: acelera con el nivel hasta el
+        // doble, de modo que TODAS bajan cada vez más deprisa justo cuando son
+        // más largas y sus letras dan más trabajo.
         function supSpeed() {
             const extra = (level() - 1) * SUP_SPEED_STEP;
             return Math.min(SUP_SPEED_MAX, 1 + extra);
+        }
+
+        // Segundos que le quedan a una palabra antes de tocar el fondo
+        function supLeft(it) {
+            return Math.max(0, (1 - it.y) * it.span / supSpeed());
         }
 
         // Palabras que pueden estar en pantalla a la vez: se empieza con una
@@ -6600,11 +6628,12 @@
             fillLetters(typed);
         }
 
-        // ---------- Modo Supervivencia: palabras por todas partes ----------
-        // El tablero es un campo con varios huecos repartidos por la pantalla.
-        // Cada palabra ocupa uno libre con sus letras y su barra de cuenta
-        // atrás; solo la apuntada está encendida y es la que se teclea. Se
-        // apunta con el clic o con Tab, y las demás van con su propio reloj.
+        // ---------- Modo Supervivencia: palabras que bajan desde arriba ----------
+        // El tablero es un campo con varias columnas. Cada palabra nace arriba
+        // del todo y va bajando por su columna hasta el fondo, con sus letras
+        // y su barra de descenso; solo la apuntada está encendida y es la que
+        // se teclea. Se apunta con el clic o con Tab, y si una llega hasta
+        // abajo se pierde una vida.
 
         // Letras de UNA palabra: disparadas (tachadas), explosión de la última
         // y cursor donde entra la siguiente
@@ -6623,22 +6652,38 @@
             }
         }
 
-        // Barra de cuenta atrás de UNA palabra (se repinta en cada tick)
+        // Barra de descenso de UNA palabra: cuánto le queda de camino hasta
+        // el fondo (se repinta en cada tick)
         function supPaintBar(it) {
             if (!it.fill) return;
-            const pct = Math.max(0, Math.min(100, (it.left / Math.max(0.1, it.span)) * 100));
+            const quedan = Math.max(0, (1 - it.y) * it.span);
+            const pct = Math.max(0, Math.min(100, (quedan / Math.max(0.1, it.span)) * 100));
             it.fill.style.width = pct + "%";
-            it.fill.classList.toggle("low", it.left <= 4);
+            const cerca = quedan <= 4;      // a punto de tocar el fondo
+            it.fill.classList.toggle("low", cerca);
+            if (it.el) it.el.classList.toggle("danger", cerca);
+        }
+
+        // Baja la caja de la palabra por su columna hasta el fondo
+        function supMove(it) {
+            supPlace(it);
+        }
+
+        // Coloca la caja en su altura: nace arriba del todo (y = 0) y va
+        // bajando hasta que su base toca el fondo del tablero (y = 1)
+        function supPlace(it) {
+            if (!it.el || !board) return;
+            const viaje = Math.max(0, board.clientHeight - it.el.offsetHeight - 4);
+            it.el.style.top = Math.max(0, Math.min(1, it.y)) * viaje + "px";
         }
 
         // Caja de una palabra en pantalla: letras, barra y señalamiento
         function supRenderBox(it, fresh) {
-            const hueco = SUP_SLOTS[it.slot] || SUP_SLOTS[0];
             const box = document.createElement("div");
             box.className = "sup-word" + (fresh ? " fresh" : "") +
                 (it === supTarget ? " target" : "");
-            box.style.left = hueco.left;
-            box.style.top = hueco.top;
+            box.style.left = it.lane;                 // su columna
+            box.style.top = (it.y * 100) + "%";       // arriba al nacer (se corrige al colocarla)
 
             const letras = document.createElement("div");
             letras.className = "sup-letters";
@@ -6675,18 +6720,28 @@
             for (const it of supItems) {
                 it.el = null; it.letras = null; it.fill = null;
                 board.appendChild(supRenderBox(it, fresh === true));
+                supPlace(it);        // cada una en su altura, ya medida
             }
         }
 
-        // Nueva palabra en un hueco libre: solo datos, la caja la pinta quien
-        // la llama (el tablero entero o la caja suelta de la palabra nueva)
+        // Nueva palabra: nace arriba del todo en la columna que tenga más
+        // aire (solo datos, la caja la pinta quien la llama: el tablero
+        // entero o la caja suelta de la palabra nueva)
         function supSpawn() {
             if (supItems.length >= supMaxWords()) return null;
-            const libres = [];
-            for (let s = 0; s < SUP_SLOTS.length; s++) {
-                if (!supItems.some(x => x.slot === s)) libres.push(s);
+            const lanes = board && board.clientWidth < 520
+                ? SUP_LANES_NARROW : SUP_LANES_WIDE;
+            // Se elige la columna cuya palabra más alta deja más hueco
+            // arriba, así que las letras no se pisan al bajar
+            let lane = lanes[0];
+            let mejor = -1;
+            for (const ln of lanes) {
+                let alto = 2;                       // 2 = columna vacía
+                for (const x of supItems) {
+                    if (x.lane === ln && x.y < alto) alto = x.y;
+                }
+                if (alto > mejor) { mejor = alto; lane = ln; }
             }
-            if (libres.length === 0) return null;
 
             let w = nextWord();
             // Se evita repetir las que ya están en pantalla
@@ -6695,17 +6750,20 @@
             const seg = supWordTime();
             const it = {
                 w: w, typed: 0,
-                slot: libres[Math.floor(Math.random() * libres.length)],
-                span: seg, left: seg,
+                lane: lane,
+                span: seg, y: 0,     // y: 0 = arriba del todo, 1 = fondo
                 el: null, letras: null, fill: null
             };
             supItems.push(it);
             return it;
         }
 
-        // La caja de una palabra recién aparecida entra en el tablero
+        // La caja de una palabra recién aparecida entra por arriba del todo
         function supArrive(it) {
-            if (it && state === "playing" && board) board.appendChild(supRenderBox(it, true));
+            if (it && state === "playing" && board) {
+                board.appendChild(supRenderBox(it, true));
+                supPlace(it);
+            }
         }
 
         // Rellena el tablero hasta el tope del nivel: cada vez hay más
@@ -6735,8 +6793,8 @@
         }
 
         // Apunta a una palabra: a partir de ahí es la que se teclea. El reloj
-        // del HUD pasa a marcar SU tiempo y se recupera lo que ya se había
-        // disparado de ella antes de cambiar de objetivo.
+        // del HUD pasa a marcar lo que LE FALTA de camino al fondo y se
+        // recupera lo que ya se había disparado de ella antes de cambiar.
         function supAim(it) {
             if (!it) return;
             supTarget = it;
@@ -6747,14 +6805,14 @@
                 if (x.el) x.el.classList.toggle("target", x === it);
             }
             supRenderLetters(it);
-            timeLeft = Math.max(0, it.left);
+            timeLeft = supLeft(it);
             updateHud();
         }
 
-        // La siguiente en apuntar es la que menos tiempo le queda
+        // La siguiente en apuntar es la que está más cerca del fondo
         function supAimNext() {
             let mejor = null;
-            for (const x of supItems) if (!mejor || x.left < mejor.left) mejor = x;
+            for (const x of supItems) if (!mejor || x.y > mejor.y) mejor = x;
             supAim(mejor);
         }
 
@@ -6777,8 +6835,8 @@
             updateHud();
         }
 
-        // Se acaba el plazo de UNA palabra: se escapa, se pierde una vida y
-        // sigue la partida con las que queden (sin vidas se acaba del todo)
+        // Una palabra ha llegado hasta el fondo del tablero: se pierde una
+        // vida y sigue la partida con las que queden (sin vidas se acaba)
         function supEscape(it) {
             const escapada = it.w;
             supRemove(it);
@@ -6793,8 +6851,9 @@
                 endGame();
                 return;
             }
-            status.textContent = t("supFail") + supLives + " ❤️ · " + t("wordFailed") + escapada;
-            // El hueco no se queda vacío: entra otra y se apunta a ella
+            status.textContent = t("supFail") + supLives + " ❤️ · " + t("supFell") + escapada;
+            // En el hueco de la que se ha caído entra otra por arriba y se
+            // apunta a ella
             supFillBoard();
             supAimNext();
         }
@@ -7254,27 +7313,28 @@
                 updateHud();
                 return;
             }
-            // En Supervivencia todas las barras corren a la vez: el reloj se
-            // vacía cada vez más deprisa con el nivel y la palabra que llegue
-            // a cero se escapa (una vida menos) hasta acabar la partida
+            // En Supervivencia todas las palabras bajan a la vez: la que
+            // llegue hasta el fondo del tablero se cae (una vida menos) hasta
+            // acabar la partida
             if (mode === "supervivencia") {
                 const dt = (now - lastTick) / 1000 * supSpeed();
                 lastTick = now;
-                // Se recorre una copia: al escaparse puede entrar otra palabra
-                // (con su plazo entero) y a esa no le toca todavía
+                // Se recorre una copia: al caerse puede entrar otra palabra
+                // (por arriba del todo) y a esa no le toca todavía
                 const vivas = supItems.slice();
                 for (const it of vivas) {
-                    if (supItems.indexOf(it) < 0) continue;   // ya se escapó
-                    it.left -= dt;
-                    if (it.left <= 0) {
+                    if (supItems.indexOf(it) < 0) continue;   // ya se cayó
+                    it.y += dt / Math.max(0.5, it.span);
+                    if (it.y >= 1) {
                         supEscape(it);
                         if (state !== "playing") return;      // sin vidas: fin
                     } else {
+                        supMove(it);
                         supPaintBar(it);
                     }
                 }
-                // El reloj del HUD marca lo que le queda a la palabra apuntada
-                timeLeft = supTarget ? Math.max(0, supTarget.left) : 0;
+                // El reloj del HUD marca lo que le falta a la palabra apuntada
+                timeLeft = supTarget ? supLeft(supTarget) : 0;
                 updateHud();
                 return;
             }
