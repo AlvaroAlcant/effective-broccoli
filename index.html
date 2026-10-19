@@ -2350,6 +2350,9 @@
         </div>
         <p class="shop-hint" id="accHint">Crea una cuenta con tu nombre y una contraseña para guardar tu dinero, tu experiencia y tus récords. Se guarda solo al terminar cada partida.</p>
 
+        <!-- Rol del jugador: visible solo para el Administrador (Alvaro) -->
+        <p class="shop-hint hidden" id="accRole">👑 Rol: Administrador · dinero infinito para probarlo todo</p>
+
         <form class="perfil-form hidden" id="accForm" novalidate>
             <div class="pf-field">
                 <label for="accName" id="accNameLabel">Tu nombre</label>
@@ -3403,6 +3406,7 @@
                 accTitle: "👤 Tu perfil",
                 accHint: "Crea una cuenta con tu nombre y una contraseña para guardar tu dinero, tu experiencia y tus récords. Se guarda solo al terminar cada partida. Usa una contraseña que no uses en otro sitio.",
                 accDataHint: "Tus datos se guardan solos al terminar cada partida. Vuelve a entrar cuando quieras para recuperarlos.",
+                accRole: "👑 Rol: Administrador · dinero infinito para probarlo todo",
                 accNameLabel: "Tu nombre",
                 accPassLabel: "Contraseña",
                 accPass2Label: "Repite la contraseña",
@@ -3590,6 +3594,7 @@
                 accTitle: "👤 Your profile",
                 accHint: "Create an account with your name and a password to save your coins, experience and records. Everything is saved at the end of each game. Use a password you do not use anywhere else.",
                 accDataHint: "Your data is saved automatically at the end of each game. Log back in whenever you want to get it back.",
+                accRole: "👑 Role: Administrator · infinite money to test everything",
                 accNameLabel: "Your name",
                 accPassLabel: "Password",
                 accPass2Label: "Repeat your password",
@@ -3812,6 +3817,7 @@
         const accData = document.getElementById("accData");
         const accMsg = document.getElementById("accMsg");
         const accHint = document.getElementById("accHint");
+        const accRole = document.getElementById("accRole");
         const accName = document.getElementById("accName");
         const accPass = document.getElementById("accPass");
         const accPass2 = document.getElementById("accPass2");
@@ -3940,6 +3946,7 @@
             try {
                 localStorage.setItem("teclear.nombre", name);
             } catch (e) { /* sin almacenamiento disponible */ }
+            updateCoins();   // el rol (Administrador) depende del nombre
         }
 
         function loadLocalRanking(tab) {
@@ -4642,6 +4649,25 @@
                 .catch(() => ({ saved: false, local: true }));
         }
 
+        // ---------- Roles de usuario ----------
+        // Alvaro tiene el rol de ADMINISTRADOR: dinero infinito para poder
+        // probarlo todo. El rol se reconoce por el nombre de la cuenta o por
+        // el nombre del jugador, normalizados con nameKey() (sin acentos y en
+        // minúsculas), así que «Alvaro», «ÁLVARO» o «alvaro» valen igual.
+        const ADMIN_NAMES = ["alvaro"];
+
+        function esAdmin() {
+            if (accSession && ADMIN_NAMES.indexOf(nameKey(accSession.n)) >= 0) return true;
+            return ADMIN_NAMES.indexOf(nameKey(loadPlayerName())) >= 0;
+        }
+
+        // Cómo se pintan las cantidades de dinero en pantalla: los
+        // administradores ven ∞ porque pueden comprar lo que quieran sin
+        // gastar. Su saldo real no se toca: solo se oculta el número.
+        function fmtCoins(n) {
+            return esAdmin() ? "∞" : String(n);
+        }
+
         // ---------- Panel de cuenta ----------
         function setAccMsg(key, warn) {
             if (!accMsg) return;
@@ -4655,18 +4681,20 @@
             accForm.classList.toggle("hidden", logged);
             accData.classList.toggle("hidden", !logged);
             accHint.textContent = logged ? t("accDataHint") : t("accHint");
+            // La insignia del rol solo la ven los Administradores
+            if (accRole) accRole.classList.toggle("hidden", !esAdmin());
 
             if (logged) {
                 accWho.textContent = t("accWho") + accSession.n;
                 const vals = {
-                    accVCoins: coins, accVXp: xp, accVLevel: Math.floor(xp / 500) + 1,
+                    accVCoins: fmtCoins(coins), accVXp: xp, accVLevel: Math.floor(xp / 500) + 1,
                     accVGames: gamesPlayed, accVWords: wordsTotal, accVBest: best
                 };
                 Object.keys(vals).forEach(id => {
                     const e = document.getElementById(id);
                     if (e) e.textContent = String(vals[id]);
                 });
-                if (accCoins) accCoins.textContent = coins;
+                if (accCoins) accCoins.textContent = fmtCoins(coins);
             } else {
                 accSubmit.textContent = accMode === "reg" ? t("accSubmitReg") : t("accSubmitLogin");
                 accSwitch.textContent = accMode === "reg" ? t("accSwitchToLogin") : t("accSwitchToReg");
@@ -5301,9 +5329,10 @@
         }
 
         function updateCoins() {
-            coinsEl.textContent = coins;
-            shopCoins.textContent = coins;
-            if (accCoins) accCoins.textContent = coins;
+            const txt = fmtCoins(coins);   // ∞ si se es Administrador
+            coinsEl.textContent = txt;
+            shopCoins.textContent = txt;
+            if (accCoins) accCoins.textContent = txt;
             if (shopOpen) renderShop();
             if (accOpen && accSession) renderAccount();
         }
@@ -5350,11 +5379,11 @@
                 shopMsg.textContent = t("achNeed");
                 return;
             }
-            if (coins < st.price) {
+            if (!esAdmin() && coins < st.price) {
                 shopMsg.textContent = t("shopNoMoney");
                 return;
             }
-            coins -= st.price;
+            if (!esAdmin()) coins -= st.price;   // el Administrador no gasta
             owned.push(st.id);
             equipped = st.id;
             saveShop();
@@ -5405,7 +5434,7 @@
                     btn.classList.add("cant");
                 } else {
                     btn.textContent = t("shopBuy");
-                    if (coins < st.price) btn.classList.add("cant");
+                    if (!esAdmin() && coins < st.price) btn.classList.add("cant");
                     btn.addEventListener("click", () => buyStyle(st));
                 }
                 card.appendChild(btn);
@@ -5469,7 +5498,7 @@
                     btn.classList.add("cant");
                 } else {
                     btn.textContent = t("shopBuy");
-                    if (coins < b.price) btn.classList.add("cant");
+                    if (!esAdmin() && coins < b.price) btn.classList.add("cant");
                     btn.addEventListener("click", () => buyBg(b));
                 }
                 card.appendChild(btn);
@@ -5572,11 +5601,11 @@
                 setExtra(x.id, true);
                 return;
             }
-            if (coins < x.price) {
+            if (!esAdmin() && coins < x.price) {
                 shopMsg.textContent = t("shopNoMoney");
                 return;
             }
-            coins -= x.price;
+            if (!esAdmin()) coins -= x.price;   // el Administrador no gasta
             ownedExtras.push(x.id);
             // Al comprarla se activa sola y se apagan las demás variantes
             EXTRAS.forEach(e => extraOn[e.id] = (e.id === x.id));
@@ -5633,7 +5662,7 @@
                     btn.addEventListener("click", () => setExtra(x.id, true));
                 } else {
                     btn.textContent = t("shopBuy");
-                    if (coins < x.price) btn.classList.add("cant");
+                    if (!esAdmin() && coins < x.price) btn.classList.add("cant");
                     btn.addEventListener("click", () => buyExtra(x));
                 }
                 card.appendChild(btn);
@@ -5685,11 +5714,11 @@
                 setFx(fxEquipped === f.id ? "" : f.id);
                 return;
             }
-            if (coins < f.price) {
+            if (!esAdmin() && coins < f.price) {
                 shopMsg.textContent = t("shopNoMoney");
                 return;
             }
-            coins -= f.price;
+            if (!esAdmin()) coins -= f.price;   // el Administrador no gasta
             ownedFx.push(f.id);
             fxEquipped = f.id;    // recién comprado: sale puesto en marcha
             saveShop();
@@ -5751,7 +5780,7 @@
                     btn.classList.add("cant");
                 } else {
                     btn.textContent = t("shopBuy");
-                    if (coins < f.price) btn.classList.add("cant");
+                    if (!esAdmin() && coins < f.price) btn.classList.add("cant");
                     btn.addEventListener("click", () => buyFx(f));
                 }
                 card.appendChild(btn);
@@ -5862,7 +5891,7 @@
                     c.btn.addEventListener("click", () => setBgEquipped(b.id));
                 } else {
                     c.btn.textContent = t("shopBuy");
-                    if (coins < b.price) c.btn.classList.add("cant");
+                    if (!esAdmin() && coins < b.price) c.btn.classList.add("cant");
                     c.btn.addEventListener("click", () => buyBg(b));
                 }
                 shopEventGrid.appendChild(c.card);
@@ -5888,7 +5917,7 @@
                     c.btn.addEventListener("click", () => setFx(f.id));
                 } else {
                     c.btn.textContent = t("shopBuy");
-                    if (coins < f.price) c.btn.classList.add("cant");
+                    if (!esAdmin() && coins < f.price) c.btn.classList.add("cant");
                     c.btn.addEventListener("click", () => buyFx(f));
                 }
                 shopEventGrid.appendChild(c.card);
@@ -5913,7 +5942,7 @@
                     c.btn.addEventListener("click", () => setExtra(x.id, true));
                 } else {
                     c.btn.textContent = t("shopBuy");
-                    if (coins < x.price) c.btn.classList.add("cant");
+                    if (!esAdmin() && coins < x.price) c.btn.classList.add("cant");
                     c.btn.addEventListener("click", () => buyExtra(x));
                 }
                 shopEventGrid.appendChild(c.card);
@@ -6193,6 +6222,7 @@
             renderRanking();
             // Textos del panel de perfil
             document.getElementById("accTitle").textContent = t("accTitle");
+            if (accRole) accRole.textContent = t("accRole");
             document.getElementById("accNameLabel").textContent = t("accNameLabel");
             document.getElementById("accPassLabel").textContent = t("accPassLabel");
             document.getElementById("accPass2Label").textContent = t("accPass2Label");
@@ -6726,11 +6756,11 @@
                 shopMsg.textContent = t("achNeed");
                 return;
             }
-            if (coins < b.price) {
+            if (!esAdmin() && coins < b.price) {
                 shopMsg.textContent = t("shopNoMoney");
                 return;
             }
-            coins -= b.price;
+            if (!esAdmin()) coins -= b.price;   // el Administrador no gasta
             ownedBgs.push(b.id);
             bg = b.id;
             saveShop();
@@ -8583,6 +8613,7 @@
                 get savedScore() { return savedScore; },
                 get rankResets() { return rankResets; },
                 get session() { return accSession; },
+                get admin() { return esAdmin(); },   // ¿rol de Administrador?
                 get xp() { return xp; },
                 get lives() { return supLives; },   // vidas en el modo Supervivencia
                 get gamesPlayed() { return gamesPlayed; },
