@@ -998,6 +998,30 @@
             from { opacity: 0; transform: translateY(-26px) scale(.8); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
+        /* Modo Encantado (evento de Halloween): cada letra cae montada en un
+           fantasma, con halo morado y vaivén suave */
+        .sup-word.ghost::before {
+            content: "👻";
+            font-size: 24px;
+            line-height: 1;
+            animation: ghostBob 1.4s ease-in-out infinite;
+        }
+        .sup-word.ghost .sup-letters {
+            font-size: 26px;
+            text-shadow: 0 0 12px rgba(167, 139, 250, .85);
+        }
+        .sup-word.ghost.target {
+            border-color: #a78bfa;
+            background-color: rgba(167, 139, 250, .12);
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, .20);
+        }
+        @keyframes ghostBob {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-5px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .sup-word.ghost::before { animation: none; }
+        }
         /* Letras de la palabra: caben en su hueco aunque sea larga */
         .sup-letters {
             display: flex;
@@ -2554,6 +2578,19 @@
         const SUP_LANES_WIDE = ["4%", "37%", "70%"];
         const SUP_LANES_NARROW = ["4%", "51%"];
 
+        // ---------- Evento de Halloween: caramelos y modo Encantado ----------
+        // Los caramelos son la MONEDA DEL EVENTO: se ganan jugando a cualquier
+        // modo (la misma cantidad que darían las monedas) y solo se gastan en
+        // la tienda de evento mientras dura Halloween (8 oct – 3 nov, 12:00).
+        const ENC_ALFABETO = "abcdefghijklmnñopqrstuvwxyz";  // letras con fantasma
+        const ENC_CANDY_HIT = 1;    // caramelos de cada letra acertada
+        const ENC_CANDY_FAIL = 2;   // caramelos que resta cada tecla fallada
+        const ENC_MAX_GHOSTS = 6;   // fantasmas en pantalla a la vez (tope)
+        const ENC_MIN_TIME = 8;     // segundos mínimos de bajada de una letra
+        const ENC_GHOST_STEP = 4;   // letras acertadas por cada fantasma más
+        const ENC_TIME_STEP = 0.7;  // segundos que se restan por letra acertada
+        const ENC_SPEED_STEP = 0.05;// aceleración del descenso por letra acertada
+
         // Ranking global: JSON público compartido por todos los visitantes.
         // Si no hay internet se usa la copia guardada en este dispositivo.
         const RANK_URL = "https://mantledb.sh/v2/teclear-ranking/ranking";
@@ -3287,6 +3324,7 @@
                 veyon: "🖥️ Modo Veyon",
                 kScore: "Puntos", kTime: "Tiempo", kStreak: "Racha", kLevel: "Nivel", kBest: "Récord",
                 kCoins: "Monedas",
+                kCandy: "Caramelos",
                 kBestWords: "Récord palabras",
                 btnShop: "🛒 Tienda",
                 shopTitle: "🛒 Tienda de estilos",
@@ -3347,6 +3385,7 @@
                 achNeed: "🔒 Requiere logro",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
+                shopNoCandy: "¡No tienes suficientes caramelos! 🍬 (se ganan jugando)",
                 shopBought: "¡Estilo desbloqueado! Ya puedes usarlo. ✨",
                 shopBoughtBg: "¡Fondo desbloqueado! Ya puedes usarlo. ✨",
                 shopEquippedMsg: "Estilo aplicado al tablero. 🔤",
@@ -3364,6 +3403,16 @@
                 supFail: "⏰ ¡Una palabra ha llegado hasta el fondo! Pierdes una vida ❤️‍🩹 Quedan: ",
                 supFell: "Ha tocado el fondo. Palabra: ",
                 supFailEnd: "💔 ¡Te has quedado sin vidas! Fin de la supervivencia.",
+                supVarClasico: "🛡️ Clásico",
+                supVarEncantado: "👻 Encantado",
+                supVarHint: "Elige la variante de Supervivencia",
+                supSelectOff: "Pulsa «🛡️ Supervivencia» para cambiar su variante",
+                encStart: "👻 Modo Encantado: teclea las letras de los fantasmas. Solo ganas caramelos (sin monedas ni experiencia) y fallar te los quita.",
+                encHit: "👻 Letra acertada: +1 caramelos",
+                encFail: "👻 ¡Tecla fallada! −",
+                encFailEnd: " caramelos.",
+                encFailZero: "👻 ¡Tecla fallada! No tienes caramelos que perder.",
+                eventCashTxt: "🍬 Tus caramelos:",
                 kLives: "Vidas",
                 kTimeWord: "Tiempo palabra",
                 rTitleLives: "¡Te has quedado sin vidas! 💔",
@@ -3384,7 +3433,7 @@
                 btnStart: "Jugar", btnRestart: "Reiniciar", btnAgain: "Jugar otra vez",
                 rTitle: "¡Tiempo agotado! ⏱️",
                 rkScore: "Puntos", rkWords: "Palabras", rkWordsG: "Palabras adivinadas",
-                rkAcc: "Precisión", rkPpm: "Palabras/min", rkCoins: "Monedas ganadas",
+                rkAcc: "Precisión", rkPpm: "Palabras/min", rkCoins: "Monedas ganadas", rkCandy: "Caramelos (esta partida)",
                 rkBestWords: "Récord palabras",
                 msgRecord: "🏆 ¡Nuevo récord! Se ha guardado tu mejor puntuación.",
                 msgWordsRecord: "🏆 ¡Nuevo récord personal de palabras escritas! Se ha guardado tu marca. 📝",
@@ -3642,6 +3691,11 @@
 
         // ---------- Estado ----------
         let lang = "es";         // es | en | mur (murciano)
+        // ---------- Caramelos y variante Encantada (evento de Halloween) ----------
+        let caramelos = 0;           // caramelos guardados (moneda del evento)
+        let candyRun = 0;            // cambio de caramelos durante la partida
+        let supVariant = "clasico";  // variante de Supervivencia: clasico | encantado
+        let encTyped = 0;            // letras acertadas en la partida Encantada
         let mode = "type";       // type | guess | imagen | aventura | supervivencia
         let bg = "dark";         // dark | franco | elprico | esteso
         let veyon = false;       // Modo Veyon: oculta logo y fondos «General»/«Ia»
@@ -3806,6 +3860,7 @@
         const shopBgGrid = document.getElementById("shopBgGrid");
         const bgExtra = document.getElementById("bgExtra");
         const modeSelect = document.getElementById("modeSelect");
+        const supSelect = document.getElementById("supSelect");
         const shopExtraGrid = document.getElementById("shopExtraGrid");
         const shopFxGrid = document.getElementById("shopFxGrid");
         const shopEventTitle = document.getElementById("shopEventTitle");
@@ -3815,6 +3870,13 @@
         const eventCount = document.getElementById("eventCount");
         const shopMsg = document.getElementById("shopMsg");
         const shopCoins = document.getElementById("shopCoins");
+        const candyStat = document.getElementById("candyStat");
+        const candyEl = document.getElementById("candy");
+        const shopCandy = document.getElementById("shopCandy");
+        const eventCash = document.getElementById("eventCash");
+        const eventCashTxt = document.getElementById("eventCashTxt");
+        const rCandyRow = document.getElementById("rCandyRow");
+        const rCandy = document.getElementById("rCandy");
         const btnShop = document.getElementById("btnShop");
         const btnRanking = document.getElementById("btnRanking");
         const btnLogros = document.getElementById("btnLogros");
@@ -3865,7 +3927,7 @@
         const perkVeil = document.getElementById("perkVeil");
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
-        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, btnGuess, btnImagen, btnAventura, btnSup,
+        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, supSelect, btnGuess, btnImagen, btnAventura, btnSup,
             btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
