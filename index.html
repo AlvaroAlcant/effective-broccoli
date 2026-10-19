@@ -308,6 +308,113 @@
             background: radial-gradient(120% 90% at 50% 45%, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .82) 100%);
         }
 
+        /* ---------- Fondo "Five Nigths" (tienda de evento de Halloween) ----------
+           El GIF de Fredi mirando fijamente a cámara, con una capa oscura
+           encima para que el texto del juego siga leyéndose sin problemas. */
+        body.bg-fivenights {
+            background-color: #05070c;
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(255, 117, 24, .14), transparent 65%),
+                linear-gradient(rgba(5, 7, 12, .74), rgba(5, 7, 12, .80)),
+                url("fredi.gif");
+            background-size: auto, cover, cover;
+            background-position: center, center, center;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-attachment: fixed, fixed, fixed;
+        }
+
+        /* ---------- Evento de Halloween ----------
+           Mientras dure el evento (8 de octubre – 3 de noviembre a las 12:00)
+           el logo y el menú se visten de Halloween: naranja y morado,
+           calabaza asomada en el logo y chips del selector en tono calabaza. */
+        body.halloween {
+            --accent: #ff7518;
+            --accent-2: #a855f7;
+        }
+        body.halloween header {
+            background:
+                linear-gradient(135deg, rgba(255, 117, 24, .22), rgba(168, 85, 247, .16) 55%, rgba(255, 117, 24, 0) 100%),
+                var(--surface);
+            border-color: rgba(255, 117, 24, .45);
+        }
+        body.halloween header::before {
+            background: linear-gradient(90deg, transparent, #ff7518, #a855f7, transparent);
+        }
+        body.halloween header h1 {
+            color: #ff9d4d;
+            text-shadow: 0 0 14px rgba(255, 117, 24, .45);
+        }
+        /* El logo se tiñe de naranja, late suavemente y lleva una calabaza */
+        body.halloween .game-logo {
+            filter: sepia(.75) saturate(1.7) hue-rotate(-15deg)
+                    drop-shadow(0 0 12px rgba(255, 117, 24, .55));
+            animation: hwnLogo 2.6s ease-in-out infinite;
+        }
+        body.halloween .logo-wrap::after {
+            content: "🎃";
+            position: absolute;
+            right: -12px;
+            bottom: -4px;
+            font-size: 28px;
+            line-height: 1;
+            pointer-events: none;
+            filter: drop-shadow(0 0 8px rgba(255, 117, 24, .8));
+            animation: hwnFloat 3.2s ease-in-out infinite;
+        }
+        @keyframes hwnLogo {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.045); }
+        }
+        @keyframes hwnFloat {
+            0%, 100% { transform: translateY(0) rotate(-4deg); }
+            50%      { transform: translateY(-6px) rotate(4deg); }
+        }
+        /* El menú de selección también se viste de calabaza */
+        body.halloween .selectors {
+            border-color: rgba(255, 117, 24, .45);
+            background:
+                radial-gradient(560px 200px at 6% -40%, rgba(255, 117, 24, .16), transparent 70%),
+                radial-gradient(520px 200px at 94% 140%, rgba(168, 85, 247, .14), transparent 70%),
+                var(--surface);
+        }
+        body.halloween .sel-row + .sel-row {
+            border-top: 1px dashed rgba(255, 117, 24, .28);
+        }
+        body.halloween .sel-label {
+            color: #ff9d4d;
+        }
+        body.halloween .chip-btn:hover:not(:disabled) {
+            border-color: #ff7518;
+            background-color: rgba(255, 117, 24, .12);
+        }
+        body.halloween .chip-btn.active {
+            background: linear-gradient(180deg, #ff9d4d, #f97316);
+            border-color: transparent;
+            color: #2b1200;
+            box-shadow: 0 6px 16px rgba(255, 117, 24, .38);
+        }
+        body.halloween .chip-select:hover:not(:disabled) {
+            border-color: #a855f7;
+        }
+
+        /* Barra del evento: se muestra solo mientras dura Halloween */
+        .event-bar {
+            margin: 14px auto 0;
+            max-width: 760px;
+            padding: 8px 18px;
+            border: 1px dashed rgba(255, 117, 24, .6);
+            border-radius: 999px;
+            background: rgba(255, 117, 24, .10);
+            color: #ffb46b;
+            font-size: 14px;
+            text-align: center;
+        }
+        .event-bar strong {
+            margin-left: 8px;
+            color: #c084fc;
+            font-weight: 700;
+        }
+
         /* ---------- Cabecera ---------- */
         header {
             position: relative;
@@ -1223,6 +1330,38 @@
             color: var(--danger);
         }
 
+        /* ---------- Tienda de evento (Halloween) ----------
+           Solo aparece mientras dura el evento: tres artículos exclusivos
+           con temática de terror, con el borde naranja del evento. */
+        .shop-sub.event-sub {
+            color: #ff9d4d;
+            border-bottom-color: rgba(255, 117, 24, .4);
+        }
+        .shop-card.event-card {
+            border-color: rgba(255, 117, 24, .5);
+            background:
+                linear-gradient(160deg, rgba(255, 117, 24, .10), rgba(168, 85, 247, .10)),
+                var(--surface-2);
+        }
+        .shop-card.event-card:hover {
+            border-color: #ff7518;
+            box-shadow: 0 10px 22px rgba(255, 117, 24, .25);
+        }
+        .shop-card.event-card .shop-preview.event-thumb {
+            width: 100%;
+            height: 78px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 117, 24, .35);
+            background-color: #000;
+            background-size: cover;
+            background-position: center;
+        }
+        .shop-card.event-card.card-truco.extra-on {
+            border-color: #ff7518;
+            background-color: #2b1505;
+            box-shadow: inset 0 0 0 1px rgba(255, 117, 24, .45);
+        }
+
         /* ---------- Extras de juego (modo picante) ---------- */
         .shop-preview.extra {
             font-size: 36px;
@@ -1263,6 +1402,12 @@
             background-color: #12122b;
             box-shadow: inset 0 0 0 1px rgba(129, 140, 248, .45);
         }
+        /* Modo Truco o trato (evento de Halloween): el tablero se enciende
+           en naranja mientras la variante está elegida */
+        body.truco-on .board {
+            border-color: rgba(255, 117, 24, .65);
+            box-shadow: 0 0 22px rgba(255, 117, 24, .22);
+        }
 
         /* ---------- Efectos de tecleo (partículas de la tienda) ---------- */
         /* El color del efecto equipado se globaliza en variables: de ahí
@@ -1273,6 +1418,7 @@
         body.fx-hielo        { --fx-c: #7dd3fc; --fx-glow: rgba(125, 211, 252, .45); }
         body.fx-magia        { --fx-c: #e879f9; --fx-glow: rgba(232, 121, 249, .45); }
         body.fx-explosion    { --fx-c: #8ff05a; --fx-glow: rgba(143, 240, 90, .45); }
+        body.fx-sangre       { --fx-c: #e11d48; --fx-glow: rgba(225, 29, 72, .45); }
 
         #typing {
             box-shadow: 0 0 18px var(--fx-glow, transparent);
@@ -1314,6 +1460,15 @@
             border-radius: 2px;
             background-color: var(--fx-color, #fff);
             box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
+        }
+        /* Gota de sangre (efecto Sangre, tienda de evento): forma de
+           lágrima y brillo rojo oscuro, como una salpicadura */
+        .fx-p.drop {
+            width: var(--fx-size, 9px);
+            height: calc(var(--fx-size, 9px) * 1.2);
+            border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+            background-color: var(--fx-color, #e11d48);
+            box-shadow: 0 0 8px var(--fx-color, #e11d48);
         }
         @keyframes fx-burst {
             0% {
@@ -1936,6 +2091,11 @@
         </div>
         <h1 id="title">⌨️ Teclea a la Velocidad</h1>
         <p id="subtitle">Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!</p>
+        <!-- Evento de Halloween: barra con la cuenta atrás hasta el final del evento -->
+        <p class="event-bar hidden" id="eventBar">
+            🎃 <span id="eventText">Evento de Halloween: la tienda de evento está abierta hasta el 3 de noviembre a las 12:00</span>
+            <strong id="eventCount"></strong>
+        </p>
     </header>
 
     <div class="selectors">
@@ -1999,6 +2159,10 @@
 
         <h3 class="shop-sub" id="shopFxTitle">✨ Efectos de tecleo</h3>
         <div class="shop-grid" id="shopFxGrid"></div>
+
+        <!-- Tienda de evento: solo se muestra mientras dura el evento de Halloween -->
+        <h3 class="shop-sub event-sub hidden" id="shopEventTitle">🎃 Tienda de evento · Halloween</h3>
+        <div class="shop-grid event-grid hidden" id="shopEventGrid"></div>
 
         <p class="shop-msg" id="shopMsg"></p>
     </section>
@@ -2430,6 +2594,17 @@
                 descEs: "Números binarios verdes cambiando sobre fondo negro. ¡Recompensa del logro «Hacker»!",
                 descEn: "Changing green binary digits on a black background. Reward of the “Hacker” achievement!",
                 img: "", icon: "💻"
+            },
+            {
+                // Tienda de EVENTO (Halloween): el fondo Five Nigths con el
+                // GIF de Fredi mirando fijamente. Solo está a la venta
+                // mientras dura el evento (8 de octubre – 3 de noviembre); una vez
+                // comprado se queda para siempre.
+                id: "fivenights", price: 1987, event: true, decor: true,
+                es: "Five Nigths", en: "Five Nigths",
+                descEs: "Fondo Five Nigths con Fredi mirándote fijamente desde la oscuridad. ¡Puro terror! Solo durante el evento de Halloween.",
+                descEn: "A Five Nigths background with Fredi staring at you from the darkness. Pure horror! Halloween event only.",
+                img: "fredi.gif", icon: "📼"
             }
         ];
 
@@ -2552,6 +2727,34 @@
             "oveja", "cabra", "conejo", "zorro", "oso", "llama", "tortuga"
         ];
 
+        // ---------- Palabras del modo Truco o trato (evento de Halloween) ----------
+        // Vocabulario terrorífico del evento de Halloween: calabazas,
+        // fantasmas y criaturas de la noche. Se escribe sin acentos para
+        // que las palabras se puedan teclear en todos los teclados.
+        const HALLOWEEN_WORDS = {
+            es: [
+                "calabaza", "fantasma", "esqueleto", "vampiro", "bruja",
+                "calavera", "telaraña", "araña", "monstruo", "zombi",
+                "cementerio", "luna", "noche", "sombra", "miedo", "terror",
+                "hechizo", "pocion", "disfraz", "caramelo", "truco", "trato",
+                "hueso", "murcielago", "espantajo", "embrujado", "mausoleo",
+                "ataud", "fantasmal", "demonio", "cripta", "osario", "sangre",
+                "colmillo", "garras", "mascara", "medianoche", "trueno",
+                "relampago", "embrujo", "maleficio", "nigromante", "halloween",
+                "silueta", "vendaval", "calabobos"
+            ],
+            en: [
+                "halloween", "ghost", "skeleton", "vampire", "witch",
+                "pumpkin", "spider", "web", "monster", "zombie", "cemetery",
+                "moon", "night", "shadow", "fear", "terror", "spell",
+                "potion", "costume", "candy", "trick", "treat", "bone",
+                "bat", "scarecrow", "haunted", "tomb", "crypt", "blood",
+                "fang", "claw", "mask", "midnight", "thunder", "lightning",
+                "ghoul", "demon", "scream", "coffin", "broomstick",
+                "cauldron", "graveyard", "spooky", "creepy", "nightmare"
+            ]
+        };
+
         // ---------- Extras de la tienda ----------
         // id: identificador guardado en localStorage · price: precio en monedas
         // icon: vista previa de la tarjeta · desc*: texto de la tarjeta
@@ -2640,6 +2843,23 @@
                 msgBuy: "shopBoughtCubico",
                 msgOn: "shopEquippedCubicoMsg",
                 msgOff: "shopDeactivatedCubicoMsg"
+            },
+            {
+                // Tienda de EVENTO (Halloween): modo Truco o trato. Palabras
+                // terroríficas y DOBLE de monedas por palabra, pero cada
+                // tecla fallada cuesta el doble: pierdes 2 segundos y 2 de
+                // experiencia. Solo a la venta mientras dura el evento.
+                id: "truco",
+                price: 2040,
+                event: true,
+                icon: "🍬",
+                es: "Modo Truco o trato",
+                en: "Trick or treat mode",
+                descEs: "Evento de Halloween: palabras de Halloween y DOBLE de monedas, pero cada tecla fallada cuesta el doble: pierdes 2 segundos y 2 de experiencia.",
+                descEn: "Halloween event: Halloween words and DOUBLE coins, but every wrong key costs double: you lose 2 seconds and 2 experience.",
+                msgBuy: "shopBoughtTruco",
+                msgOn: "shopEquippedTrucoMsg",
+                msgOff: "shopDeactivatedTrucoMsg"
             }
         ];
 
@@ -2716,6 +2936,23 @@
                 glyph: "✨", count: 10, power: 95, rise: -50, size: 16, life: 900
             },
             {
+                // Tienda de EVENTO (Halloween): gotas de sangre que
+                // salpican y gotean hacia abajo con cada letra. Solo está
+                // a la venta mientras dura el evento (8 de octubre – 3 de noviembre).
+                id: "sangre",
+                price: 666,
+                event: true,
+                icon: "🩸",
+                color: "#e11d48",
+                es: "Sangre",
+                en: "Blood",
+                descEs: "Gotas de sangre que salpican y gotean con cada letra que tecleas.",
+                descEn: "Blood drops splashing and dripping with every letter you type.",
+                colors: ["#e11d48", "#b00020", "#ff2d55", "#7f0d1a"],
+                glyph: "🩸", glyphEvery: 5, count: 9, power: 65, rise: 110, size: 15, life: 950,
+                shape: "drop"
+            },
+            {
                 // No se compra con monedas: es la RECOMPENSA del logro
                 // "Un poco de pólvora" (price null = no está a la venta).
                 // Las partículas son cubos que salen despedidos como en la
@@ -2735,6 +2972,43 @@
                 shape: "block"
             }
         ];
+
+        // ---------- Evento de Halloween ----------
+        // El evento empieza el 8 de octubre y termina el 3 de noviembre a
+        // las 12:00 (todos los años). Mientras dure, el logo y el menú se
+        // visten de Halloween y se abre la TIENDA DE EVENTO con tres
+        // artículos exclusivos: el fondo Five Nigths (fredi.gif, 1987
+        // monedas), el efecto de tecleo Sangre (666 monedas) y el modo de
+        // juego Truco o trato (2040 monedas). Cuando el evento termina, la
+        // tienda de evento se cierra, pero lo comprado se queda para siempre.
+        const EVENT_MONTH = 9;         // octubre (los meses van de 0 a 11)
+        const EVENT_DAY_START = 8;
+        const EVENT_MONTH_END = 10;    // noviembre
+        const EVENT_DAY_END = 3;
+        const EVENT_HOUR_END = 12;
+        // Castigo de cada tecla fallada en el modo Truco o trato: se pierde
+        // el DOBLE de tiempo y de experiencia (2 segundos y 2 XP)
+        const TT_TIME_PENALTY = 2;
+        const TT_XP_PENALTY = 2;
+
+        function eventStartDate(year) {
+            return new Date(year, EVENT_MONTH, EVENT_DAY_START, 0, 0, 0, 0);
+        }
+
+        function eventEndDate(year) {
+            return new Date(year, EVENT_MONTH_END, EVENT_DAY_END, EVENT_HOUR_END, 0, 0, 0);
+        }
+
+        // ¿Está activo el evento de Halloween en esta fecha?
+        function halloweenOn(now) {
+            const d = now || new Date();
+            return d >= eventStartDate(d.getFullYear()) &&
+                   d < eventEndDate(d.getFullYear());
+        }
+
+        // Experiencia que las teclas falladas se han tragado en la partida
+        // en curso (se descuenta al acabar, en endGame)
+        let ttXpLoss = 0;
 
         // ---------- Logros ----------
         // Retos que se completan jugando: cada uno otorga una recompensa
@@ -2865,6 +3139,13 @@
                 shopEquippedFxMsg: "Efecto de tecleo activado: cada letra estalla en el tablero. ✨",
                 shopDeactivatedFxMsg: "Efecto de tecleo desactivado. 💤",
                 shopFxOff: "Apagar",
+                shopEventTitle: "🎃 Tienda de evento · Halloween",
+                eventBar: "Evento de Halloween: la tienda de evento está abierta hasta el 3 de noviembre a las 12:00",
+                shopBoughtTruco: "¡Modo Truco o trato desbloqueado! Ya puedes activarlo cuando quieras. 🍬",
+                shopEquippedTrucoMsg: "Modo Truco o trato activado: palabras de Halloween y doble de monedas, ¡pero cada tecla fallada cuesta 2 segundos y 2 de experiencia! 🍬",
+                shopDeactivatedTrucoMsg: "Modo Truco o trato desactivado. 😌",
+                statusTruco: "🍬🎃 Truco o trato: palabras de Halloween y DOBLE de monedas… pero cada tecla fallada cuesta el doble: pierdes 2 segundos y 2 de experiencia. ¡Trata bien o trucarás!",
+                statusTrucoFail: "😈 ¡Truco o trato! Tecla fallada: pierdes 2 segundos y 2 de experiencia.",
                 btnLogros: "🏅 Logros",
                 achTitle: "🏅 Logros",
                 achHint: "Completa los retos para desbloquear recompensas. ¡El progreso se guarda en este dispositivo y se queda guardado aunque cierres la página!",
@@ -3045,6 +3326,13 @@
                 shopEquippedFxMsg: "Typing effect on: every letter bursts on the board. ✨",
                 shopDeactivatedFxMsg: "Typing effect off. 💤",
                 shopFxOff: "Turn off",
+                shopEventTitle: "🎃 Event shop · Halloween",
+                eventBar: "Halloween event: the event shop is open until November 3 at 12:00",
+                shopBoughtTruco: "Trick or treat mode unlocked! Turn it on whenever you want. 🍬",
+                shopEquippedTrucoMsg: "Trick or treat mode on: Halloween words and double coins, but every wrong key costs 2 seconds and 2 experience! 🍬",
+                shopDeactivatedTrucoMsg: "Trick or treat mode off. 😌",
+                statusTruco: "🍬🎃 Trick or treat: Halloween words and DOUBLE coins… but every wrong key costs double: you lose 2 seconds and 2 experience. Treat it nice!",
+                statusTrucoFail: "😈 Trick or treat! Wrong key: you lose 2 seconds and 2 experience.",
                 btnLogros: "🏅 Achievements",
                 achTitle: "🏅 Achievements",
                 achHint: "Complete the challenges to unlock rewards. Your progress is saved on this device, even if you close the page!",
@@ -3329,6 +3617,11 @@
         const modeSelect = document.getElementById("modeSelect");
         const shopExtraGrid = document.getElementById("shopExtraGrid");
         const shopFxGrid = document.getElementById("shopFxGrid");
+        const shopEventTitle = document.getElementById("shopEventTitle");
+        const shopEventGrid = document.getElementById("shopEventGrid");
+        const eventBar = document.getElementById("eventBar");
+        const eventText = document.getElementById("eventText");
+        const eventCount = document.getElementById("eventCount");
         const shopMsg = document.getElementById("shopMsg");
         const shopCoins = document.getElementById("shopCoins");
         const btnShop = document.getElementById("btnShop");
@@ -4946,12 +5239,15 @@
             renderBgShop();
             renderExtraShop();
             renderFxShop();
+            renderEventShop();   // tienda de evento (solo durante Halloween)
         }
 
         function renderBgShop() {
             if (!shopBgGrid) return;
             shopBgGrid.innerHTML = "";
-            BACKGROUNDS.forEach(b => {
+            // Los artículos del evento de Halloween se compran en su propia
+            // sección (la tienda de evento): aquí solo aparecen si ya se poseen
+            BACKGROUNDS.filter(b => !(b.event && halloweenOn())).forEach(b => {
                 const card = document.createElement("div");
                 card.className = "shop-card";
                 if (b.id === bg) card.classList.add("equipped");
@@ -5119,7 +5415,9 @@
         function renderExtraShop() {
             if (!shopExtraGrid) return;
             shopExtraGrid.innerHTML = "";
-            EXTRAS.forEach(x => {
+            // El modo Truco o trato se compra en la tienda de EVENTO
+            // (Halloween): aquí solo aparece si ya se posee
+            EXTRAS.filter(x => !(x.event && halloweenOn())).forEach(x => {
                 const ownedX = ownsExtra(x.id);
                 // Lo que se enseña es lo ELEGIDO en el menú, no si ahora actúa:
                 // el extra puede estar puesto y jugarse en un modo donde no se
@@ -5229,7 +5527,9 @@
         function renderFxShop() {
             if (!shopFxGrid) return;
             shopFxGrid.innerHTML = "";
-            TYPE_EFFECTS.forEach(f => {
+            // El efecto Sangre se compra en la tienda de EVENTO (Halloween):
+            // aquí solo aparece si ya se posee
+            TYPE_EFFECTS.filter(f => !(f.event && halloweenOn())).forEach(f => {
                 const own = ownsFx(f.id);
                 const on = own && fxEquipped === f.id;
 
@@ -5282,6 +5582,167 @@
                 card.appendChild(btn);
                 shopFxGrid.appendChild(card);
             });
+        }
+
+        // ---------- Evento de Halloween: temática y tienda de evento ----------
+        // La tienda de evento solo existe mientras dura el evento (8 de
+        // octubre – 3 de noviembre): tres tarjetas exclusivas que reutilizan
+        // la compra de su sección normal (fondo, efecto de tecleo y modo de
+        // juego). Al terminar el evento la sección se cierra sola y los
+        // artículos comprados siguen en sus secciones normales, desbloqueados.
+        let halloweenTimer = null;   // cuenta atrás del evento
+
+        // Viste de Halloween el logo y el menú, y abre o cierra la tienda
+        // de evento según la fecha. La llama applyLang() en cada cambio.
+        function applyHalloween() {
+            const on = halloweenOn();
+            document.body.classList.toggle("halloween", on);
+            if (eventBar) eventBar.classList.toggle("hidden", !on);
+            if (shopEventTitle) shopEventTitle.classList.toggle("hidden", !on);
+            if (shopEventGrid) shopEventGrid.classList.toggle("hidden", !on);
+            if (on) {
+                renderEventShop();
+                tickHalloween();
+                // Si el evento termina con la página abierta, la barra y la
+                // tienda de evento se cierran solas en el próximo segundo
+                if (!halloweenTimer) halloweenTimer = setInterval(tickHalloween, 1000);
+            }
+        }
+
+        // Cuenta atrás hasta el final del evento (3 de noviembre a las 12:00)
+        function tickHalloween() {
+            const ahora = new Date();
+            if (!halloweenOn(ahora)) {
+                clearInterval(halloweenTimer);
+                halloweenTimer = null;
+                applyHalloween();            // se apaga la temática…
+                if (shopOpen) renderShop();   // … y la tienda de evento
+                return;
+            }
+            if (!eventCount) return;
+            const fin = eventEndDate(ahora.getFullYear());
+            const ms = fin - ahora;
+            const d = Math.floor(ms / 86400000);
+            const h = Math.floor((ms % 86400000) / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            const s = Math.floor((ms % 60000) / 1000);
+            eventCount.textContent = "⏳ " + d + "d " + h + "h " + m + "m " + s + "s";
+        }
+
+        // Tarjeta base de la tienda de evento: miniatura, nombre, precio,
+        // descripción y un botón que cada artículo rellena a su manera
+        function eventCardBox(icono, nombre, precio, desc) {
+            const card = document.createElement("div");
+            card.className = "shop-card event-card";
+
+            const prev = document.createElement("div");
+            prev.className = "shop-preview";
+            prev.textContent = icono;
+
+            const name = document.createElement("div");
+            name.className = "shop-name";
+            name.textContent = nombre;
+
+            const price = document.createElement("div");
+            price.className = "shop-price";
+            price.textContent = precio;
+
+            const d = document.createElement("div");
+            d.className = "shop-desc";
+            d.textContent = desc;
+
+            const btn = document.createElement("button");
+            btn.className = "chip-btn shop-btn";
+
+            card.append(prev, name, price, d, btn);
+            return { card: card, btn: btn };
+        }
+
+        // Pinta los tres artículos del evento: Five Nigths (1987), Sangre
+        // (666) y Truco o trato (2040). Cada uno se compra con la función
+        // de su sección normal, así que el comportamiento es idéntico.
+        function renderEventShop() {
+            if (!shopEventGrid || !halloweenOn()) return;
+            shopEventGrid.innerHTML = "";
+            const en = uiLang() === "en";
+            const D = (o, campo) => en ? o[campo + "En"] : o[campo + "Es"];
+
+            // 1) Fondo Five Nigths (fredi.gif, 1987 monedas)
+            const b = BACKGROUNDS.find(x => x.id === "fivenights");
+            if (b) {
+                const own = ownedBgs.includes(b.id);
+                const c = eventCardBox(b.icon || "📼",
+                    en ? b.en : b.es,
+                    own ? "✓ " + t("shopOwned") : "🪙 " + b.price,
+                    D(b, "desc"));
+                const prev = c.card.querySelector(".shop-preview");
+                prev.classList.add("event-thumb");
+                prev.style.backgroundImage = 'url("' + b.img + '")';
+                if (bg === b.id) {
+                    c.card.classList.add("equipped");
+                    c.btn.textContent = t("shopEquipped");
+                    c.btn.disabled = true;
+                } else if (own) {
+                    c.btn.textContent = t("shopEquip");
+                    c.btn.addEventListener("click", () => setBgEquipped(b.id));
+                } else {
+                    c.btn.textContent = t("shopBuy");
+                    if (coins < b.price) c.btn.classList.add("cant");
+                    c.btn.addEventListener("click", () => buyBg(b));
+                }
+                shopEventGrid.appendChild(c.card);
+            }
+
+            // 2) Efecto de tecleo Sangre (666 monedas)
+            const f = fxById("sangre");
+            if (f) {
+                const own = ownsFx(f.id);
+                const on = own && fxEquipped === f.id;
+                const c = eventCardBox(f.icon,
+                    en ? f.en : f.es,
+                    own ? "✓ " + t("shopOwned") : "🪙 " + f.price,
+                    D(f, "desc"));
+                c.card.classList.add("card-fx", "card-fx-sangre");
+                if (on) c.card.classList.add("fx-on");
+                c.card.style.setProperty("--fx-c", f.color);
+                if (on) {
+                    c.btn.textContent = t("shopFxOff");
+                    c.btn.addEventListener("click", () => setFx(""));
+                } else if (own) {
+                    c.btn.textContent = t("shopEquip");
+                    c.btn.addEventListener("click", () => setFx(f.id));
+                } else {
+                    c.btn.textContent = t("shopBuy");
+                    if (coins < f.price) c.btn.classList.add("cant");
+                    c.btn.addEventListener("click", () => buyFx(f));
+                }
+                shopEventGrid.appendChild(c.card);
+            }
+
+            // 3) Modo Truco o trato (2040 monedas)
+            const x = EXTRAS.find(e => e.id === "truco");
+            if (x) {
+                const own = ownsExtra(x.id);
+                const on = own && !!extraOn[x.id];
+                const c = eventCardBox(x.icon,
+                    en ? x.en : x.es,
+                    own ? "✓ " + t("shopOwned") : "🪙 " + x.price,
+                    D(x, "desc"));
+                c.card.classList.add("card-truco");
+                if (on) c.card.classList.add("extra-on");
+                if (on) {
+                    c.btn.textContent = t("shopEquipped");
+                    c.btn.disabled = true;
+                } else if (own) {
+                    c.btn.textContent = t("shopEquip");
+                    c.btn.addEventListener("click", () => setExtra(x.id, true));
+                } else {
+                    c.btn.textContent = t("shopBuy");
+                    if (coins < x.price) c.btn.classList.add("cant");
+                    c.btn.addEventListener("click", () => buyExtra(x));
+                }
+                shopEventGrid.appendChild(c.card);
+            }
         }
 
         function toggleShop() {
@@ -5577,6 +6038,8 @@
                 t("shopBgsTitle") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
             document.getElementById("shopExtrasTitle").textContent = t("shopExtrasTitle");
             document.getElementById("shopFxTitle").textContent = t("shopFxTitle");
+            if (shopEventTitle) shopEventTitle.textContent = t("shopEventTitle");
+            if (eventText) eventText.textContent = t("eventBar");
             btnLogros.textContent = t("btnLogros");
             document.getElementById("achTitle").textContent = t("achTitle");
             document.getElementById("achHint").textContent = t("achHint");
@@ -5645,6 +6108,7 @@
             }
 
             if (shopOpen) renderShop();
+            applyHalloween();   // temática y tienda de evento (solo en Halloween)
             updateRankWho();   // quién firma la puntuación también cambia de idioma
             // Durante la partida no se cambia nada: los botones están bloqueados
         }
@@ -6466,6 +6930,10 @@
             if (extraActive("php")) propias.push(PHP_WORDS);
             if (extraActive("andaluz")) propias.push(ANDALUZ_WORDS);
             if (extraActive("cubico")) propias.push(MINECRAFT_WORDS);
+            // Modo Truco o trato (evento de Halloween): palabras terroríficas
+            if (extraActive("truco")) {
+                propias.push(lang === "en" ? HALLOWEEN_WORDS.en : HALLOWEEN_WORDS.es);
+            }
 
             let pool;
             if (extraActive("caos")) {
@@ -7166,8 +7634,11 @@
                 const dy = Math.sin(ang) * pow + fx.rise * (.6 + Math.random() * .8);
                 const cada = fx.glyphEvery || 3;   // de vez en cuando, el emoji
                 const emoji = fx.glyph && i % cada === 0;
-                // Punto redondo... o cubo, si el efecto es de bloques (Explosión)
-                p.className = "fx-p" + (emoji ? "" : (fx.shape === "block" ? " block" : " dot"));
+                // Punto redondo... o cubo, si el efecto es de bloques (Explosión),
+                // o gota, si es de sangre (tienda de evento de Halloween)
+                p.className = "fx-p" + (emoji ? "" :
+                    (fx.shape === "block" ? " block" :
+                     fx.shape === "drop" ? " drop" : " dot"));
                 p.style.left = (a.x + Math.random() * 12 - 6) + "px";
                 p.style.top = (a.y + Math.random() * 12 - 6) + "px";
                 p.style.setProperty("--fx-dx", dx.toFixed(1) + "px");
@@ -7263,7 +7734,9 @@
                 (triple ? SCORE_BOOST : 1) *
                 (bgPower("franco") ? 2 : 1) *
                 // Ventaja "monedas dobles": solo durante su ventana
-                ((mode === "aventura" && performance.now() < advCoins) ? 2 : 1);
+                ((mode === "aventura" && performance.now() < advCoins) ? 2 : 1) *
+                // Modo Truco o trato (evento de Halloween): DOBLE de monedas
+                (extraActive("truco") ? 2 : 1);
             giveCoins(coinGain);
             showCoin(coinGain);
             // Modo Supervivencia: cada palabra disparada paga su experiencia
@@ -7301,6 +7774,7 @@
             prevLen = 0;
             misses = 0;
             wrongLetters = [];
+            ttXpLoss = 0;   // experiencia robada por fallos (Truco o trato)
             // El modo Aventura se juega contra un cronómetro propio: 50 s
             // En Supervivencia el reloj es el de la palabra apuntada
             timeLeft = mode === "aventura" ? ADV_TIME :
@@ -7388,6 +7862,9 @@
                 mode === "supervivencia" ? t("statusPlayS") :
                 (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
             if (azarTxt) status.textContent = azarTxt;
+            // Modo Truco o trato (evento de Halloween): se avisan sus reglas
+            // (doble de monedas, pero doble castigo por tecla fallada)
+            if (extraActive("truco")) status.textContent = t("statusTruco");
             // Aviso de la habilidad que aporta el fondo equipado
             // (en Aventura no actúa ningún fondo: el modo lleva el suyo)
             const poder = bgPowerDesc();
@@ -7547,8 +8024,11 @@
             rMsgEl.classList.toggle("record", newScoreRecord || newWordsRecord);
 
             // Experiencia ganada en esta partida y totales del perfil:
-            // se suman aquí porque es cuando se da por terminada la partida
-            const xpGain = completed * 10 + Math.floor(score / 10);
+            // se suman aquí porque es cuando se da por terminada la partida.
+            // El modo Truco o trato descuenta la experiencia que las teclas
+            // falladas se han ido tragando durante la partida (ttXpLoss)
+            const xpGain = Math.max(0,
+                completed * 10 + Math.floor(score / 10) - ttXpLoss);
             xp += xpGain;
             gamesPlayed += 1;
             wordsTotal += completed;
@@ -7610,6 +8090,13 @@
                     score = Math.max(0, score - 5);
                     shake();
                     status.textContent = indul ? t("statusGrace") : t("statusError");
+                    // Modo Truco o trato (evento de Halloween): cada tecla
+                    // fallada cuesta el DOBLE, en tiempo y en experiencia
+                    if (extraActive("truco")) {
+                        timeLeft = Math.max(0, timeLeft - TT_TIME_PENALTY);
+                        ttXpLoss += TT_XP_PENALTY;
+                        status.textContent = t("statusTrucoFail");
+                    }
                 }
             } else {
                 if (val.length > prevLen) hits += val.length - prevLen;
