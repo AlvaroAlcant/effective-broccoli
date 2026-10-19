@@ -786,6 +786,11 @@
         .stat.coins strong {
             color: var(--gold);
         }
+        .stat.candy strong,
+        .event-cash strong,
+        .points.candy {
+            color: #ff9f43;
+        }
         .stat.words strong {
             color: var(--pink);
         }
@@ -2328,6 +2333,8 @@
 
         <!-- Tienda de evento: arriba del todo mientras dura Halloween -->
         <h3 class="shop-sub event-sub hidden" id="shopEventTitle">🎃 Tienda de evento · Halloween</h3>
+        <!-- Saldo de la moneda del evento: los artículos de arriba se pagan en caramelos -->
+        <p class="shop-hint event-cash hidden" id="eventCash"><span id="eventCashTxt">🍬 Tus caramelos:</span> <strong id="shopCandy">0</strong></p>
         <div class="shop-grid event-grid hidden" id="shopEventGrid"></div>
 
         <h3 class="shop-sub" id="shopFontsTitle">🔤 Estilos de letra</h3>
@@ -2436,6 +2443,7 @@
             <li><span id="rkAcc">Precisión</span><strong id="rAcc">0%</strong></li>
             <li><span id="rkPpm">Palabras/min</span><strong id="rPpm">0</strong></li>
             <li><span id="rkCoins">Monedas</span><strong id="rCoins">0</strong></li>
+            <li class="hidden" id="rCandyRow"><span id="rkCandy">Caramelos</span><strong id="rCandy">0</strong></li>
             <li><span id="rkXp">Experiencia</span><strong id="rXp">0</strong></li>
             <li><span id="rkBestWords">Récord palabras</span><strong id="rBestWords">0</strong></li>
         </ul>
