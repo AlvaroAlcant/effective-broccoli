@@ -1293,12 +1293,13 @@
             transform: none;
         }
 
-        /* ---------- Tarjetas: resultados, tienda, ranking y perfil ---------- */
+        /* ---------- Tarjetas: resultados, tienda, ranking, perfil e inventario ---------- */
         .results,
         .shop,
         .ranking,
         .perfil,
-        .logros {
+        .logros,
+        .inventario {
             margin-top: 20px;
             padding: 20px;
             text-align: center;
@@ -1311,14 +1312,16 @@
         .shop.hidden,
         .ranking.hidden,
         .perfil.hidden,
-        .logros.hidden {
+        .logros.hidden,
+        .inventario.hidden {
             display: none;
         }
         .results h2,
         .shop-head h2,
         .ranking h2,
         .perfil h2,
-        .logros h2 {
+        .logros h2,
+        .inventario h2 {
             margin: 0 0 6px;
             font-size: 20px;
             color: var(--accent);
@@ -2009,6 +2012,95 @@
             100% { opacity: 0; transform: translate(-50%, -20px) scale(.95); }
         }
 
+        /* ---------- Inventario: todo lo comprado y todo lo ganado ----------
+           Cada tarjeta enseña el artículo (miniatura, nombre y categoría),
+           de dónde salió (comprado en la tienda o ganado con un logro) y si
+           está puesto en uso ahora mismo. El inventario se recalcula a partir
+           de lo que ya posees, así que nunca se queda desfasado. */
+        .inv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .inv-card {
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            transition: border-color .18s, transform .18s, box-shadow .18s;
+        }
+        .inv-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .3);
+        }
+        /* Artículo puesto en uso: borde de color y fondo algo más claro */
+        .inv-card.in-use {
+            border-color: var(--accent-2);
+            background-color: #0d2b27;
+            box-shadow: inset 0 0 0 1px rgba(20, 184, 166, .4);
+        }
+        .inv-thumb {
+            width: 100%;
+            height: 66px;
+            border-radius: 8px;
+            border: 1px solid var(--line-soft);
+            background-color: var(--bg);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .inv-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text);
+        }
+        .inv-cat {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+        }
+        /* De dónde salió el artículo: comprado (dorado) o logro (celeste) */
+        .inv-src {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            color: var(--muted);
+        }
+        .inv-src.src-shop {
+            color: var(--gold);
+            border-color: rgba(255, 215, 106, .5);
+        }
+        .inv-src.src-ach {
+            color: #7dd3fc;
+            border-color: rgba(125, 211, 252, .5);
+        }
+        .inv-use {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .inv-empty {
+            color: var(--muted);
+            font-size: 15px;
+            margin: 14px 0 0;
+        }
+        .inv-empty.hidden {
+            display: none;
+        }
+
         /* ---------- Estilos de letra comprados ---------- */
         body {
             --game-font: Consolas, "Courier New", monospace;
@@ -2182,7 +2274,8 @@
             .shop,
             .ranking,
             .perfil,
-            .logros {
+            .logros,
+            .inventario {
                 padding: 16px;
             }
             .pf-field input {
@@ -2341,6 +2434,7 @@
         <div class="sel-row sel-row-divider">
             <span class="sel-label" id="progLabel">🏆 Progreso</span>
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
+            <button class="chip-btn" id="btnInv">🎒 Inventario</button>
             <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
             <button class="chip-btn" id="btnLogros">🏅 Logros</button>
         </div>
@@ -2527,6 +2621,18 @@
         </div>
         <p class="shop-hint" id="achHint">Completa los retos para desbloquear recompensas. ¡El progreso se guarda en este dispositivo y se queda guardado aunque cierres la página!</p>
         <div class="ach-grid" id="achGrid"></div>
+    </section>
+
+    <!-- Inventario: todos los artículos comprados en la tienda y todos los
+         ganados con logros, con su procedencia y si están en uso -->
+    <section class="inventario hidden" id="inventario">
+        <div class="shop-head">
+            <h2 id="invTitle">🎒 Inventario</h2>
+            <span class="shop-coins">🎒 <span id="invCount">0</span></span>
+        </div>
+        <p class="shop-hint" id="invHint">Todos los artículos que posees: los comprados en la tienda y los ganados completando logros. ¡Se quedan guardados para siempre!</p>
+        <div class="inv-grid" id="invGrid"></div>
+        <p class="inv-empty hidden" id="invEmpty">Todavía no tienes ningún artículo. ¡Ve a la tienda o completa logros!</p>
     </section>
 
     <footer>
@@ -3400,6 +3506,18 @@
                 achToastEnd: " · Recompensa: ",
                 shopAchPrice: "🔒 Logro",
                 achNeed: "🔒 Requiere logro",
+                btnInv: "🎒 Inventario",
+                invTitle: "🎒 Inventario",
+                invHint: "Todos los artículos que posees: los comprados en la tienda y los ganados completando logros. ¡Se quedan guardados para siempre!",
+                invEmpty: "Todavía no tienes ningún artículo. ¡Ve a la tienda o completa logros!",
+                invFromShop: "Comprado en la tienda",
+                invFromAch: "Ganado con un logro",
+                invInUse: "✓ En uso",
+                invNotInUse: "Sin usar",
+                invCatFont: "🔤 Letra",
+                invCatBg: "🖼️ Fondo",
+                invCatExtra: "🔥 Extra",
+                invCatFx: "✨ Efecto",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
                 shopNoCandy: "¡No tienes suficientes caramelos! 🍬 (se ganan jugando)",
@@ -3601,6 +3719,18 @@
                 achToastEnd: " · Reward: ",
                 shopAchPrice: "🔒 Achievement",
                 achNeed: "🔒 Needs achievement",
+                btnInv: "🎒 Inventory",
+                invTitle: "🎒 Inventory",
+                invHint: "Every item you own: bought in the shop or earned with achievements. They stay forever!",
+                invEmpty: "You don't have any items yet. Go to the shop or complete achievements!",
+                invFromShop: "Bought in the shop",
+                invFromAch: "Earned with an achievement",
+                invInUse: "✓ Equipped",
+                invNotInUse: "Not in use",
+                invCatFont: "🔤 Font",
+                invCatBg: "🖼️ Background",
+                invCatExtra: "🔥 Extra",
+                invCatFx: "✨ Effect",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
                 shopNoMoney: "Not enough coins! 🪙",
                 shopNoCandy: "Not enough candies! 🍬 (earn them by playing)",
@@ -3775,6 +3905,7 @@
         let shopOpen = false;
         let rankOpen = false;      // panel de ranking abierto
         let logrosOpen = false;    // panel de logros abierto
+        let invOpen = false;       // panel de inventario abierto
         let achData = {};          // id → { p: progreso, done: completado }
         let srAt = 0;              // instante en que arrancó la ventana del logro Speedrunner
         let srWords = 0;           // palabras escritas dentro de esa ventana de 8 segundos
@@ -3913,6 +4044,11 @@
         const btnRanking = document.getElementById("btnRanking");
         const btnLogros = document.getElementById("btnLogros");
         const logros = document.getElementById("logros");
+        const btnInv = document.getElementById("btnInv");
+        const inventario = document.getElementById("inventario");
+        const invGrid = document.getElementById("invGrid");
+        const invEmpty = document.getElementById("invEmpty");
+        const invCount = document.getElementById("invCount");
         const achGrid = document.getElementById("achGrid");
         const achCount = document.getElementById("achCount");
         const btnRegister = document.getElementById("btnRegister");
@@ -5431,6 +5567,10 @@
                 localStorage.setItem("teclear.efectosTecleo", JSON.stringify(ownedFx));
                 localStorage.setItem("teclear.efectoTecleo", fxEquipped);
             } catch (e) { /* sin almacenamiento disponible */ }
+            // El inventario se recalcula con lo que posees: si está abierto,
+            // se vuelve a pintar para que se note al instante cada compra
+            // o cada recompensa de logro recién ganada
+            if (invOpen) renderInv();
         }
 
         // ---------- Caramelos: la moneda del evento de Halloween ----------
@@ -6385,6 +6525,146 @@
             btnLogros.classList.remove("active");
         }
 
+        // ---------- Inventario: todo lo comprado y todo lo ganado ----------
+        // El inventario no guarda datos aparte: se recalcula a partir de lo
+        // que ya posees (estilos, fondos, extras y efectos), así que nunca
+        // se queda desfasado. Para saber de dónde sale cada artículo se
+        // comprueba su definición: los marcados con "ach" son recompensas
+        // de logros y el resto se compran en la tienda. Se enseñan también
+        // los artículos del EVENTO de Halloween que ya poseas, aunque la
+        // tienda de evento esté cerrada: el inventario es para siempre.
+
+        // Devuelve la lista completa de artículos con su estado:
+        // { tipo, id, nombre, icono, img, enUso, deLogro }
+        function invItems() {
+            const en = uiLang() === "en";
+            const out = [];
+
+            FONT_STYLES.forEach(s => {
+                if (!owned.includes(s.id)) return;
+                out.push({
+                    tipo: "font", id: s.id,
+                    nombre: en ? s.en : s.es,
+                    icono: "🔤", img: "", previewFont: s.font, cls: s.cls,
+                    enUso: equipped === s.id,
+                    deLogro: !!s.ach
+                });
+            });
+
+            BACKGROUNDS.forEach(b => {
+                if (!ownedBgs.includes(b.id)) return;
+                out.push({
+                    tipo: "bg", id: b.id,
+                    nombre: en ? b.en : b.es,
+                    icono: b.icon || "🖼️", img: b.img,
+                    enUso: bg === b.id,
+                    deLogro: !!b.ach
+                });
+            });
+
+            EXTRAS.forEach(x => {
+                if (!ownedExtras.includes(x.id)) return;
+                out.push({
+                    tipo: "extra", id: x.id,
+                    nombre: en ? x.en : x.es,
+                    icono: x.icon, img: "",
+                    enUso: !!extraOn[x.id],
+                    deLogro: !!x.ach
+                });
+            });
+
+            TYPE_EFFECTS.forEach(f => {
+                if (!ownedFx.includes(f.id)) return;
+                out.push({
+                    tipo: "fx", id: f.id,
+                    nombre: en ? f.en : f.es,
+                    icono: f.icon, img: "",
+                    enUso: fxEquipped === f.id,
+                    deLogro: !!f.ach
+                });
+            });
+
+            return out;
+        }
+
+        // Dibuja el inventario completo en su panel
+        function renderInv() {
+            if (!invGrid) return;
+            const items = invItems();
+            invGrid.innerHTML = "";
+
+            items.forEach(it => {
+                const card = document.createElement("div");
+                card.className = "inv-card" + (it.enUso ? " in-use" : "");
+
+                // Miniatura: la foto del fondo, la letra «Aa» del estilo o
+                // el icono del extra/efecto
+                const thumb = document.createElement("div");
+                thumb.className = "inv-thumb " + (it.cls || "");
+                if (it.tipo === "bg" && it.img) {
+                    thumb.style.backgroundImage = 'url("' + it.img + '")';
+                } else if (it.tipo === "font") {
+                    thumb.classList.add("font-preview");
+                    thumb.style.fontFamily = it.previewFont;
+                    thumb.textContent = "Aa";
+                } else {
+                    thumb.textContent = it.icono;
+                }
+                card.appendChild(thumb);
+
+                const name = document.createElement("div");
+                name.className = "inv-name";
+                name.textContent = it.nombre;
+                card.appendChild(name);
+
+                const cat = document.createElement("div");
+                cat.className = "inv-cat";
+                cat.textContent = t("invCat" + it.tipo.charAt(0).toUpperCase() + it.tipo.slice(1));
+                card.appendChild(cat);
+
+                // De dónde salió: comprado en la tienda o ganado jugando
+                const src = document.createElement("div");
+                src.className = "inv-src " + (it.deLogro ? "src-ach" : "src-shop");
+                src.textContent = it.deLogro ? t("invFromAch") : t("invFromShop");
+                card.appendChild(src);
+
+                const use = document.createElement("div");
+                use.className = "inv-use";
+                use.textContent = it.enUso ? t("invInUse") : t("invNotInUse");
+                card.appendChild(use);
+
+                invGrid.appendChild(card);
+            });
+
+            // Contador del encabezado y aviso si no hay nada todavía
+            if (invCount) invCount.textContent = items.length;
+            if (invEmpty) invEmpty.classList.toggle("hidden", items.length > 0);
+        }
+
+        function toggleInv() {
+            if (state === "playing") return;
+            invOpen = !invOpen;
+            inventario.classList.toggle("hidden", !invOpen);
+            btnInv.classList.toggle("active", invOpen);
+            if (invOpen) {
+                renderInv();
+                // El panel queda por debajo: se lleva a la vista para que se note
+                if (inventario.scrollIntoView) {
+                    inventario.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+        }
+
+        btnInv.addEventListener("click", toggleInv);
+
+        // El panel de inventario se cierra al empezar una partida
+        function closeInvOnPlay() {
+            if (!invOpen) return;
+            invOpen = false;
+            inventario.classList.add("hidden");
+            btnInv.classList.remove("active");
+        }
+
         // ---------- Idioma y modo ----------
         function applyLang() {
             document.documentElement.lang = uiLang();
@@ -6460,6 +6740,10 @@
             document.getElementById("achTitle").textContent = t("achTitle");
             document.getElementById("achHint").textContent = t("achHint");
             if (logrosOpen) renderLogros();
+            btnInv.textContent = t("btnInv");
+            document.getElementById("invTitle").textContent = t("invTitle");
+            document.getElementById("invHint").textContent = t("invHint");
+            if (invOpen) renderInv();
             applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent =
                 mode === "supervivencia" ? t("rTitleLives") : t("rTitle");
@@ -8307,6 +8591,7 @@
                 btnShop.classList.remove("active");
             }
             closeLogrosOnPlay();   // el panel de logros también
+            closeInvOnPlay();      // el panel de inventario también
             closeAccountOnPlay();   // el panel de perfil también
 
             results.classList.add("hidden");
