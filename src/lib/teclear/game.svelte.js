@@ -6,6 +6,14 @@ import imgVeyonPlaceholder from '#lib/img/repuesto.svg';
 import imgVeyonFavicon from '#lib/img/repuesto-icono.svg';
 import imgLogo from '#lib/img/estesoTeclea.png';
 import { getSetting, setSetting } from './settings.js';
+
+// ---------- Fachada reactiva (runes) ----------
+// Estado del juego expuesto a los componentes: initTeclear() publica
+// aquí getters sobre sus variables $state, de modo que cualquier
+// componente Svelte puede leer G.score, G.coins… y re-renderizarse
+// solo cuando ese dato cambia. El objeto es plano a propósito: la
+// reactividad la proporcionan los getters sobre las variables $state.
+export const G = {};
         // TODO el juego vive dentro de este closure: las variables internas
         // (puntuación, palabras, teclas, contadores) no son accesibles desde la
         // consola del navegador, así que no se pueden manipular con comandos.
@@ -1225,45 +1233,45 @@ export function initTeclear() {
         };
 
         // ---------- Estado ----------
-        let lang = "es";         // es | en | mur (murciano)
+        let lang = $state("es");         // es | en | mur (murciano)
         // ---------- Caramelos y variante Encantada (evento de Halloween) ----------
-        let caramelos = 0;           // caramelos guardados (moneda del evento)
-        let candyRun = 0;            // cambio de caramelos durante la partida
-        let supVariant = "clasico";  // variante de Supervivencia: clasico | encantado
+        let caramelos = $state(0);           // caramelos guardados (moneda del evento)
+        let candyRun = $state(0);            // cambio de caramelos durante la partida
+        let supVariant = $state("clasico");  // variante de Supervivencia: clasico | encantado
         let encTyped = 0;            // letras acertadas en la partida Encantada
-        let mode = "type";       // type | guess | imagen | aventura | supervivencia
-        let bg = "dark";         // dark | franco | elprico | esteso
-        let veyon = getSetting("veyon");  // Modo Veyon: oculta logo y fondos «General»/«Ia» (activo por defecto)
+        let mode = $state("type");       // type | guess | imagen | aventura | supervivencia
+        let bg = $state("dark");         // dark | franco | elprico | esteso
+        let veyon = $state(getSetting("veyon"));  // Modo Veyon: oculta logo y fondos «General»/«Ia» (activo por defecto)
         // Imagen de repuesto que sustituye a las de «General» e «Ia»
         // mientras el Modo Veyon está activo (tienda y selector de fondos)
         const VEYON_PLACEHOLDER = imgVeyonPlaceholder;
         // Icono de la pestaña que sustituye al de estesoTeclea
         const VEYON_FAVICON = imgVeyonFavicon;
         const VEYON_BGS = ["franco", "esteso"];
-        let state = "idle";      // idle | playing | over
+        let state = $state("idle");      // idle | playing | over
         let word = "";
         let currentImg = null;   // imagen en pantalla (modo Imágenes)
         let mask = [];          // modo adivinar: "start" | "hidden" | "found"
         let wrongLetters = [];  // modo adivinar
         let misses = 0;         // modo adivinar
-        let score = 0;
-        let streak = 0;
+        let score = $state(0);
+        let streak = $state(0);
         let hits = 0;           // teclas / letras acertadas
         let errors = 0;         // fallos
-        let completed = 0;
+        let completed = $state(0);
         let prevLen = 0;        // longitud aceptada en el modo tecleo
         let timeLeft = GAME_TIME;
         let lastTick = 0;
         let timerId = null;
-        let best = 0;
-        let bestWords = 0;         // récord personal de palabras escritas
-        let coins = 0;             // monedas acumuladas
-        let coinsRun = 0;          // monedas ganadas en la partida actual
-        let owned = ["clasico"];   // estilos comprados
-        let equipped = "clasico";  // estilo activo
-        let ownedBgs = ["dark"];   // fondos desbloqueados (Franco se compra)
-        let ownedExtras = [];      // extras comprados (picante, caos…)
-        let extraOn = {            // extras activos en este momento
+        let best = $state(0);
+        let bestWords = $state(0);         // récord personal de palabras escritas
+        let coins = $state(0);             // monedas acumuladas
+        let coinsRun = $state(0);          // monedas ganadas en la partida actual
+        let owned = $state(["clasico"]);   // estilos comprados
+        let equipped = $state("clasico");  // estilo activo
+        let ownedBgs = $state(["dark"]);   // fondos desbloqueados (Franco se compra)
+        let ownedExtras = $state([]);      // extras comprados (picante, caos…)
+        let extraOn = $state({             // extras activos en este momento
             picante: false,
             caos: false,
             php: false,
@@ -1271,17 +1279,17 @@ export function initTeclear() {
             andaluz: false,
             azar: false,
             cubico: false
-        };
+        });
         // Extras elegidos SOLO para la partida en curso (Modo Al azar):
         // null = se usa lo que haya en extraOn
         let extraRun = null;
-        let ownedFx = [];          // efectos de tecleo comprados
-        let fxEquipped = "";       // efecto de tecleo en uso ("" = ninguno)
-        let shopOpen = false;
-        let rankOpen = false;      // panel de ranking abierto
-        let logrosOpen = false;    // panel de logros abierto
-        let invOpen = false;       // panel de inventario abierto
-        let achData = {};          // id → { p: progreso, done: completado }
+        let ownedFx = $state([]);          // efectos de tecleo comprados
+        let fxEquipped = $state("");       // efecto de tecleo en uso ("" = ninguno)
+        let shopOpen = $state(false);
+        let rankOpen = $state(false);      // panel de ranking abierto
+        let logrosOpen = $state(false);    // panel de logros abierto
+        let invOpen = $state(false);       // panel de inventario abierto
+        let achData = $state({});          // id → { p: progreso, done: completado }
         let srAt = 0;              // instante en que arrancó la ventana del logro Speedrunner
         let srWords = 0;           // palabras escritas dentro de esa ventana de 8 segundos
         let rankBusy = false;      // evita guardar la puntuación dos veces
@@ -1317,7 +1325,7 @@ export function initTeclear() {
             }
         };
         // Tabla destacada del panel: al guardar una marca se resalta la suya
-        let rankFocus = "normal";
+        let rankFocus = $state("normal");
         // Estado de cada tabla: filas válidas, conexión, aviso de alteración
         const rankData = {
             normal: { entries: [], online: false, loaded: false, tampered: false },
@@ -1358,13 +1366,53 @@ export function initTeclear() {
         let supStartAt = 0;        // instante en que empezó la partida (dificultad)
 
         // ---------- Perfil de usuario ----------
-        let accOpen = false;       // panel de perfil abierto
-        let accMode = "reg";       // reg | login  (formulario que se está mostrando)
+        let accOpen = $state(false);       // panel de perfil abierto
+        let accMode = $state("reg");       // reg | login  (formulario que se está mostrando)
         let accBusy = false;       // evita registrar/entrar dos veces a la vez
-        let accSession = null;     // { id, n } de la cuenta con sesión abierta
-        let xp = 0;                // experiencia acumulada en todas las partidas
-        let gamesPlayed = 0;       // partidas terminadas
-        let wordsTotal = 0;        // palabras escritas en total
+        let accSession = $state(null);     // { id, n } de la cuenta con sesión abierta
+        let xp = $state(0);                // experiencia acumulada en todas las partidas
+        let gamesPlayed = $state(0);       // partidas terminadas
+        let wordsTotal = $state(0);        // palabras escritas en total
+
+        // Publicación del estado para los componentes: cada propiedad de
+        // G es un getter que lee la variable $state correspondiente, así
+        // que Svelte re-renderiza solo cuando cambia ese dato.
+        Object.defineProperties(G, {
+            lang:        { get: () => lang },
+            mode:        { get: () => mode },
+            state:       { get: () => state },
+            supVariant:  { get: () => supVariant },
+            bg:          { get: () => bg },
+            veyon:       { get: () => veyon },
+            score:       { get: () => score },
+            streak:      { get: () => streak },
+            completed:   { get: () => completed },
+            best:        { get: () => best },
+            bestWords:   { get: () => bestWords },
+            coins:       { get: () => coins },
+            coinsRun:    { get: () => coinsRun },
+            caramelos:   { get: () => caramelos },
+            candyRun:    { get: () => candyRun },
+            owned:       { get: () => owned },
+            equipped:    { get: () => equipped },
+            ownedBgs:    { get: () => ownedBgs },
+            ownedExtras: { get: () => ownedExtras },
+            extraOn:     { get: () => extraOn },
+            ownedFx:     { get: () => ownedFx },
+            fxEquipped:  { get: () => fxEquipped },
+            achData:     { get: () => achData },
+            xp:          { get: () => xp },
+            gamesPlayed: { get: () => gamesPlayed },
+            wordsTotal:  { get: () => wordsTotal },
+            shopOpen:    { get: () => shopOpen },
+            rankOpen:    { get: () => rankOpen },
+            logrosOpen:  { get: () => logrosOpen },
+            invOpen:     { get: () => invOpen },
+            accOpen:     { get: () => accOpen },
+            accMode:     { get: () => accMode },
+            accSession:  { get: () => accSession },
+            rankFocus:   { get: () => rankFocus }
+        });
 
         // El murciano es un dialecto: los textos, récords y fechas se guardan
         // igual que en español, pero las palabras salen del diccionario murciano.
