@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minijuego: Teclea a la Velocidad</title>
+    <title>Teclear</title>
     <!-- Fuentes opcionales para la tienda (si no hay internet se usa la fuente de reserva) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -660,6 +660,11 @@
         }
         .sel-row:first-child {
             border-top: 0;
+        }
+        /* Corte visual entre la config de la partida (filas 1-3) y las
+           secciones auxiliares (Progreso y Cuenta) */
+        .sel-row-divider {
+            border-top: 1px solid var(--line);
         }
         .sel-label {
             flex: 0 0 132px;
@@ -2289,11 +2294,11 @@
         <div class="logo-wrap">
             <button type="button" class="logo-btn" id="logoBtn"
                     aria-label="Toca el logo y saldrá una frase distinta">
-                <img class="game-logo" src="estesoTeclea.png" alt="Logo de Teclea a la Velocidad">
+                <img class="game-logo" src="estesoTeclea.png" alt="Logo de Teclear">
             </button>
             <span class="logo-phrase" id="logoPhrase" aria-live="polite"></span>
         </div>
-        <h1 id="title">⌨️ Teclea a la Velocidad</h1>
+        <h1 id="title">⌨️ Teclear</h1>
         <p id="subtitle">Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!</p>
         <!-- Evento de Halloween: barra con la cuenta atrás hasta el final del evento -->
         <p class="event-bar hidden" id="eventBar">
@@ -2302,15 +2307,13 @@
         </p>
     </header>
 
+    <!-- ===================== Menú principal =====================
+         Ordenado de lo más importante a lo auxiliar:
+         1· Modo de juego · 2· Idioma · 3· Fondo · 4· Progreso · 5· Cuenta -->
     <div class="selectors">
+        <!-- 1 · Cómo se juega (con sus variantes al lado) -->
         <div class="sel-row">
-            <span class="sel-label" id="langLabel">Idioma / Language</span>
-            <button class="chip-btn active" id="btnEs">🇪🇸 Español</button>
-            <button class="chip-btn" id="btnEn">🇬🇧 English</button>
-            <button class="chip-btn" id="btnMurciano">🗣️ Murciano</button>
-        </div>
-        <div class="sel-row">
-            <span class="sel-label" id="modeLabel">Modo de juego</span>
+            <span class="sel-label" id="modeLabel">🎮 Modo de juego</span>
             <button class="chip-btn active" id="btnType">⌨️ Tecleo</button>
             <select id="modeSelect" class="chip-select" aria-label="Variante del modo Tecleo"></select>
             <button class="chip-btn" id="btnGuess">🧩 Adivinar</button>
@@ -2320,17 +2323,30 @@
             <!-- Variante de Supervivencia: Clásico / Encantado (solo en Halloween) -->
             <select id="supSelect" class="chip-select" aria-label="Variante de Supervivencia"></select>
         </div>
+        <!-- 2 · Idioma de la interfaz y de las palabras -->
         <div class="sel-row">
-            <span class="sel-label" id="bgLabel">Fondo de pantalla</span>
+            <span class="sel-label" id="langLabel">🌐 Idioma / Language</span>
+            <button class="chip-btn active" id="btnEs">🇪🇸 Español</button>
+            <button class="chip-btn" id="btnEn">🇬🇧 English</button>
+            <button class="chip-btn" id="btnMurciano">🗣️ Murciano</button>
+        </div>
+        <!-- 3 · Apariencia (los fondos comprados se añaden en #bgExtra) -->
+        <div class="sel-row">
+            <span class="sel-label" id="bgLabel">🖼️ Fondo de pantalla</span>
             <button class="chip-btn active" id="btnBgDark">🌙 Oscuro</button>
             <button class="chip-btn" id="btnBgFranco">🖼️ General</button>
             <span id="bgExtra"></span>
         </div>
-        <div class="sel-row">
-            <span class="sel-label" id="actLabel">Acciones</span>
+        <!-- 4 · Dónde mirar tu progreso y qué desbloquear -->
+        <div class="sel-row sel-row-divider">
+            <span class="sel-label" id="progLabel">🏆 Progreso</span>
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
             <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
             <button class="chip-btn" id="btnLogros">🏅 Logros</button>
+        </div>
+        <!-- 5 · Cuenta de jugador y herramientas del profe -->
+        <div class="sel-row">
+            <span class="sel-label" id="userLabel">👤 Cuenta y ajustes</span>
             <button class="chip-btn" id="btnRegister">👤 Registrar</button>
             <button class="chip-btn" id="btnLogin">🔑 Iniciar sesión</button>
             <button class="chip-btn" id="btnVeyon">🖥️ Modo Veyon</button>
@@ -2514,7 +2530,7 @@
     </section>
 
     <footer>
-        <p id="footer">&copy; 2026 Minijuegos Web · Archivo: teclear.html</p>
+        <p id="footer">&copy; 2026 Minijuegos Web · Juego: Teclear</p>
     </footer>
 
     <script>
@@ -3301,24 +3317,25 @@
         // ---------- Textos de la interfaz por idioma ----------
         const I18N = {
             es: {
-                docTitle: "Minijuego: Teclea a la Velocidad",
-                title: "⌨️ Teclea a la Velocidad",
+                docTitle: "Teclear",
+                title: "⌨️ Teclear",
                 subtitleT: "Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!",
                 subtitleG: "Adivina la palabra con letras ocultas: escribe solo una letra cada vez. ¡Los fallos quitan vidas!",
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
                 subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
                 subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada cierto número de palabras paras a elegir una ventaja. ¡El reloj acelera y las ventajas salen cada vez más lejos!",
                 subtitleS: "Supervivencia: la pantalla se agranda y las palabras NACEN ARRIBA DEL TODO y van bajando poco a poco. ¡Dispara todas sus letras antes de que lleguen al fondo o pierdes una vida! Van " + SUP_LIVES + " vidas: sin ellas se acabó la partida. Empiezas con una sola palabra y todo va muy despacio: con el tiempo las palabras caen cada vez más deprisa y van apareciendo más a la vez. Cada palabra te da experiencia y monedas.",
-                modeLabel: "Modo de juego",
+                modeLabel: "🎮 Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
                 btnImagen: "🖼️ Imágenes",
                 btnAventura: "🗺️ Aventura",
                 btnSup: "🛡️ Supervivencia",
                 btnMurciano: "🗣️ Murciano",
-                bgLabel: "Fondo de pantalla",
+                bgLabel: "🖼️ Fondo de pantalla",
                 bgOffAventura: "no se usa en Aventura (el modo lleva el suyo)",
-                actLabel: "Acciones",
+                progLabel: "🏆 Progreso",
+                userLabel: "👤 Cuenta y ajustes",
                 bgDark: "🌙 Oscuro",
                 bgFranco: "🖼️ General",
                 veyon: "🖥️ Modo Veyon",
@@ -3497,27 +3514,28 @@
                 accRankNo: "🔒 Para guardar en el ranking necesitas un perfil: pulsa «👤 Registrar».",
                 accNoSession: "🔒 No has iniciado sesión: no hay nada que guardar todavía.",
                 accXpGain: "Experiencia ganada",
-                footer: "&copy; 2026 Minijuegos Web · Archivo: teclear.html"
+                footer: "&copy; 2026 Minijuegos Web · Game: Teclear"
             },
             en: {
-                docTitle: "Typing Game: Speed Typing",
-                title: "⌨️ Speed Typing Challenge",
+                docTitle: "Teclear",
+                title: "⌨️ Teclear",
                 subtitleT: "Type every word before time runs out. Wrong keys break your streak!",
                 subtitleG: "Guess the word with hidden letters: type only one letter at a time. Misses cost lives!",
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
                 subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
                 subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every few words you stop to pick an advantage. The clock speeds up and advantages come further apart!",
                 subtitleS: "Survival: the screen grows and words are born at the very top and keep sinking down. Shoot all its letters before it reaches the bottom or you lose a life! You have " + SUP_LIVES + " lives: no lives, no game. You start with a single word and everything is very slow: over time words sink faster and more of them appear at once. Every word gives you experience and coins.",
-                modeLabel: "Game mode",
+                modeLabel: "🎮 Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
                 btnImagen: "🖼️ Pictures",
                 btnAventura: "🗺️ Adventure",
                 btnSup: "🛡️ Survival",
                 btnMurciano: "🗣️ Murcia dialect",
-                bgLabel: "Background",
+                bgLabel: "🖼️ Background",
                 bgOffAventura: "not used in Adventure (that mode has its own)",
-                actLabel: "Actions",
+                progLabel: "🏆 Progress",
+                userLabel: "👤 Account & settings",
                 bgDark: "🌙 Dark",
                 bgFranco: "🖼️ General",
                 veyon: "🖥️ Veyon mode",
@@ -3697,7 +3715,7 @@
                 accRankNo: "🔒 You need a profile to save to the leaderboard: press “👤 Register”.",
                 accNoSession: "🔒 You are not logged in: there is nothing to save yet.",
                 accXpGain: "Experience earned",
-                footer: "&copy; 2026 Web Mini-Games · File: teclear.html"
+                footer: "&copy; 2026 Web Mini-Games · Game: Teclear"
             }
         };
 
@@ -6388,7 +6406,8 @@
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent =
                 t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
-            document.getElementById("actLabel").textContent = t("actLabel");
+            document.getElementById("progLabel").textContent = t("progLabel");
+            document.getElementById("userLabel").textContent = t("userLabel");
             if (modeSelect) modeSelect.setAttribute("aria-label", t("modeSelectAria"));
             btnBgDark.textContent = t("bgDark");
             setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
