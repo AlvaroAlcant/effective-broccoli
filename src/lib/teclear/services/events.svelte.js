@@ -9,7 +9,7 @@ import { EVENTS, eventOn, eventEndDate } from '../data/events.js';
 export class EventService {
     deps = { isAdmin: () => false };
     timer = null;      // intervalo de la cuenta atrás
-    testId = null;     // override de admin: fuerza un evento fuera de fecha
+    testId = $state(null);   // override de admin: fuerza un evento fuera de fecha
 
     bind(d) { Object.assign(this.deps, d); }
 

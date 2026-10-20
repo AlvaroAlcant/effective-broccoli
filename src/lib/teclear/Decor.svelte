@@ -1,3 +1,10 @@
+<script>
+    import { onMount } from 'svelte';
+    import { initSpiders } from './spiders.js';
+    // Las arañas de los hilos se pueden agarrar y tensar; al soltarlas
+    // oscilan con físicas reales hasta volver a su sitio
+    onMount(() => initSpiders(document.getElementById('hwnDecor')));
+</script>
     <!-- Decoración de Halloween: telarañas en las esquinas, arañas
          colgando de un hilo y calabazas en la parte inferior. Oculta por
          defecto: solo la muestra body.halloween. Va fija y POR DETRÁS de

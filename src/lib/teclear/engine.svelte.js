@@ -27,10 +27,10 @@ import {
 } from './data/words.js';
 import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from './data/catalog.js';
 import { TT_TIME_PENALTY, TT_XP_PENALTY } from './data/events.js';
-import { events } from './services/events.js';
+import { events } from './services/events.svelte.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
 import { I18N } from './data/i18n.js';
-import { VEYON_PLACEHOLDER, VEYON_FAVICON, VEYON_BGS } from './data/veyon.js';
+import { VEYON_PLACEHOLDER, VEYON_FAVICON } from './data/veyon.js';
 
 const LOGO_PHRASES = [
             "arreglo", "IA", "veyon", "va a botarlo", "yo soy la IA", "enseñe su array"
@@ -140,81 +140,20 @@ export class GameEngine {
                 return modes.aventura.chips();
             }
 
-    get shopFonts() { return FONT_STYLES.map(st => ({
-                id: st.id, cls: st.cls, font: st.font,
-                name: uiLang() === "es" ? st.es : st.en,
-                equipped: S.equipped === st.id,
-                own: S.owned.includes(st.id), ach: !!st.ach,
-                price: st.price, cant: !acc.esAdmin() && S.coins < st.price
-            })); }
+    // Las cuatro secciones de la tienda salen del registro de tipos de
+    // economy.js — añadir una categoría es darla de alta allí y repetir
+    // la sección en Shop.svelte
+    get shopFonts() { return eco.shopCards("font"); }
 
-    get shopBgs() { return BACKGROUNDS
-                .filter(b => !b.event || (b.event !== events.activeId() && S.ownedBgs.includes(b.id)))
-                .map(b => ({
-                    id: b.id, icon: b.icon || "🌙",
-                    img: eco.veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
-                    name: uiLang() === "es" ? b.es : b.en,
-                    desc: uiLang() === "es" ? b.descEs : b.descEn,
-                    equipped: S.bg === b.id,
-                    own: S.ownedBgs.includes(b.id), ach: !!b.ach,
-                    price: b.price, cant: !acc.esAdmin() && S.coins < b.price
-                })); }
+    get shopBgs() { return eco.shopCards("bg"); }
 
-    get shopExtras() { return EXTRAS
-                .filter(x => !x.event || (x.event !== events.activeId() && eco.ownsExtra(x.id)))
-                .map(x => ({
-                    id: x.id, icon: x.icon,
-                    name: uiLang() === "es" ? x.es : x.en,
-                    desc: uiLang() === "es" ? x.descEs : x.descEn,
-                    on: eco.ownsExtra(x.id) && !!S.extraOn[x.id],
-                    own: eco.ownsExtra(x.id),
-                    price: x.price, cant: !acc.esAdmin() && S.coins < x.price
-                })); }
+    get shopExtras() { return eco.shopCards("extra"); }
 
-    get shopFxs() { return TYPE_EFFECTS
-                .filter(f => !f.event || (f.event !== events.activeId() && eco.ownsFx(f.id)))
-                .map(f => ({
-                    id: f.id, icon: f.icon, art: f.art, color: f.color,
-                    name: uiLang() === "es" ? f.es : f.en,
-                    desc: uiLang() === "es" ? f.descEs : f.descEn,
-                    on: eco.ownsFx(f.id) && S.fxEquipped === f.id,
-                    own: eco.ownsFx(f.id), ach: !!f.ach,
-                    price: f.price, cant: !acc.esAdmin() && S.coins < f.price
-                })); }
+    get shopFxs() { return eco.shopCards("fx"); }
 
-    get shopEvents() {
-                // La tienda de evento lista lo que el registro del evento
-                // activo declara (data/events.js): fondo + efecto + extra
-                const def = events.active;
-                if (!def || !def.shopItems) return [];
-                const en = uiLang() === "en";
-                const out = [];
-                const b = BACKGROUNDS.find(x => x.id === def.shopItems.bg);
-                if (b) out.push({
-                    kind: "bg", id: b.id, icon: b.icon || "📼",
-                    name: en ? b.en : b.es, desc: en ? b.descEn : b.descEs,
-                    img: b.img, equipped: S.bg === b.id,
-                    own: S.ownedBgs.includes(b.id), price: b.price,
-                    cant: !acc.esAdmin() && S.caramelos < b.price
-                });
-                const f = eco.fxById(def.shopItems.fx);
-                if (f) out.push({
-                    kind: "fx", id: f.id, icon: f.icon, color: f.color,
-                    name: en ? f.en : f.es, desc: en ? f.descEn : f.descEs,
-                    on: eco.ownsFx(f.id) && S.fxEquipped === f.id,
-                    own: eco.ownsFx(f.id), price: f.price,
-                    cant: !acc.esAdmin() && S.caramelos < f.price
-                });
-                const x = EXTRAS.find(e => e.id === def.shopItems.extra);
-                if (x) out.push({
-                    kind: "extra", id: x.id, icon: x.icon,
-                    name: en ? x.en : x.es, desc: en ? x.descEn : x.descEs,
-                    on: eco.ownsExtra(x.id) && !!S.extraOn[x.id],
-                    own: eco.ownsExtra(x.id), price: x.price,
-                    cant: !acc.esAdmin() && S.caramelos < x.price
-                });
-                return out;
-            }
+    // La tienda de evento lista lo que declara el registro del evento
+    // activo (data/events.js): fondo + efecto + extra, en caramelos
+    get shopEvents() { return eco.eventCards(); }
 
     get invSections() {
                 const items = eco.invItems();
@@ -1012,6 +951,67 @@ export class GameEngine {
             });
         }
 
+    // ---------- Depuración (solo administradores) ----------
+    // Pone un campo de S a un valor. Los campos con efectos secundarios
+    // (fondo, fuente, efecto, extra, veyon, modo) pasan por sus setters
+    // normales para no dejar la UI a medias; el resto se escribe directo.
+    dbgSet(key, val) {
+            if (!acc.esAdmin()) return;
+            // «extra.<id>» activa o apaga un extra concreto del menú
+            if (key.startsWith("extra.")) {
+                const id = key.slice(6);
+                if (!S.ownedExtras.includes(id)) S.ownedExtras.push(id);
+                eco.setExtra(id, !!val);
+                return;
+            }
+            switch (key) {
+                case "bg":
+                    // Deja constancia del fondo aunque no lo tuviéramos
+                    if (!S.ownedBgs.includes(val)) S.ownedBgs.push(val);
+                    this.setBg(val);
+                    return;
+                case "equipped":
+                    if (!S.owned.includes(val)) S.owned.push(val);
+                    eco.setEquipped(val);
+                    return;
+                case "fxEquipped":
+                    if (val && !S.ownedFx.includes(val)) S.ownedFx.push(val);
+                    eco.setFx(val);
+                    return;
+                case "veyon":
+                    this.setVeyon(!!val);
+                    return;
+                case "mode":
+                    this.setMode(val);
+                    return;
+                case "state":
+                    if (val === "playing" && S.state !== "playing") this.startGame();
+                    else if (S.state === "playing") this.endGame();
+                    return;
+                default:
+                    S[key] = val;
+            }
+        }
+
+    // Suma (o resta) un número a un campo numérico de S
+    dbgAdd(key, n) {
+            if (!acc.esAdmin()) return;
+            S[key] = (S[key] || 0) + n;
+            if (key === "caramelos") eco.saveCandy();
+        }
+
+    // Concede TODOS los artículos del catálogo — la forma explícita de
+    // "quiero probarlo todo" que sustituye al antiguo dinero infinito
+    dbgGrantAll() {
+            if (!acc.esAdmin()) return;
+            FONT_STYLES.forEach(s => { if (!S.owned.includes(s.id)) S.owned.push(s.id); });
+            BACKGROUNDS.forEach(b => { if (!S.ownedBgs.includes(b.id)) S.ownedBgs.push(b.id); });
+            EXTRAS.forEach(x => { if (!S.ownedExtras.includes(x.id)) S.ownedExtras.push(x.id); });
+            TYPE_EFFECTS.forEach(f => { if (!S.ownedFx.includes(f.id)) S.ownedFx.push(f.id); });
+            eco.saveShop();
+            eco.applyExtras();
+        }
+
     // ---------- Acciones para la vista (engine.actions.x) ----------
     actions = {
             setLang: this.setLang.bind(this),
@@ -1030,10 +1030,7 @@ export class GameEngine {
             accSwitchMode: acc.accSwitchMode,
             accSave: acc.accSaveProfile,
             accOut: () => acc.doLogout(),
-            buyStyle: id => eco.buyStyle(FONT_STYLES.find(s => s.id === id)),
-            buyBg: id => eco.buyBg(BACKGROUNDS.find(b => b.id === id)),
-            buyExtra: id => eco.buyExtra(EXTRAS.find(x => x.id === id)),
-            buyFx: id => eco.buyFx(eco.fxById(id)),
+            buyItem: (kind, id) => eco.buyItem(kind, eco.findItem(kind, id)),
             startGame: this.startGame.bind(this),
             saveScore: this.saveScore.bind(this),
             choosePerk: p => modes.aventura.choosePerk(p),
@@ -1045,7 +1042,14 @@ export class GameEngine {
             verifyInput: acc.verifyInputText,
             verifyPaste: acc.verifyPaste,
             picError: () => { S.picErr = true; },
-            showLogoPhrase: this.showLogoPhrase.bind(this)
+            showLogoPhrase: this.showLogoPhrase.bind(this),
+            // Depuración de administradores (panel visual, todo filtrado
+            // por esAdmin dentro de cada operación)
+            dbgToggle: () => { if (acc.esAdmin()) S.debugOpen = !S.debugOpen; },
+            dbgSet: this.dbgSet.bind(this),
+            dbgAdd: this.dbgAdd.bind(this),
+            dbgGrantAll: () => { if (acc.esAdmin()) this.dbgGrantAll(); },
+            dbgEvent: id => { if (!acc.esAdmin()) return; id ? events.test(id) : events.clearTest(); },
         };
 
     // ---------- Montaje: elementos, servicios, listeners e init ----------

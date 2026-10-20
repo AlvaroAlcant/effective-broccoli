@@ -6,6 +6,34 @@
 		%sveltekit.head%
 	</head>
 	<body>
+		<script>
+			// Tema antes del primer paint: si no, se ve el parpadeo del
+			// aspecto normal al de Veyon/Halloween al cargar la página.
+			// (Espejo de lo que luego aplican engine.mount() y EventService)
+			(function () {
+				try {
+					var b = document.body.classList;
+					var aj = JSON.parse(localStorage.getItem("teclear.ajustes") || "{}");
+					if (aj.veyon) b.add("veyon-on");
+					var ahora = new Date();
+					var y = ahora.getFullYear();
+					var hal = ahora >= new Date(y, 9, 8) && ahora < new Date(y, 10, 3, 12);
+					// La prueba de evento solo la honra un administrador
+					var ev = localStorage.getItem("teclear.testEvent");
+					var nombre = (localStorage.getItem("teclear.nombre") || "").toLowerCase();
+					var admin = nombre === "alvaro" || nombre === "joshmiquel";
+					if (admin && ev) hal = ev === "halloween";
+					if (hal) b.add("halloween");
+					var bg = localStorage.getItem("teclear.fondo");
+					if (bg) b.add("bg-" + bg);
+					// Fuente equipada: las clases son ff-<id> salvo
+					// «script» (ff-manuscrito) y el logro (ff-shinyy)
+					var est = localStorage.getItem("teclear.estilo") || "clasico";
+					var cls = { script: "ff-manuscrito", shinyy: "ff-shinyy" }[est] || "ff-" + est;
+					b.add(cls);
+				} catch (e) { /* sin almacenamiento disponible */ }
+			})();
+		</script>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

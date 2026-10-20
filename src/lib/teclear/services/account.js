@@ -20,11 +20,11 @@ import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from '../data/catalog.
 import { ACHIEVEMENTS } from '../data/achievements.js';
 
 // ---------- Roles de usuario ----------
-// Alvaro tiene el rol de ADMINISTRADOR: dinero infinito para poder
-// probarlo todo. El rol se reconoce por el nombre de la cuenta o por
-// el nombre del jugador, normalizados con nameKey() (sin acentos y en
-// minúsculas), así que «Alvaro», «ÁLVARO» o «alvaro» valen igual.
-const ADMIN_NAMES = ["alvaro"];
+// Rol de ADMINISTRADOR: acceso al panel de depuración visual y a las
+// pruebas de eventos. El rol se reconoce por el nombre de la cuenta o
+// por el nombre del jugador, normalizados con nameKey() (sin acentos y
+// en minúsculas), así que «Alvaro», «ÁLVARO» o «alvaro» valen igual.
+const ADMIN_NAMES = ["alvaro", "joshmiquel"];
 
 // Código aleatorio de 4 caracteres que hay que escribir con teclas REALES
 const VERIFY_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";

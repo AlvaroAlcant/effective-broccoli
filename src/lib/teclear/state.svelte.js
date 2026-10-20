@@ -62,6 +62,7 @@ export class GameState {
     accSession = $state(null);
     accMsgTxt = $state("");
     accMsgWarn = $state(false);
+    debugOpen = $state(false);
     statusTxt = $state("");
     startTxt = $state("");
     shopMsgTxt = $state("");

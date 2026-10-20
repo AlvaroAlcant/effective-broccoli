@@ -45,9 +45,7 @@
                         <button class="chip-btn shop-btn" disabled={it.own}
                                 class:cant={!it.own && it.cant}
                                 title={it.own ? engine.t('shopInInvHint') : null}
-                                onclick={() => it.kind === 'bg' ? engine.actions.buyBg(it.id)
-                                    : it.kind === 'fx' ? engine.actions.buyFx(it.id)
-                                    : engine.actions.buyExtra(it.id)}>
+                                onclick={() => engine.actions.buyItem(it.kind, it.id)}>
                             {it.own ? engine.t('shopInInv') : engine.t('shopBuy')}
                         </button>
                     </div>
@@ -64,7 +62,7 @@
                     <div class="shop-price">{priceTxt(st)}</div>
                     <button class="chip-btn shop-btn" disabled={btnDis(st)}
                             class:cant={btnCant(st)} title={btnTitle(st)}
-                            onclick={() => engine.actions.buyStyle(st.id)}>{btnTxt(st)}</button>
+                            onclick={() => engine.actions.buyItem('font', st.id)}>{btnTxt(st)}</button>
                 </div>
             {/each}
         </div>
@@ -83,7 +81,7 @@
                     <div class="shop-desc">{b.desc}</div>
                     <button class="chip-btn shop-btn" disabled={btnDis(b)}
                             class:cant={btnCant(b)} title={btnTitle(b)}
-                            onclick={() => engine.actions.buyBg(b.id)}>{btnTxt(b)}</button>
+                            onclick={() => engine.actions.buyItem('bg', b.id)}>{btnTxt(b)}</button>
                 </div>
             {/each}
         </div>
@@ -98,7 +96,7 @@
                     <div class="shop-desc">{x.desc}</div>
                     <button class="chip-btn shop-btn" disabled={btnDis(x)}
                             class:cant={!x.own && x.cant} title={btnTitle(x)}
-                            onclick={() => engine.actions.buyExtra(x.id)}>{btnTxt(x)}</button>
+                            onclick={() => engine.actions.buyItem('extra', x.id)}>{btnTxt(x)}</button>
                 </div>
             {/each}
         </div>
@@ -116,7 +114,7 @@
                     <div class="shop-desc">{f.desc}</div>
                     <button class="chip-btn shop-btn" disabled={btnDis(f)}
                             class:cant={btnCant(f)} title={btnTitle(f)}
-                            onclick={() => engine.actions.buyFx(f.id)}>{btnTxt(f)}</button>
+                            onclick={() => engine.actions.buyItem('fx', f.id)}>{btnTxt(f)}</button>
                 </div>
             {/each}
         </div>

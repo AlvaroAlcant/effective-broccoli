@@ -12,6 +12,7 @@
 	import Ranking from '#lib/teclear/Ranking.svelte';
 	import Logros from '#lib/teclear/Logros.svelte';
 	import Inventario from '#lib/teclear/Inventario.svelte';
+	import Debug from '#lib/teclear/Debug.svelte';
 	import Footer from '#lib/teclear/Footer.svelte';
 	import './index.css';
 
@@ -40,4 +41,5 @@
 <Ranking />
 <Logros />
 <Inventario />
+<Debug />
 <Footer />

@@ -6,8 +6,20 @@
 import { S } from '../state.svelte.js';
 import { storage } from '../storage.js';
 import { uiLang, t } from './i18n.js';
+import { events } from './events.svelte.js';
 import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from '../data/catalog.js';
 import { VEYON_BGS, VEYON_PLACEHOLDER } from '../data/veyon.js';
+
+// ---------- Registro de tipos de artículo ----------
+// Cada tipo declara su lista, el campo de S donde viven los poseídos y
+// los textos/operaciones propias. Añadir una categoría nueva a la tienda
+// = una entrada aquí + sus datos en catalog.js.
+const KINDS = {
+    font:  { list: FONT_STYLES,  owned: "owned",       icon: "🔤", buyMsg: "shopBought" },
+    bg:    { list: BACKGROUNDS,  owned: "ownedBgs",    icon: "🖼️", buyMsg: "shopBoughtBg" },
+    extra: { list: EXTRAS,       owned: "ownedExtras", icon: "",    buyMsg: "shopBought" },
+    fx:    { list: TYPE_EFFECTS, owned: "ownedFx",     icon: "",    buyMsg: "shopBoughtFx" },
+};
 
 export class EconomyService {
     // Dependencias inyectadas
@@ -102,15 +114,14 @@ export class EconomyService {
         storage.set("teclear.caramelos", String(S.caramelos));
     }
 
-    // Cómo se pintan las cantidades en pantalla: los administradores ven ∞
-    // porque pueden comprar lo que quieran sin gastar. Su saldo real no se
-    // toca: solo se oculta el número.
+    // Cómo se pintan las cantidades en pantalla (los admins juegan con
+    // saldo real: el panel de depuración es su forma de concederse)
     fmtCoins(n) {
-        return this.isAdmin() ? "∞" : String(n);
+        return String(n);
     }
 
     fmtCandy(n) {
-        return this.isAdmin() ? "∞" : String(n);
+        return String(n);
     }
 
     // Suma (o resta) caramelos. El contador nunca baja de cero: fallar
@@ -126,15 +137,14 @@ export class EconomyService {
 
     // Cobra el precio de un artículo de la tienda. Los artículos del
     // EVENTO se pagan en CARAMELOS (con la misma cifra que costaban en
-    // monedas); el resto, en monedas. El Administrador no gasta.
+    // monedas); el resto, en monedas.
     cobra(item) {
         const ev = !!item.event;
         const saldo = ev ? S.caramelos : S.coins;
-        if (!this.isAdmin() && saldo < item.price) {
+        if (saldo < item.price) {
             S.shopMsgTxt = ev ? t("shopNoCandy") : t("shopNoMoney");
             return false;
         }
-        if (this.isAdmin()) return true;
         if (ev) {
             S.caramelos = Math.max(0, S.caramelos - item.price);   // se pagan en caramelos
             this.saveCandy();
@@ -158,6 +168,115 @@ export class EconomyService {
         this.saveShop();
     }
 
+    // ---------- Artículos: operaciones genéricas por tipo ----------
+    // Busca el artículo en la lista de su tipo (lo usan las acciones)
+    findItem(kind, id) {
+        return KINDS[kind].list.find(it => it.id === id);
+    }
+
+    // ¿El artículo está comprado? El campo donde vive lo dice el registro
+    owns(kind, id) {
+        return S[KINDS[kind].owned].includes(id);
+    }
+
+    // ¿El artículo está en uso ahora mismo?
+    itemOn(kind, id) {
+        if (kind === "font") return S.equipped === id;
+        if (kind === "bg") return S.bg === id;
+        if (kind === "extra") return !!S.extraOn[id];
+        return S.fxEquipped === id;   // fx
+    }
+
+    // Pone el artículo en uso (las restricciones las sabe cada dominio)
+    useItem(kind, id) {
+        if (kind === "font") this.setEquipped(id);
+        else if (kind === "bg") this.setBgEquipped(id);
+        else if (kind === "extra") this.setExtra(id, true);
+        else this.setFx(id);
+    }
+
+    // Lo apaga — solo extras y efectos se apagan; fuente y fondo siempre
+    // hay alguno puesto, así que devuelven false (sin botón de apagar)
+    offItem(kind, id) {
+        if (kind === "extra") { this.setExtra(id, false); return true; }
+        if (kind === "fx") { this.setFx(""); return true; }
+        return false;
+    }
+
+    // Compra genérica de cualquier artículo de la tienda: ya lo tienes,
+    // viene de un logro o se cobra (evento → caramelos; resto → monedas).
+    // La compra solo DESBLOQUEA: ponerse/apagar se hace en el Inventario.
+    buyItem(kind, item) {
+        if (!item || this.owns(kind, item.id)) return;
+        if (item.ach) {
+            // Los artículos de logro no se compran (los efectos lo hacían
+            // en silencio; el mensaje aclara por qué no hay botón)
+            S.shopMsgTxt = t("achNeed");
+            return;
+        }
+        if (!this.cobra(item)) return;
+        S[KINDS[kind].owned].push(item.id);
+        this.saveShop();
+        if (kind === "extra") this.applyExtras();   // entra en el menú de variantes
+        S.shopMsgTxt = t(item.msgBuy || KINDS[kind].buyMsg);
+    }
+
+    // Tarjetas de una sección de la tienda, con su estado actual
+    shopCards(kind) {
+        const K = KINDS[kind];
+        const en = uiLang() === "en";
+        return K.list
+            .filter(it => !it.event || (it.event !== events.activeId() && this.owns(kind, it.id)))
+            .map(it => ({
+                kind, id: it.id,
+                cls: it.cls, font: it.font, icon: it.icon || K.icon,
+                // Con el Modo Veyon, los fondos vetados enseñan la imagen de repuesto
+                img: kind === "bg" && this.veyonHiddenBg(it.id) ? VEYON_PLACEHOLDER : it.img,
+                art: it.art, color: it.color,
+                name: en ? it.en : it.es,
+                desc: en ? it.descEn : it.descEs,
+                equipped: this.itemOn(kind, it.id),
+                on: this.itemOn(kind, it.id),
+                own: this.owns(kind, it.id), ach: !!it.ach,
+                price: it.price, cant: S.coins < it.price
+            }));
+    }
+
+    // Las tarjetas de la tienda de evento (se pagan en caramelos):
+    // los ids los trae el registro del evento activo
+    eventCards() {
+        const def = events.active;
+        if (!def || !def.shopItems) return [];
+        const en = uiLang() === "en";
+        const { bg, fx, extra } = def.shopItems;
+        const out = [];
+        const b = BACKGROUNDS.find(x => x.id === bg);
+        if (b) out.push({
+            kind: "bg", id: b.id, icon: b.icon || "📼",
+            name: en ? b.en : b.es, desc: en ? b.descEn : b.descEs,
+            img: b.img, equipped: S.bg === b.id,
+            own: this.owns("bg", b.id), price: b.price,
+            cant: S.caramelos < b.price
+        });
+        const f = this.fxById(fx);
+        if (f) out.push({
+            kind: "fx", id: f.id, icon: f.icon, color: f.color,
+            name: en ? f.en : f.es, desc: en ? f.descEn : f.descEs,
+            on: this.itemOn("fx", f.id),
+            own: this.owns("fx", f.id), price: f.price,
+            cant: S.caramelos < f.price
+        });
+        const x = EXTRAS.find(e => e.id === extra);
+        if (x) out.push({
+            kind: "extra", id: x.id, icon: x.icon,
+            name: en ? x.en : x.es, desc: en ? x.descEn : x.descEs,
+            on: this.owns("extra", x.id) && !!S.extraOn[x.id],
+            own: this.owns("extra", x.id), price: x.price,
+            cant: S.caramelos < x.price
+        });
+        return out;
+    }
+
     // ---------- Estilos de fuente ----------
     styleById(id) {
         return FONT_STYLES.find(s => s.id === id) || FONT_STYLES[0];
@@ -176,24 +295,6 @@ export class EconomyService {
         this.saveShop();
         this.applyStyle();
         this.invSay(t("shopEquippedMsg"));
-    }
-
-    buyStyle(st) {
-        if (S.owned.includes(st.id)) return;   // ya está en el Inventario
-        // Los estilos ganados con un logro no se compran con monedas
-        if (st.ach) {
-            S.shopMsgTxt = t("achNeed");
-            return;
-        }
-        if (!this.isAdmin() && S.coins < st.price) {
-            S.shopMsgTxt = t("shopNoMoney");
-            return;
-        }
-        if (!this.isAdmin()) S.coins -= st.price;   // el Administrador no gasta
-        S.owned.push(st.id);
-        // La compra solo DESBLOQUEA: quién se pone se elige en el Inventario
-        this.saveShop();
-        S.shopMsgTxt = t("shopBought");
     }
 
     // ---------- Extras de juego (picante, caos, php…) ----------
@@ -255,15 +356,7 @@ export class EconomyService {
         S.shopMsgTxt = x ? t(x.msgOn) : t("modeClassicMsg");
     }
 
-    buyExtra(x) {
-        if (this.ownsExtra(x.id)) return;   // ya está en el Inventario
-        if (!this.cobra(x)) return;
-        S.ownedExtras.push(x.id);
-        // La compra solo DESBLOQUEA: activarla se hace en el Inventario
-        this.saveShop();
-        this.applyExtras();     // el nuevo extra entra en el menú de variantes
-        S.shopMsgTxt = t(x.msgBuy);
-    }
+    // (la compra de extras la hace buyItem("extra", x) como cualquier tipo)
 
     // ---------- Efectos de tecleo (chispas con cada letra) ----------
     fxById(id) {
@@ -299,15 +392,7 @@ export class EconomyService {
         this.invSay(t(S.fxEquipped ? "shopEquippedFxMsg" : "shopDeactivatedFxMsg"));
     }
 
-    buyFx(f) {
-        // Los efectos ganados con un logro no se compran con monedas
-        if (f.ach || this.ownsFx(f.id)) return;   // ya está en el Inventario
-        if (!this.cobra(f)) return;
-        S.ownedFx.push(f.id);
-        // La compra solo DESBLOQUEA: ponerlo en uso se hace en el Inventario
-        this.saveShop();
-        S.shopMsgTxt = t("shopBoughtFx");
-    }
+    // (la compra de efectos la hace buyItem("fx", f) como cualquier tipo)
 
     // ---------- Fondos ----------
     // ¿Este fondo se tapa con el Modo Veyon?
@@ -323,19 +408,7 @@ export class EconomyService {
         this.invSay(t("shopEquippedBgMsg"));
     }
 
-    buyBg(b) {
-        if (S.ownedBgs.includes(b.id)) return;   // ya está en el Inventario
-        // Los fondos ganados con un logro no se compran con monedas
-        if (b.ach) {
-            S.shopMsgTxt = t("achNeed");
-            return;
-        }
-        if (!this.cobra(b)) return;
-        S.ownedBgs.push(b.id);
-        // La compra solo DESBLOQUEA: usarse se hace en el Inventario
-        this.saveShop();
-        S.shopMsgTxt = t("shopBoughtBg");
-    }
+    // (la compra de fondos la hace buyItem("bg", b) como cualquier tipo)
 
     bgPower(id) {
         // En el modo Aventura no actúa ningún fondo: el modo lleva el suyo
@@ -359,69 +432,32 @@ export class EconomyService {
         S.invMsgTxt = txt;
     }
 
-    // Devuelve la lista completa de artículos con su estado:
+    // Devuelve la lista completa de artículos con su estado, recorriendo
+    // el registro de tipos (añadir una categoría = una entrada en KINDS):
     // { tipo, id, nombre, icono, img, enUso, deLogro, event, usar, apagar }
     invItems() {
         const en = uiLang() === "en";
         const out = [];
-
-        FONT_STYLES.forEach(s => {
-            if (!S.owned.includes(s.id)) return;
-            out.push({
-                tipo: "font", id: s.id,
-                nombre: en ? s.en : s.es,
-                icono: "🔤", img: "", previewFont: s.font, cls: s.cls,
-                enUso: S.equipped === s.id,
-                deLogro: !!s.ach, event: false,
-                // Un estilo nunca se apaga: siempre hay alguno puesto
-                usar: () => this.setEquipped(s.id), apagar: null
+        for (const kind in KINDS) {
+            const K = KINDS[kind];
+            K.list.forEach(it => {
+                if (!this.owns(kind, it.id)) return;
+                const offable = kind === "extra" || kind === "fx";
+                out.push({
+                    tipo: kind, id: it.id,
+                    nombre: en ? it.en : it.es,
+                    icono: it.icon || K.icon,
+                    // Con el Modo Veyon, los fondos vetados enseñan la imagen
+                    // de repuesto, igual que en la tienda y en el selector
+                    img: kind === "bg" && this.veyonHiddenBg(it.id) ? VEYON_PLACEHOLDER : (it.img || ""),
+                    previewFont: it.font, cls: it.cls, art: it.art,
+                    enUso: this.itemOn(kind, it.id),
+                    deLogro: !!it.ach, event: it.event || false,
+                    usar: () => this.useItem(kind, it.id),
+                    apagar: offable ? () => this.offItem(kind, it.id) : null
+                });
             });
-        });
-
-        BACKGROUNDS.forEach(b => {
-            if (!S.ownedBgs.includes(b.id)) return;
-            out.push({
-                tipo: "bg", id: b.id,
-                nombre: en ? b.en : b.es,
-                icono: b.icon || "🖼️",
-                // Con el Modo Veyon, «General» e «Ia» enseñan la imagen de
-                // repuesto, igual que en la tienda y en el selector
-                img: this.veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
-                enUso: S.bg === b.id,
-                deLogro: !!b.ach, event: b.event || false,
-                // Igual que los estilos: siempre hay un fondo puesto
-                usar: () => this.setBgEquipped(b.id), apagar: null
-            });
-        });
-
-        EXTRAS.forEach(x => {
-            if (!S.ownedExtras.includes(x.id)) return;
-            out.push({
-                tipo: "extra", id: x.id,
-                nombre: en ? x.en : x.es,
-                icono: x.icon, img: "",
-                enUso: !!S.extraOn[x.id],
-                deLogro: !!x.ach, event: x.event || false,
-                // Un extra sí se apaga: vuelve el Tecleo clásico
-                usar: () => this.setExtra(x.id, true),
-                apagar: () => this.setExtra(x.id, false)
-            });
-        });
-
-        TYPE_EFFECTS.forEach(f => {
-            if (!S.ownedFx.includes(f.id)) return;
-            out.push({
-                tipo: "fx", id: f.id,
-                nombre: en ? f.en : f.es,
-                icono: f.icon, img: "", art: f.art,
-                enUso: S.fxEquipped === f.id,
-                deLogro: !!f.ach, event: f.event || false,
-                // Un efecto también se apaga: sin chispas al teclear
-                usar: () => this.setFx(f.id),
-                apagar: () => this.setFx("")
-            });
-        });
-
+        }
         return out;
     }
 }
