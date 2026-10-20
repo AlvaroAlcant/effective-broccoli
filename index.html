@@ -3523,6 +3523,7 @@
                 veyon: "🖥️ Veyon mode",
                 kScore: "Points", kTime: "Time", kStreak: "Streak", kLevel: "Level", kBest: "Best",
                 kCoins: "Coins",
+                kCandy: "Candies",
                 kBestWords: "Words record",
                 btnShop: "🛒 Shop",
                 shopTitle: "🛒 Style Shop",
@@ -3584,6 +3585,7 @@
                 achNeed: "🔒 Needs achievement",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
                 shopNoMoney: "Not enough coins! 🪙",
+                shopNoCandy: "Not enough candies! 🍬 (earn them by playing)",
                 shopBought: "Style unlocked! You can equip it now. ✨",
                 shopBoughtBg: "Wallpaper unlocked! You can use it now. ✨",
                 shopEquippedMsg: "Style applied to the board. 🔤",
@@ -3601,6 +3603,16 @@
                 supFail: "⏰ A word reached the bottom! You lose a life ❤️‍🩹 Lives left: ",
                 supFell: "It hit the bottom. The word was: ",
                 supFailEnd: "💔 You are out of lives! Survival over.",
+                supVarClasico: "🛡️ Classic",
+                supVarEncantado: "👻 Enchanted",
+                supVarHint: "Choose the Survival variant",
+                supSelectOff: "Click “🛡️ Survival” to change its variant",
+                encStart: "👻 Enchanted mode: type the ghosts' letters. You only earn candies (no coins, no XP) and missing keys costs candies.",
+                encHit: "👻 Letter hit: +1 candies",
+                encFail: "👻 Wrong key! −",
+                encFailEnd: " candies.",
+                encFailZero: "👻 Wrong key! You have no candies to lose.",
+                eventCashTxt: "🍬 Your candies:",
                 kLives: "Lives",
                 kTimeWord: "Word time",
                 rTitleLives: "You are out of lives! 💔",
@@ -3621,7 +3633,7 @@
                 btnStart: "Play", btnRestart: "Restart", btnAgain: "Play again",
                 rTitle: "Time's up! ⏱️",
                 rkScore: "Points", rkWords: "Words", rkWordsG: "Words guessed",
-                rkAcc: "Accuracy", rkPpm: "Words/min", rkCoins: "Coins earned",
+                rkAcc: "Accuracy", rkPpm: "Words/min", rkCoins: "Coins earned", rkCandy: "Candies (this run)",
                 rkBestWords: "Words record",
                 msgRecord: "🏆 New record! Your best score has been saved.",
                 msgWordsRecord: "🏆 New personal record for words typed! Your mark has been saved. 📝",
@@ -5401,11 +5413,68 @@
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
+        // ---------- Caramelos: la moneda del evento de Halloween ----------
+        // Se cargan y se guardan aparte del dinero normal; si el
+        // almacenamiento falla, a cero. Nunca bajan de 0.
+        function loadCandy() {
+            try {
+                caramelos = parseInt(localStorage.getItem("teclear.caramelos") || "0", 10) || 0;
+            } catch (e) { caramelos = 0; }
+            if (caramelos < 0) caramelos = 0;
+        }
+
+        function saveCandy() {
+            try {
+                localStorage.setItem("teclear.caramelos", String(caramelos));
+            } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // Los caramelos en pantalla: ∞ para el Administrador, como el dinero
+        function fmtCandy(n) {
+            return esAdmin() ? "∞" : String(n);
+        }
+
+        // Suma (o resta) caramelos. El contador nunca baja de cero: fallar
+        // con 0 caramelos en el modo Encantado NO mueve el número.
+        function giveCandy(n) {
+            if (!n) return;
+            const antes = Math.max(0, caramelos);
+            caramelos = Math.max(0, caramelos + n);
+            // La partida actual apunta el saldo neto para los resultados
+            if (state === "playing") candyRun += caramelos - antes;
+            saveCandy();
+            updateCoins();
+        }
+
+        // Cobra el precio de un artículo de la tienda. Los artículos del
+        // EVENTO se pagan en CARAMELOS (con la misma cifra que costaban en
+        // monedas); el resto, en monedas. El Administrador no gasta.
+        function cobra(item) {
+            const ev = !!item.event;
+            const saldo = ev ? caramelos : coins;
+            if (!esAdmin() && saldo < item.price) {
+                shopMsg.textContent = ev ? t("shopNoCandy") : t("shopNoMoney");
+                return false;
+            }
+            if (esAdmin()) return true;
+            if (ev) {
+                caramelos = Math.max(0, caramelos - item.price);   // se pagan en caramelos
+                saveCandy();
+            } else {
+                coins -= item.price;                              // se pagan en monedas
+            }
+            return true;
+        }
+
         function updateCoins() {
             const txt = fmtCoins(coins);   // ∞ si se es Administrador
             coinsEl.textContent = txt;
             shopCoins.textContent = txt;
             if (accCoins) accCoins.textContent = txt;
+            // Caramelos (moneda del evento): HUD, tienda de evento y perfil
+            const caram = fmtCandy(caramelos);
+            if (candyEl) candyEl.textContent = caram;
+            if (shopCandy) shopCandy.textContent = caram;
             if (shopOpen) renderShop();
             if (accOpen && accSession) renderAccount();
         }
@@ -5418,6 +5487,9 @@
             // Logro «Shinyy»: cuenta el dinero ganado en TOTAL, sumando lo
             // que entra (gastar en la tienda no resta del progreso)
             achAdd("shinyy", n);
+            // Caramelos del evento: se ganan en TODOS los modos junto a las
+            // monedas y con la MISMA cantidad (los gasta la tienda de evento)
+            giveCandy(n);
             saveShop();
             updateCoins();
         }
@@ -5523,8 +5595,10 @@
             if (!shopBgGrid) return;
             shopBgGrid.innerHTML = "";
             // Los artículos del evento de Halloween se compran en su propia
-            // sección (la tienda de evento): aquí solo aparecen si ya se poseen
-            BACKGROUNDS.filter(b => !(b.event && halloweenOn())).forEach(b => {
+            // sección (la tienda de evento): mientras dura el evento no salen
+            // aquí, y cuando se acaba solo los COMPRADOS siguen apareciendo
+            // para poder equiparlos (ya no se pueden comprar con caramelos)
+            BACKGROUNDS.filter(b => !b.event || (!halloweenOn() && ownedBgs.includes(b.id))).forEach(b => {
                 const card = document.createElement("div");
                 card.className = "shop-card";
                 if (b.id === bg) card.classList.add("equipped");
@@ -5634,12 +5708,54 @@
                 (soloTecleo ? t("modeSelectOff") : t("modeSelectHint"));
         }
 
+        // ---------- Variante del modo Supervivencia ----------
+        // "Clásico" es la supervivencia de siempre (palabras que bajan) y
+        // "Encantado" es la variante del evento: letras con fantasmas que
+        // solo dan caramelos. Se elige en el desplegable de al lado del
+        // botón "🛡️ Supervivencia", igual que las variantes de Tecleo.
+        function encOn() {
+            return mode === "supervivencia" && supVariant === "encantado";
+        }
+
+        function renderSupSelect() {
+            if (!supSelect) return;
+            // Si el evento ya se acabó, la variante Encantada deja de existir
+            if (supVariant === "encantado" && !halloweenOn() && state !== "playing") {
+                supVariant = "clasico";
+            }
+            supSelect.innerHTML = "";
+            const opt = (val, txt) => {
+                const o = document.createElement("option");
+                o.value = val;
+                o.textContent = txt;
+                supSelect.appendChild(o);
+            };
+            opt("clasico", t("supVarClasico"));
+            if (halloweenOn()) opt("encantado", t("supVarEncantado"));
+            supSelect.value = supVariant;
+            const fuera = mode !== "supervivencia";
+            supSelect.disabled = fuera || state === "playing";
+            supSelect.title = fuera ? t("supSelectOff") : t("supVarHint");
+        }
+
+        function setSupVariant(v) {
+            if (state === "playing") return;
+            supVariant = (v === "encantado" && halloweenOn()) ? "encantado" : "clasico";
+            try {
+                localStorage.setItem("teclear.supVariante", supVariant);
+            } catch (e) { /* sin almacenamiento disponible */ }
+            renderSupSelect();
+        }
+
+        if (supSelect) supSelect.addEventListener("change", () => setSupVariant(supSelect.value));
+
         // Refresca el desplegable, la fila de extras y el tablero
         function applyExtras() {
             EXTRAS.forEach(x => {
                 document.body.classList.toggle(x.id + "-on", extraActive(x.id));
             });
             renderModeSelect();
+            renderSupSelect();   // el menú de variantes de Supervivencia también
         }
 
         function setExtra(id, on) {
@@ -5674,11 +5790,7 @@
                 setExtra(x.id, true);
                 return;
             }
-            if (!esAdmin() && coins < x.price) {
-                shopMsg.textContent = t("shopNoMoney");
-                return;
-            }
-            if (!esAdmin()) coins -= x.price;   // el Administrador no gasta
+            if (!cobra(x)) return;
             ownedExtras.push(x.id);
             // Al comprarla se activa sola y se apagan las demás variantes
             EXTRAS.forEach(e => extraOn[e.id] = (e.id === x.id));
@@ -5693,8 +5805,9 @@
             if (!shopExtraGrid) return;
             shopExtraGrid.innerHTML = "";
             // El modo Truco o trato se compra en la tienda de EVENTO
-            // (Halloween): aquí solo aparece si ya se posee
-            EXTRAS.filter(x => !(x.event && halloweenOn())).forEach(x => {
+            // (Halloween): mientras dura el evento no aparece aquí y, cuando
+            // se acaba, solo los COMPRADOS siguen para poder activarlos
+            EXTRAS.filter(x => !x.event || (!halloweenOn() && ownsExtra(x.id))).forEach(x => {
                 const ownedX = ownsExtra(x.id);
                 // Lo que se enseña es lo ELEGIDO en el menú, no si ahora actúa:
                 // el extra puede estar puesto y jugarse en un modo donde no se
@@ -5787,11 +5900,7 @@
                 setFx(fxEquipped === f.id ? "" : f.id);
                 return;
             }
-            if (!esAdmin() && coins < f.price) {
-                shopMsg.textContent = t("shopNoMoney");
-                return;
-            }
-            if (!esAdmin()) coins -= f.price;   // el Administrador no gasta
+            if (!cobra(f)) return;
             ownedFx.push(f.id);
             fxEquipped = f.id;    // recién comprado: sale puesto en marcha
             saveShop();
@@ -5805,8 +5914,9 @@
             if (!shopFxGrid) return;
             shopFxGrid.innerHTML = "";
             // El efecto Sangre se compra en la tienda de EVENTO (Halloween):
-            // aquí solo aparece si ya se posee
-            TYPE_EFFECTS.filter(f => !(f.event && halloweenOn())).forEach(f => {
+            // mientras dura el evento no aparece aquí y, cuando se acaba,
+            // solo los COMPRADOS siguen para poder equiparlos
+            TYPE_EFFECTS.filter(f => !f.event || (!halloweenOn() && ownsFx(f.id))).forEach(f => {
                 const own = ownsFx(f.id);
                 const on = own && fxEquipped === f.id;
 
@@ -5877,6 +5987,9 @@
             if (eventBar) eventBar.classList.toggle("hidden", !on);
             if (shopEventTitle) shopEventTitle.classList.toggle("hidden", !on);
             if (shopEventGrid) shopEventGrid.classList.toggle("hidden", !on);
+            // Los caramelos (moneda del evento) solo se ven mientras dura Halloween
+            if (candyStat) candyStat.classList.toggle("hidden", !on);
+            if (eventCash) eventCash.classList.toggle("hidden", !on);
             if (on) {
                 renderEventShop();
                 tickHalloween();
@@ -5884,6 +5997,8 @@
                 // tienda de evento se cierran solas en el próximo segundo
                 if (!halloweenTimer) halloweenTimer = setInterval(tickHalloween, 1000);
             }
+            // Al acabar el evento desaparece la variante Encantada del menú
+            renderSupSelect();
         }
 
         // Cuenta atrás hasta el final del evento (3 de noviembre a las 12:00)
@@ -5950,7 +6065,7 @@
                 const own = ownedBgs.includes(b.id);
                 const c = eventCardBox(b.icon || "📼",
                     en ? b.en : b.es,
-                    own ? "✓ " + t("shopOwned") : "🪙 " + b.price,
+                    own ? "✓ " + t("shopOwned") : "🍬 " + b.price,
                     D(b, "desc"));
                 const prev = c.card.querySelector(".shop-preview");
                 prev.classList.add("event-thumb");
@@ -5964,7 +6079,7 @@
                     c.btn.addEventListener("click", () => setBgEquipped(b.id));
                 } else {
                     c.btn.textContent = t("shopBuy");
-                    if (!esAdmin() && coins < b.price) c.btn.classList.add("cant");
+                    if (!esAdmin() && caramelos < b.price) c.btn.classList.add("cant");
                     c.btn.addEventListener("click", () => buyBg(b));
                 }
                 shopEventGrid.appendChild(c.card);
@@ -5977,7 +6092,7 @@
                 const on = own && fxEquipped === f.id;
                 const c = eventCardBox(f.icon,
                     en ? f.en : f.es,
-                    own ? "✓ " + t("shopOwned") : "🪙 " + f.price,
+                    own ? "✓ " + t("shopOwned") : "🍬 " + f.price,
                     D(f, "desc"));
                 c.card.classList.add("card-fx", "card-fx-sangre");
                 if (on) c.card.classList.add("fx-on");
@@ -5990,7 +6105,7 @@
                     c.btn.addEventListener("click", () => setFx(f.id));
                 } else {
                     c.btn.textContent = t("shopBuy");
-                    if (!esAdmin() && coins < f.price) c.btn.classList.add("cant");
+                    if (!esAdmin() && caramelos < f.price) c.btn.classList.add("cant");
                     c.btn.addEventListener("click", () => buyFx(f));
                 }
                 shopEventGrid.appendChild(c.card);
@@ -6003,7 +6118,7 @@
                 const on = own && !!extraOn[x.id];
                 const c = eventCardBox(x.icon,
                     en ? x.en : x.es,
-                    own ? "✓ " + t("shopOwned") : "🪙 " + x.price,
+                    own ? "✓ " + t("shopOwned") : "🍬 " + x.price,
                     D(x, "desc"));
                 c.card.classList.add("card-truco");
                 if (on) c.card.classList.add("extra-on");
@@ -6015,7 +6130,7 @@
                     c.btn.addEventListener("click", () => setExtra(x.id, true));
                 } else {
                     c.btn.textContent = t("shopBuy");
-                    if (!esAdmin() && coins < x.price) c.btn.classList.add("cant");
+                    if (!esAdmin() && caramelos < x.price) c.btn.classList.add("cant");
                     c.btn.addEventListener("click", () => buyExtra(x));
                 }
                 shopEventGrid.appendChild(c.card);
@@ -6283,6 +6398,7 @@
             document.getElementById("kLevel").textContent = t("kLevel");
             document.getElementById("kBest").textContent = t("kBest");
             document.getElementById("kCoins").textContent = t("kCoins");
+            document.getElementById("kCandy").textContent = t("kCandy");
             document.getElementById("kBestWords").textContent = t("kBestWords");
             btnShop.textContent = t("btnShop");
             btnRanking.textContent = t("btnRanking");
@@ -6318,6 +6434,7 @@
             document.getElementById("shopFxTitle").textContent = t("shopFxTitle");
             if (shopEventTitle) shopEventTitle.textContent = t("shopEventTitle");
             if (eventText) eventText.textContent = t("eventBar");
+            if (eventCashTxt) eventCashTxt.textContent = t("eventCashTxt");
             btnLogros.textContent = t("btnLogros");
             document.getElementById("achTitle").textContent = t("achTitle");
             document.getElementById("achHint").textContent = t("achHint");
@@ -6331,6 +6448,7 @@
             document.getElementById("rkAcc").textContent = t("rkAcc");
             document.getElementById("rkPpm").textContent = t("rkPpm");
             document.getElementById("rkCoins").textContent = t("rkCoins");
+            document.getElementById("rkCandy").textContent = t("rkCandy");
             document.getElementById("rkBestWords").textContent = t("rkBestWords");
             document.getElementById("footer").innerHTML = t("footer");
 
@@ -6829,11 +6947,7 @@
                 shopMsg.textContent = t("achNeed");
                 return;
             }
-            if (!esAdmin() && coins < b.price) {
-                shopMsg.textContent = t("shopNoMoney");
-                return;
-            }
-            if (!esAdmin()) coins -= b.price;   // el Administrador no gasta
+            if (!cobra(b)) return;
             ownedBgs.push(b.id);
             bg = b.id;
             saveShop();
@@ -6896,6 +7010,12 @@
         // abajo: van bajando con el nivel, así que cada vez hay que disparar
         // sus letras más deprisa antes de que toque el fondo.
         function supWordTime() {
+            // Modo Encantado: cada letra que aciertas hace que los fantasmas
+            // siguientes bajen antes (nunca por debajo de ENC_MIN_TIME)
+            if (encOn()) {
+                const base = SUP_TIME - encTyped * ENC_TIME_STEP;
+                return Math.max(ENC_MIN_TIME, Math.round(base * 10) / 10);
+            }
             const base = SUP_TIME - (level() - 1) * SUP_TIME_STEP;
             return Math.max(SUP_TIME_MIN, Math.round(base * 10) / 10);
         }
@@ -6904,7 +7024,12 @@
         // doble, de modo que TODAS bajan cada vez más deprisa justo cuando son
         // más largas y sus letras dan más trabajo.
         function supSpeed() {
-            const extra = (level() - 1) * SUP_SPEED_STEP;
+            // En el modo Encantado la aceleración la marcan las LETRAS
+            // acertadas, no el reloj: escribir más hace a los fantasmas más
+            // rápidos (hasta el mismo tope de doble velocidad)
+            const extra = encOn()
+                ? encTyped * ENC_SPEED_STEP
+                : (level() - 1) * SUP_SPEED_STEP;
             return Math.min(SUP_SPEED_MAX, 1 + extra);
         }
 
@@ -6917,6 +7042,9 @@
         // y el tope va subiendo con el NIVEL (que crece con el tiempo), así
         // que la pantalla se va llenando según pasan los segundos.
         function supMaxWords() {
+            // Modo Encantado: los fantasmas salen según lo que ESCRIBES (al
+            // principio pocos, y crece el tope con cada letra acertada)
+            if (encOn()) return Math.min(ENC_MAX_GHOSTS, 2 + Math.floor(encTyped / ENC_GHOST_STEP));
             return Math.min(SUP_MAX_WORDS, 1 + Math.floor((level() - 1) / 2));
         }
 
@@ -7484,7 +7612,8 @@
         function supRenderBox(it, fresh) {
             const box = document.createElement("div");
             box.className = "sup-word" + (fresh ? " fresh" : "") +
-                (it === supTarget ? " target" : "");
+                (it === supTarget ? " target" : "") +
+                (encOn() ? " ghost" : "");   // el fantasma del modo Encantado
             box.style.left = it.lane;                 // su columna
             box.style.top = (it.y * 100) + "%";       // arriba al nacer (se corrige al colocarla)
 
@@ -7527,6 +7656,11 @@
             }
         }
 
+        // Letra aleatoria que baja en el modo Encantado (con su fantasma)
+        function encLetter() {
+            return ENC_ALFABETO[Math.floor(Math.random() * ENC_ALFABETO.length)];
+        }
+
         // Nueva palabra: nace arriba del todo en la columna que tenga más
         // aire (solo datos, la caja la pinta quien la llama: el tablero
         // entero o la caja suelta de la palabra nueva)
@@ -7546,9 +7680,12 @@
                 if (alto > mejor) { mejor = alto; lane = ln; }
             }
 
-            let w = nextWord();
+            // En el modo Encantado caen LETRAS sueltas (cada una en su
+            // fantasma); en el clásico, palabras como siempre
+            const enc = encOn();
+            let w = enc ? encLetter() : nextWord();
             // Se evita repetir las que ya están en pantalla
-            for (let i = 0; i < 8 && supItems.some(x => x.w === w); i++) w = nextWord();
+            for (let i = 0; i < 8 && supItems.some(x => x.w === w); i++) w = enc ? encLetter() : nextWord();
 
             const seg = supWordTime();
             const it = {
@@ -7631,11 +7768,26 @@
         function supComplete() {
             const it = supTarget;
             if (!it) return;
-            pagaPalabra();               // recompensas, racha y logros
+            // El modo Encantado solo paga CARAMELOS (ni monedas ni experiencia)
+            if (encOn()) encReward();
+            else pagaPalabra();           // recompensas, racha y logros
             supRemove(it);
             supFillBoard();
             supAimNext();
             updateHud();
+        }
+
+        // Letra acertada en el modo Encantado: su recompensa son caramelos.
+        // Cuenta para nivel, racha y resultados, pero NUNCA da monedas ni
+        // experiencia (el modo se paga solo en la moneda del evento).
+        function encReward() {
+            encTyped++;
+            completed++;
+            streak++;
+            score += 10;
+            giveCandy(ENC_CANDY_HIT);     // +1 caramelos por letra
+            showCandy(ENC_CANDY_HIT);
+            status.textContent = t("encHit");
         }
 
         // Una palabra ha llegado hasta el fondo del tablero: se pierde una
@@ -7724,7 +7876,19 @@
                 streak = 0;
                 score = Math.max(0, score - 5);
                 shake();
-                status.textContent = t("statusError");
+                // Modo Encantado: fallar cuesta CARAMELOS, pero el contador
+                // nunca baja de cero (con 0 caramelos no se mueve)
+                if (encOn()) {
+                    const perdidos = Math.min(ENC_CANDY_FAIL, Math.max(0, caramelos));
+                    if (perdidos > 0) {
+                        giveCandy(-perdidos);
+                        status.textContent = t("encFail") + perdidos + t("encFailEnd");
+                    } else {
+                        status.textContent = t("encFailZero");
+                    }
+                } else {
+                    status.textContent = t("statusError");
+                }
             } else {
                 if (val.length > prevLen) hits += val.length - prevLen;
                 status.textContent = t("statusOk");
@@ -7839,6 +8003,15 @@
             const c = document.createElement("div");
             c.className = "points coin";
             c.textContent = "🪙 +" + n;
+            stage.appendChild(c);
+            setTimeout(() => c.remove(), 900);
+        }
+
+        // Aviso de caramelos ganados con la letra (modo Encantado)
+        function showCandy(n) {
+            const c = document.createElement("div");
+            c.className = "points candy";
+            c.textContent = "🍬 +" + n;
             stage.appendChild(c);
             setTimeout(() => c.remove(), 900);
         }
@@ -8053,6 +8226,8 @@
             misses = 0;
             wrongLetters = [];
             ttXpLoss = 0;   // experiencia robada por fallos (Truco o trato)
+            encTyped = 0;   // letras acertadas del modo Encantado (si se juega)
+            candyRun = 0;   // caramelos ganados en esta partida
             // El modo Aventura se juega contra un cronómetro propio: 50 s
             // En Supervivencia el reloj es el de la palabra apuntada
             timeLeft = mode === "aventura" ? ADV_TIME :
@@ -8149,6 +8324,8 @@
             if (poder && mode !== "aventura") {
                 status.textContent += " · " + poder;
             }
+            // Modo Encantado (evento): sus reglas mandan sobre los avisos previos
+            if (encOn()) status.textContent = t("encStart");
             lastTick = performance.now();
 
             newWord();
@@ -8250,6 +8427,7 @@
                 applyExtras();
             }
             renderModeSelect();   // el menú se vuelve a dejar como toca
+            renderSupSelect();    // …y el de variantes de Supervivencia
             startBtn.textContent = t("btnAgain");
 
             const total = hits + errors;
@@ -8267,6 +8445,11 @@
             document.getElementById("rAcc").textContent = acc + "%";
             document.getElementById("rPpm").textContent = Math.round(ppm);
             document.getElementById("rCoins").textContent = coinsRun;
+            // Caramelos de esta partida (moneda del evento): solo se enseñan
+            // mientras Halloween está activo. En el modo Encantado es lo único
+            // que se gana (puede salir negativo si fallaste más de lo ganado)
+            if (rCandy) rCandy.textContent = candyRun;
+            if (rCandyRow) rCandyRow.classList.toggle("hidden", !halloweenOn());
 
             const newScoreRecord = score > best;
             const newWordsRecord = completed > bestWords;
@@ -8305,7 +8488,9 @@
             // se suman aquí porque es cuando se da por terminada la partida.
             // El modo Truco o trato descuenta la experiencia que las teclas
             // falladas se han ido tragando durante la partida (ttXpLoss)
-            const xpGain = Math.max(0,
+            // El modo Encantado no da NI experiencia NI monedas: su partida
+            // se cobra solo en caramelos (dar 0 XP lo garantiza aquí mismo)
+            const xpGain = encOn() ? 0 : Math.max(0,
                 completed * 10 + Math.floor(score / 10) - ttXpLoss);
             xp += xpGain;
             gamesPlayed += 1;
@@ -8645,6 +8830,14 @@
 
         // ---------- Inicio ----------
         loadShop();
+        loadCandy();        // moneda del evento (caramelos)
+        // Variante de Supervivencia de la partida anterior (solo la Encantada
+        // se olvida sola si el evento de Halloween ya se ha acabado)
+        try {
+            const sv = localStorage.getItem("teclear.supVariante");
+            if (sv === "encantado" || sv === "clasico") supVariant = sv;
+        } catch (e) { /* sin almacenamiento disponible */ }
+        if (supVariant === "encantado" && !halloweenOn()) supVariant = "clasico";
         achLoad();          // progreso de los logros + recompensas ganadas
         loadProfileStats();
         accSession = loadSession();   // si hubo sesión la vez anterior, se restaura
@@ -8687,6 +8880,8 @@
                 get rankResets() { return rankResets; },
                 get session() { return accSession; },
                 get admin() { return esAdmin(); },   // ¿rol de Administrador?
+                get caramelos() { return caramelos; },   // moneda del evento de Halloween
+                get supVariante() { return supVariant; },   // variante de Supervivencia
                 get xp() { return xp; },
                 get lives() { return supLives; },   // vidas en el modo Supervivencia
                 get gamesPlayed() { return gamesPlayed; },
