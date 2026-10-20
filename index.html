@@ -3714,6 +3714,8 @@
         // Imagen de repuesto que sustituye a las de «General» e «Ia»
         // mientras el Modo Veyon está activo (tienda y selector de fondos)
         const VEYON_PLACEHOLDER = "repuesto.svg";
+        // Icono de la pestaña que sustituye al de estesoTeclea
+        const VEYON_FAVICON = "repuesto-icono.svg";
         const VEYON_BGS = ["franco", "esteso"];
         let state = "idle";      // idle | playing | over
         let word = "";
@@ -6580,6 +6582,10 @@
 
         function applyVeyon() {
             document.body.classList.toggle("veyon-on", veyon);
+            // Icono de la ventana (pestaña): con el modo activo deja de
+            // verse el de estesoTeclea y se pone el de repuesto
+            document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')
+                .forEach(l => { l.href = veyon ? VEYON_FAVICON : "estesoTeclea.png"; });
             if (btnVeyon) {
                 btnVeyon.classList.toggle("active", veyon);
                 btnVeyon.setAttribute("aria-pressed", veyon ? "true" : "false");
