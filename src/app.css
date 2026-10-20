@@ -1,0 +1,15 @@
+/* Hoja de estilos GLOBAL del sitio: la importa src/routes/+layout.svelte,
+   así que vale para TODAS las páginas (Teclea, Odyssey, Café…).
+   Aquí solo va lo que es de verdad común. Cada juego se queda con su
+   propia hoja y la importa su página:
+     · Teclea  → src/routes/index.css
+     · Odyssey → src/routes/odyssey/odyssey.css
+     · Café    → src/routes/cafe/cafe.css            */
+
+/* ---------- Clase auxiliar ".hidden" ----------
+   El JS la añade y la quita para esconder paneles, secciones sin artículos
+   y avisos de evento (tienda, Inventario, barra y saldo de Halloween,
+   botones de la cuenta…). Gane el orden de carga que gane, solo se usa
+   para esconder, así que no puede chocar con ninguna regla de display:
+   por eso lleva !important. */
+.hidden { display: none !important; }

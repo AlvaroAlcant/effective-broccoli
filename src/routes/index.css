@@ -1594,6 +1594,38 @@
             background-color: var(--fx-color, #e11d48);
             box-shadow: 0 0 8px var(--fx-color, #e11d48);
         }
+        /* Llama (efecto Fuego): SIN emoji, la partícula es una llama
+           dibujada —gota con la PUNTA arriba y el núcleo caliente en la
+           base— que trepa recta y parpadea mientras se apaga.
+           · El giro va DENTRO del transform del ::after: así no desplaza
+             nada (un «rotate» suelto giraría también el translate que
+             centra la partícula y la sacaría de su sitio).
+           · El parpadeo vive en el ::after porque la partícula ya lleva
+             su animación (fx-burst): dos no podrían repartirse el
+             «transform». */
+        .fx-p.flame {
+            width: var(--fx-size, 12px);
+            height: calc(var(--fx-size, 12px) * 1.6);
+        }
+        .fx-p.flame::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            border-radius: 0 50% 50% 50%;
+            background:
+                radial-gradient(58% 46% at 70% 70%, #fff7cf 0%, #ffe07a 44%, rgba(255, 224, 122, 0) 100%),
+                radial-gradient(86% 86% at 66% 66%, var(--fx-color, #ff9f1c) 0%, #ff6a00 52%, #d92b00 100%);
+            filter: blur(.4px) drop-shadow(0 0 7px rgba(255, 106, 0, .75));
+            transform: translate(-50%, -50%) rotate(45deg);
+            animation: fx-flame calc(var(--fx-life, 800ms) / 2) ease-in-out infinite alternate;
+        }
+        @keyframes fx-flame {
+            from { transform: translate(-50%, -50%) rotate(45deg) scale(.8, .7); }
+            to   { transform: translate(-50%, -50%) rotate(45deg) scale(1.05, .95); }
+        }
         @keyframes fx-burst {
             0% {
                 opacity: 1;
@@ -1616,6 +1648,29 @@
         .shop-card.card-fx.fx-on {
             border-color: var(--fx-c);
             box-shadow: inset 0 0 0 1px var(--fx-c);
+        }
+
+        /* Arte del efecto Fuego: la llama que se enseña en la tarjeta de la
+           tienda y en la miniatura del Inventario (tampoco usa emoji: es la
+           misma llama dibujada que estalla al teclear, quieta y asomándose).
+           El giro va en el transform (girarla con «rotate» suelto movería
+           la caja de su sitio, porque su centro no está en su origen) */
+        .flame-art {
+            display: block;
+            width: 26px;
+            height: 36px;
+            margin: 0 auto;
+            border-radius: 0 50% 50% 50%;
+            background:
+                radial-gradient(58% 46% at 70% 70%, #fff7cf 0%, #ffe07a 44%, rgba(255, 224, 122, 0) 100%),
+                radial-gradient(86% 86% at 66% 66%, #ff9f1c 0%, #ff6a00 52%, #d92b00 100%);
+            filter: drop-shadow(0 0 14px rgba(255, 106, 0, .7));
+            transform: rotate(45deg);
+            animation: flame-sway 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes flame-sway {
+            from { transform: rotate(45deg) scale(.95, .96); }
+            to   { transform: rotate(45deg) scale(1.05, 1.04); }
         }
 
         /* ---------- Ranking global y de Aventura ---------- */
@@ -1999,15 +2054,25 @@
         }
 
         /* ---------- Inventario: todo lo comprado y todo lo ganado ----------
-           Cada tarjeta enseña el artículo (miniatura, nombre y categoría),
-           de dónde salió (comprado en la tienda o ganado con un logro) y si
-           está puesto en uso ahora mismo. El inventario se recalcula a partir
-           de lo que ya posees, así que nunca se queda desfasado. */
+           Organizado en SECCIONES igual que la tienda: un título y una
+           rejilla por categoría (más la de evento mientras dura Halloween).
+           Cada tarjeta enseña el artículo (miniatura, nombre) y de dónde
+           salió (comprado en la tienda o ganado con un logro), y lleva el
+           botón con el que se PONE EN USO: en la tienda ya solo se compra.
+           El inventario se recalcula a partir de lo que ya posees, así que
+           nunca se queda desfasado. */
         .inv-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 12px;
+        }
+        /* Títulos de sección: los mismos que la tienda, con un espaciado
+           algo más apretado para que no doble el margen de la pista */
+        .inventario .inv-sub {
             margin-top: 16px;
+        }
+        .inventario .inv-sub:first-of-type {
+            margin-top: 4px;
         }
         .inv-card {
             background: var(--surface-2);
@@ -2049,12 +2114,6 @@
             font-weight: bold;
             color: var(--text);
         }
-        .inv-cat {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--muted);
-        }
         /* De dónde salió el artículo: comprado (dorado) o logro (celeste) */
         .inv-src {
             font-size: 11px;
@@ -2070,13 +2129,6 @@
         .inv-src.src-ach {
             color: #7dd3fc;
             border-color: rgba(125, 211, 252, .5);
-        }
-        .inv-use {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent);
-            font-weight: 700;
         }
         .inv-empty {
             color: var(--muted);
@@ -2272,6 +2324,13 @@
         /* ---------- Menos movimiento si el sistema lo pide ---------- */
         @media (prefers-reduced-motion: reduce) {
             * {
+                animation-duration: .001s !important;
+                transition-duration: .001s !important;
+            }
+            /* Los pseudo-elementos (la llama del efecto Fuego) no los
+               alcanza el «*», que solo mira elementos */
+            *::before,
+            *::after {
                 animation-duration: .001s !important;
                 transition-duration: .001s !important;
             }

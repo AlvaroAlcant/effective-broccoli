@@ -583,8 +583,12 @@ export function initTeclear() {
 
         // ---------- Efectos de tecleo de la tienda ----------
         // id: se guarda en el localStorage · price: precio en monedas
-        // icon: miniatura de la tarjeta · colors: colores de las chispas
+        // icon: etiqueta de texto del artículo (Fuego no usa emoji: su
+        //       art/shape dibuja la llama con CSS, en la tienda, en el
+        //       inventario y en el propio estallido de las letras)
+        // colors: colores de las chispas
         // glyph: emoji que sale de vez en cuando con cada letra
+        // shape: forma de la partícula (dot | block | drop | flame)
         // count/power/rise: cuántas partículas, hacia dónde y cuánto trepan
         // life: milisegundos que vive cada partícula
         // Al comprar se desbloquean para siempre y solo uno está activo
@@ -599,7 +603,10 @@ export function initTeclear() {
                 descEs: "Chispas de fuego que trepan con cada letra que tecleas.",
                 descEn: "Fire sparks that climb with every letter you type.",
                 colors: ["#ff6a00", "#ff9f1c", "#ffcc33", "#ff3d00"],
-                glyph: "🔥", count: 7, power: 70, rise: -70, size: 15, life: 750
+                // Sin emoji: llama dibujada con CSS (forma de gota con el
+                // núcleo caliente dentro) que trepa y parpadea al morir
+                art: "flame", shape: "flame", glyph: null,
+                count: 7, power: 70, rise: -70, size: 15, life: 750
             },
             {
                 id: "estrellas",
@@ -817,7 +824,7 @@ export function initTeclear() {
                 kBestWords: "Récord palabras",
                 btnShop: "🛒 Tienda",
                 shopTitle: "🛒 Tienda de estilos",
-                shopHint: "Gana monedas por cada palabra sin errores: la racha las multiplica (hasta x5). ¡Cómpralas para desbloquear letras, fondos de pantalla y efectos de tecleo!",
+                shopHint: "Gana monedas por cada palabra sin errores: la racha las multiplica (hasta x5). ¡Cómpralas para desbloquear letras, fondos de pantalla y efectos de tecleo! La tienda solo desbloquea: para llevar algo puesto, hazlo desde el Inventario.",
                 shopFontsTitle: "🔤 Estilos de letra",
                 shopBgsTitle: "🖼️ Fondos de pantalla",
                 modeClassic: "⌨️ Tecleo clásico",
@@ -851,10 +858,9 @@ export function initTeclear() {
                 statusAzar: "🎲 El modo Al azar ha elegido: ",
                 statusAzarNone: "🎲 Modo Al azar: sin otros modos comprados, se juega al clásico.",
                 shopFxTitle: "✨ Efectos de tecleo",
-                shopBoughtFx: "¡Efecto de tecleo desbloqueado! Ya puedes usarlo. ✨",
+                shopBoughtFx: "¡Efecto de tecleo desbloqueado! Pódelo usar desde el Inventario. ✨",
                 shopEquippedFxMsg: "Efecto de tecleo activado: cada letra estalla en el tablero. ✨",
                 shopDeactivatedFxMsg: "Efecto de tecleo desactivado. 💤",
-                shopFxOff: "Apagar",
                 shopEventTitle: "🎃 Tienda de evento · Halloween",
                 eventBar: "Evento de Halloween: la tienda de evento está abierta hasta el 3 de noviembre a las 12:00",
                 shopBoughtTruco: "¡Modo Truco o trato desbloqueado! Ya puedes activarlo cuando quieras. 🍬",
@@ -874,21 +880,23 @@ export function initTeclear() {
                 achNeed: "🔒 Requiere logro",
                 btnInv: "🎒 Inventario",
                 invTitle: "🎒 Inventario",
-                invHint: "Todos los artículos que posees: los comprados en la tienda y los ganados completando logros. ¡Se quedan guardados para siempre!",
+                invHint: "Aquí se elige lo que se lleva puesto: pulsa «Usar» en el artículo que quieras (y «Apagar» en extras y efectos). Todo lo que posees, comprado en la tienda o ganado con logros, se queda guardado para siempre.",
                 invEmpty: "Todavía no tienes ningún artículo. ¡Ve a la tienda o completa logros!",
                 invFromShop: "Comprado en la tienda",
                 invFromAch: "Ganado con un logro",
-                invInUse: "✓ En uso",
-                invNotInUse: "Sin usar",
-                invCatFont: "🔤 Letra",
-                invCatBg: "🖼️ Fondo",
-                invCatExtra: "🔥 Extra",
-                invCatFx: "✨ Efecto",
+                invFontsTitle: "🔤 Estilos de letra",
+                invBgsTitle: "🖼️ Fondos de pantalla",
+                invExtrasTitle: "🔥 Extras de juego",
+                invFxTitle: "✨ Efectos de tecleo",
+                invEventTitle: "🎃 Artículos de evento · Halloween",
+                invOff: "Apagar",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
+                shopInInv: "✓ En el inventario",
+                shopInInvHint: "La tienda solo compra: para llevarlo puesto, ve al Inventario",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
                 shopNoCandy: "¡No tienes suficientes caramelos! 🍬 (se ganan jugando)",
-                shopBought: "¡Estilo desbloqueado! Ya puedes usarlo. ✨",
-                shopBoughtBg: "¡Fondo desbloqueado! Ya puedes usarlo. ✨",
+                shopBought: "¡Estilo desbloqueado! Pódelo usar desde el Inventario. ✨",
+                shopBoughtBg: "¡Fondo desbloqueado! Pódelo usar desde el Inventario. ✨",
                 shopEquippedMsg: "Estilo aplicado al tablero. 🔤",
                 shopEquippedBgMsg: "Fondo de pantalla aplicado. 🖼️",
                 boardIdle: 'Pulsa "Jugar" o la barra espaciadora para empezar',
@@ -1029,7 +1037,7 @@ export function initTeclear() {
                 kBestWords: "Words record",
                 btnShop: "🛒 Shop",
                 shopTitle: "🛒 Style Shop",
-                shopHint: "Earn coins for every word you complete without mistakes: your streak multiplies them (up to x5). Spend them to unlock fonts, wallpapers and typing effects!",
+                shopHint: "Earn coins for every word you complete without mistakes: your streak multiplies them (up to x5). Spend them to unlock fonts, wallpapers and typing effects! The shop only unlocks items: to wear one, equip it from the Inventory.",
                 shopFontsTitle: "🔤 Font styles",
                 shopBgsTitle: "🖼️ Wallpapers",
                 modeClassic: "⌨️ Classic typing",
@@ -1064,10 +1072,9 @@ export function initTeclear() {
                 statusAzar: "🎲 Random mode picked: ",
                 statusAzarNone: "🎲 Random mode: no other modes owned, playing classic.",
                 shopFxTitle: "✨ Typing effects",
-                shopBoughtFx: "Typing effect unlocked! You can use it now. ✨",
+                shopBoughtFx: "Typing effect unlocked! Equip it from the Inventory. ✨",
                 shopEquippedFxMsg: "Typing effect on: every letter bursts on the board. ✨",
                 shopDeactivatedFxMsg: "Typing effect off. 💤",
-                shopFxOff: "Turn off",
                 shopEventTitle: "🎃 Event shop · Halloween",
                 eventBar: "Halloween event: the event shop is open until November 3 at 12:00",
                 shopBoughtTruco: "Trick or treat mode unlocked! Turn it on whenever you want. 🍬",
@@ -1087,21 +1094,23 @@ export function initTeclear() {
                 achNeed: "🔒 Needs achievement",
                 btnInv: "🎒 Inventory",
                 invTitle: "🎒 Inventory",
-                invHint: "Every item you own: bought in the shop or earned with achievements. They stay forever!",
+                invHint: "This is where you choose what to wear: press “Use” on any item (and “Turn off” on extras and effects). Everything you own — bought in the shop or earned with achievements — stays forever!",
                 invEmpty: "You don't have any items yet. Go to the shop or complete achievements!",
                 invFromShop: "Bought in the shop",
                 invFromAch: "Earned with an achievement",
-                invInUse: "✓ Equipped",
-                invNotInUse: "Not in use",
-                invCatFont: "🔤 Font",
-                invCatBg: "🖼️ Background",
-                invCatExtra: "🔥 Extra",
-                invCatFx: "✨ Effect",
+                invFontsTitle: "🔤 Font styles",
+                invBgsTitle: "🖼️ Wallpapers",
+                invExtrasTitle: "🔥 Gameplay extras",
+                invFxTitle: "✨ Typing effects",
+                invEventTitle: "🎃 Event items · Halloween",
+                invOff: "Turn off",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
+                shopInInv: "✓ In your inventory",
+                shopInInvHint: "The shop only sells: to wear it, open the Inventory",
                 shopNoMoney: "Not enough coins! 🪙",
                 shopNoCandy: "Not enough candies! 🍬 (earn them by playing)",
-                shopBought: "Style unlocked! You can equip it now. ✨",
-                shopBoughtBg: "Wallpaper unlocked! You can use it now. ✨",
+                shopBought: "Font unlocked! Equip it from the Inventory. ✨",
+                shopBoughtBg: "Wallpaper unlocked! Equip it from the Inventory. ✨",
                 shopEquippedMsg: "Style applied to the board. 🔤",
                 shopEquippedBgMsg: "Wallpaper applied. 🖼️",
                 boardIdle: 'Press "Play" or the space bar to start',
@@ -1412,7 +1421,19 @@ export function initTeclear() {
         const logros = document.getElementById("logros");
         const btnInv = document.getElementById("btnInv");
         const inventario = document.getElementById("inventario");
-        const invGrid = document.getElementById("invGrid");
+        // Secciones del inventario: una rejilla y un título por categoría,
+        // con la misma estructura que las secciones de la tienda
+        const invEventGrid = document.getElementById("invEventGrid");
+        const invEventTitle = document.getElementById("invEventTitle");
+        const invFontGrid = document.getElementById("invFontGrid");
+        const invBgGrid = document.getElementById("invBgGrid");
+        const invExtraGrid = document.getElementById("invExtraGrid");
+        const invFxGrid = document.getElementById("invFxGrid");
+        const invFontsTitle = document.getElementById("invFontsTitle");
+        const invBgsTitle = document.getElementById("invBgsTitle");
+        const invExtrasTitle = document.getElementById("invExtrasTitle");
+        const invFxTitle = document.getElementById("invFxTitle");
+        const invMsg = document.getElementById("invMsg");
         const invEmpty = document.getElementById("invEmpty");
         const invCount = document.getElementById("invCount");
         const achGrid = document.getElementById("achGrid");
@@ -3034,17 +3055,14 @@ export function initTeclear() {
         function setEquipped(id) {
             if (!owned.includes(id)) return;
             equipped = id;
-            saveShop();
+            saveShop();          // repinta el Inventario si está abierto
             applyStyle();
-            renderShop();
-            shopMsg.textContent = t("shopEquippedMsg");
+            renderShop();        // … y la tienda, para marcarlo «En uso»
+            invSay(t("shopEquippedMsg"));
         }
 
         function buyStyle(st) {
-            if (owned.includes(st.id)) {
-                setEquipped(st.id);
-                return;
-            }
+            if (owned.includes(st.id)) return;   // ya está en el Inventario
             // Los estilos ganados con un logro no se compran con monedas
             if (st.ach) {
                 shopMsg.textContent = t("achNeed");
@@ -3056,9 +3074,8 @@ export function initTeclear() {
             }
             if (!esAdmin()) coins -= st.price;   // el Administrador no gasta
             owned.push(st.id);
-            equipped = st.id;
+            // La compra solo DESBLOQUEA: quién se pone se elige en el Inventario
             saveShop();
-            applyStyle();
             updateCoins();
             shopMsg.textContent = t("shopBought");
         }
@@ -3096,8 +3113,10 @@ export function initTeclear() {
                     btn.textContent = t("shopEquipped");
                     btn.disabled = true;
                 } else if (owned.includes(st.id)) {
-                    btn.textContent = t("shopEquip");
-                    btn.addEventListener("click", () => setEquipped(st.id));
+                    // La tienda solo COMPRA: usarse se hace en el Inventario
+                    btn.textContent = t("shopInInv");
+                    btn.title = t("shopInInvHint");
+                    btn.disabled = true;
                 } else if (st.ach) {
                     // Bloqueado: solo se desbloquea completando su logro
                     btn.textContent = t("achNeed");
@@ -3162,8 +3181,10 @@ export function initTeclear() {
                     btn.textContent = t("shopEquipped");
                     btn.disabled = true;
                 } else if (ownedBgs.includes(b.id)) {
-                    btn.textContent = t("shopEquip");
-                    btn.addEventListener("click", () => setBgEquipped(b.id));
+                    // La tienda solo COMPRA: usarse se hace en el Inventario
+                    btn.textContent = t("shopInInv");
+                    btn.title = t("shopInInvHint");
+                    btn.disabled = true;
                 } else if (b.ach) {
                     // Bloqueado: solo se desbloquea completando su logro
                     btn.textContent = t("achNeed");
@@ -3296,7 +3317,7 @@ export function initTeclear() {
             applyExtras();
             if (shopOpen) renderExtraShop();
             const x = EXTRAS.find(e => e.id === id);
-            if (x) shopMsg.textContent = t(on ? x.msgOn : x.msgOff);
+            if (x) invSay(t(on ? x.msgOn : x.msgOff));
         }
 
         // Solo puede haber una variante de Tecleo activa a la vez: al elegir
@@ -3312,18 +3333,13 @@ export function initTeclear() {
         }
 
         function buyExtra(x) {
-            if (ownsExtra(x.id)) {
-                setExtra(x.id, true);
-                return;
-            }
+            if (ownsExtra(x.id)) return;   // ya está en el Inventario
             if (!cobra(x)) return;
             ownedExtras.push(x.id);
-            // Al comprarla se activa sola y se apagan las demás variantes
-            EXTRAS.forEach(e => extraOn[e.id] = (e.id === x.id));
+            // La compra solo DESBLOQUEA: activarla se hace en el Inventario
             saveShop();
-            applyExtras();
+            applyExtras();     // el nuevo extra entra en el menú de variantes
             updateCoins();
-            renderExtraShop();
             shopMsg.textContent = t(x.msgBuy);
         }
 
@@ -3370,8 +3386,10 @@ export function initTeclear() {
                     btn.textContent = t("shopEquipped");
                     btn.disabled = true;
                 } else if (ownedX) {
-                    btn.textContent = t("shopEquip");
-                    btn.addEventListener("click", () => setExtra(x.id, true));
+                    // La tienda solo COMPRA: activarse se hace en el Inventario
+                    btn.textContent = t("shopInInv");
+                    btn.title = t("shopInInvHint");
+                    btn.disabled = true;
                 } else {
                     btn.textContent = t("shopBuy");
                     if (!esAdmin() && coins < x.price) btn.classList.add("cant");
@@ -3405,7 +3423,8 @@ export function initTeclear() {
             });
         }
 
-        // Pone un efecto en uso (id vacío lo apaga); solo uno a la vez
+        // Pone un efecto en uso (id vacío lo apaga); solo uno a la vez.
+        // Como la tienda ya no selecciona, esta acción vive en el Inventario
         function setFx(id) {
             if (state === "playing") return;
             if (id && !ownsFx(id)) return;
@@ -3413,26 +3432,17 @@ export function initTeclear() {
             saveShop();
             applyFx();
             if (shopOpen) renderFxShop();
-            shopMsg.textContent = t(fxEquipped ? "shopEquippedFxMsg" : "shopDeactivatedFxMsg");
+            invSay(t(fxEquipped ? "shopEquippedFxMsg" : "shopDeactivatedFxMsg"));
         }
 
         function buyFx(f) {
             // Los efectos ganados con un logro no se compran con monedas
-            if (f.ach) {
-                if (ownsFx(f.id)) setFx(fxEquipped === f.id ? "" : f.id);
-                return;
-            }
-            if (ownsFx(f.id)) {
-                setFx(fxEquipped === f.id ? "" : f.id);
-                return;
-            }
+            if (f.ach || ownsFx(f.id)) return;   // ya está en el Inventario
             if (!cobra(f)) return;
             ownedFx.push(f.id);
-            fxEquipped = f.id;    // recién comprado: sale puesto en marcha
+            // La compra solo DESBLOQUEA: ponerlo en uso se hace en el Inventario
             saveShop();
-            applyFx();
             updateCoins();
-            renderFxShop();
             shopMsg.textContent = t("shopBoughtFx");
         }
 
@@ -3453,7 +3463,10 @@ export function initTeclear() {
 
                 const prev = document.createElement("div");
                 prev.className = "shop-preview fx-preview";
-                prev.textContent = f.icon;
+                // El efecto Fuego no usa emoji: su miniatura es una llama
+                // dibujada con CSS (lo mismo que en el Inventario)
+                if (f.art === "flame") prev.appendChild(flameArt());
+                else prev.textContent = f.icon;
                 card.appendChild(prev);
 
                 const name = document.createElement("div");
@@ -3476,12 +3489,11 @@ export function initTeclear() {
 
                 const btn = document.createElement("button");
                 btn.className = "chip-btn shop-btn";
-                if (on) {
-                    btn.textContent = t("shopFxOff");
-                    btn.addEventListener("click", () => setFx(""));
-                } else if (own) {
-                    btn.textContent = t("shopEquip");
-                    btn.addEventListener("click", () => setFx(f.id));
+                if (own) {
+                    // La tienda solo COMPRA: usarse o apagarse en el Inventario
+                    btn.textContent = t("shopInInv");
+                    btn.title = t("shopInInvHint");
+                    btn.disabled = true;
                 } else if (f.ach) {
                     // Bloqueado: solo se desbloquea completando su logro
                     btn.textContent = t("achNeed");
@@ -3525,6 +3537,8 @@ export function initTeclear() {
             }
             // Al acabar el evento desaparece la variante Encantada del menú
             renderSupSelect();
+            // … y los artículos del evento se reagrupan en el Inventario
+            if (invOpen) renderInv();
         }
 
         // Cuenta atrás hasta el final del evento (3 de noviembre a las 12:00)
@@ -3596,13 +3610,12 @@ export function initTeclear() {
                 const prev = c.card.querySelector(".shop-preview");
                 prev.classList.add("event-thumb");
                 prev.style.backgroundImage = 'url("' + b.img + '")';
-                if (bg === b.id) {
-                    c.card.classList.add("equipped");
-                    c.btn.textContent = t("shopEquipped");
+                if (bg === b.id) c.card.classList.add("equipped");
+                if (own) {
+                    // La tienda solo COMPRA: usarse se hace en el Inventario
+                    c.btn.textContent = t("shopInInv");
+                    c.btn.title = t("shopInInvHint");
                     c.btn.disabled = true;
-                } else if (own) {
-                    c.btn.textContent = t("shopEquip");
-                    c.btn.addEventListener("click", () => setBgEquipped(b.id));
                 } else {
                     c.btn.textContent = t("shopBuy");
                     if (!esAdmin() && caramelos < b.price) c.btn.classList.add("cant");
@@ -3623,12 +3636,11 @@ export function initTeclear() {
                 c.card.classList.add("card-fx", "card-fx-sangre");
                 if (on) c.card.classList.add("fx-on");
                 c.card.style.setProperty("--fx-c", f.color);
-                if (on) {
-                    c.btn.textContent = t("shopFxOff");
-                    c.btn.addEventListener("click", () => setFx(""));
-                } else if (own) {
-                    c.btn.textContent = t("shopEquip");
-                    c.btn.addEventListener("click", () => setFx(f.id));
+                if (own) {
+                    // La tienda solo COMPRA: usarse o apagarse en el Inventario
+                    c.btn.textContent = t("shopInInv");
+                    c.btn.title = t("shopInInvHint");
+                    c.btn.disabled = true;
                 } else {
                     c.btn.textContent = t("shopBuy");
                     if (!esAdmin() && caramelos < f.price) c.btn.classList.add("cant");
@@ -3648,12 +3660,11 @@ export function initTeclear() {
                     D(x, "desc"));
                 c.card.classList.add("card-truco");
                 if (on) c.card.classList.add("extra-on");
-                if (on) {
-                    c.btn.textContent = t("shopEquipped");
+                if (own) {
+                    // La tienda solo COMPRA: activarse se hace en el Inventario
+                    c.btn.textContent = t("shopInInv");
+                    c.btn.title = t("shopInInvHint");
                     c.btn.disabled = true;
-                } else if (own) {
-                    c.btn.textContent = t("shopEquip");
-                    c.btn.addEventListener("click", () => setExtra(x.id, true));
                 } else {
                     c.btn.textContent = t("shopBuy");
                     if (!esAdmin() && caramelos < x.price) c.btn.classList.add("cant");
@@ -3899,9 +3910,26 @@ export function initTeclear() {
         // de logros y el resto se compran en la tienda. Se enseñan también
         // los artículos del EVENTO de Halloween que ya poseas, aunque la
         // tienda de evento esté cerrada: el inventario es para siempre.
+        // Además es aquí donde se SELECCIONA lo que está en uso, porque la
+        // tienda ya solo compra.
+
+        // Aviso del panel: los mensajes de «elegir artículo» van aquí (la
+        // tienda se queda los de compra)
+        function invSay(txt) {
+            if (invMsg) invMsg.textContent = txt;
+        }
+
+        // Miniatura dibujada (sin emoji): la llama del efecto Fuego, hecha
+        // con CSS: gota con el núcleo caliente dentro y halo encendido
+        function flameArt() {
+            const i = document.createElement("i");
+            i.className = "flame-art";
+            i.setAttribute("aria-hidden", "true");
+            return i;
+        }
 
         // Devuelve la lista completa de artículos con su estado:
-        // { tipo, id, nombre, icono, img, enUso, deLogro }
+        // { tipo, id, nombre, icono, img, enUso, deLogro, event, usar, apagar }
         function invItems() {
             const en = uiLang() === "en";
             const out = [];
@@ -3913,7 +3941,9 @@ export function initTeclear() {
                     nombre: en ? s.en : s.es,
                     icono: "🔤", img: "", previewFont: s.font, cls: s.cls,
                     enUso: equipped === s.id,
-                    deLogro: !!s.ach
+                    deLogro: !!s.ach, event: false,
+                    // Un estilo nunca se apaga: siempre hay alguno puesto
+                    usar: () => setEquipped(s.id), apagar: null
                 });
             });
 
@@ -3924,7 +3954,9 @@ export function initTeclear() {
                     nombre: en ? b.en : b.es,
                     icono: b.icon || "🖼️", img: b.img,
                     enUso: bg === b.id,
-                    deLogro: !!b.ach
+                    deLogro: !!b.ach, event: !!b.event,
+                    // Igual que los estilos: siempre hay un fondo puesto
+                    usar: () => setBgEquipped(b.id), apagar: null
                 });
             });
 
@@ -3935,7 +3967,10 @@ export function initTeclear() {
                     nombre: en ? x.en : x.es,
                     icono: x.icon, img: "",
                     enUso: !!extraOn[x.id],
-                    deLogro: !!x.ach
+                    deLogro: !!x.ach, event: !!x.event,
+                    // Un extra sí se apaga: vuelve el Tecleo clásico
+                    usar: () => setExtra(x.id, true),
+                    apagar: () => setExtra(x.id, false)
                 });
             });
 
@@ -3944,62 +3979,97 @@ export function initTeclear() {
                 out.push({
                     tipo: "fx", id: f.id,
                     nombre: en ? f.en : f.es,
-                    icono: f.icon, img: "",
+                    icono: f.icon, img: "", art: f.art,
                     enUso: fxEquipped === f.id,
-                    deLogro: !!f.ach
+                    deLogro: !!f.ach, event: !!f.event,
+                    // Un efecto también se apaga: sin chispas al teclear
+                    usar: () => setFx(f.id),
+                    apagar: () => setFx("")
                 });
             });
 
             return out;
         }
 
-        // Dibuja el inventario completo en su panel
+        // Tarjeta de una sección del inventario: miniatura, nombre,
+        // procedencia (tienda o logro) y el botón con el que se PONE EN USO
+        function invCard(it) {
+            const card = document.createElement("div");
+            card.className = "inv-card" + (it.enUso ? " in-use" : "");
+
+            // Miniatura: la foto del fondo, la «Aa» del estilo o su arte
+            const thumb = document.createElement("div");
+            thumb.className = "inv-thumb " + (it.cls || "");
+            if (it.tipo === "bg" && it.img) {
+                // Con el Modo Veyon, «General» e «Ia» enseñan la imagen de
+                // repuesto, igual que en la tienda y en el selector
+                thumb.style.backgroundImage =
+                    'url("' + (veyonHiddenBg(it.id) ? VEYON_PLACEHOLDER : it.img) + '")';
+            } else if (it.tipo === "font") {
+                thumb.classList.add("font-preview");
+                thumb.style.fontFamily = it.previewFont;
+                thumb.textContent = "Aa";
+            } else if (it.art === "flame") {
+                thumb.appendChild(flameArt());
+            } else {
+                thumb.textContent = it.icono;
+            }
+            card.appendChild(thumb);
+
+            const name = document.createElement("div");
+            name.className = "inv-name";
+            name.textContent = it.nombre;
+            card.appendChild(name);
+
+            // De dónde salió: comprado en la tienda o ganado jugando
+            const src = document.createElement("div");
+            src.className = "inv-src " + (it.deLogro ? "src-ach" : "src-shop");
+            src.textContent = it.deLogro ? t("invFromAch") : t("invFromShop");
+            card.appendChild(src);
+
+            // Aquí (y solo aquí) se elige qué se lleva puesto
+            const btn = document.createElement("button");
+            btn.className = "chip-btn shop-btn";
+            if (it.enUso && !it.apagar) {
+                btn.textContent = t("shopEquipped");
+                btn.disabled = true;
+            } else if (it.enUso) {
+                btn.textContent = t("invOff");
+                btn.addEventListener("click", it.apagar);
+            } else {
+                btn.textContent = t("shopEquip");
+                btn.addEventListener("click", it.usar);
+            }
+            card.appendChild(btn);
+
+            return card;
+        }
+
+        // Dibuja el inventario completo, SECCIONADO igual que la tienda:
+        // un título y una rejilla por categoría, y los artículos del EVENTO
+        // en su propia sección mientras dura Halloween (al acabar vuelven a
+        // la suya). Las secciones vacías se ocultan enteras.
         function renderInv() {
-            if (!invGrid) return;
+            if (!invFontGrid) return;
             const items = invItems();
-            invGrid.innerHTML = "";
+            const hwn = halloweenOn();
+            const esEvento = it => hwn && it.event;
 
-            items.forEach(it => {
-                const card = document.createElement("div");
-                card.className = "inv-card" + (it.enUso ? " in-use" : "");
+            const secciones = [
+                { grid: invFontGrid, title: invFontsTitle, test: it => it.tipo === "font" && !esEvento(it) },
+                { grid: invBgGrid, title: invBgsTitle, test: it => it.tipo === "bg" && !esEvento(it) },
+                { grid: invExtraGrid, title: invExtrasTitle, test: it => it.tipo === "extra" && !esEvento(it) },
+                { grid: invFxGrid, title: invFxTitle, test: it => it.tipo === "fx" && !esEvento(it) },
+                { grid: invEventGrid, title: invEventTitle, test: esEvento }
+            ];
 
-                // Miniatura: la foto del fondo, la letra «Aa» del estilo o
-                // el icono del extra/efecto
-                const thumb = document.createElement("div");
-                thumb.className = "inv-thumb " + (it.cls || "");
-                if (it.tipo === "bg" && it.img) {
-                    thumb.style.backgroundImage = 'url("' + it.img + '")';
-                } else if (it.tipo === "font") {
-                    thumb.classList.add("font-preview");
-                    thumb.style.fontFamily = it.previewFont;
-                    thumb.textContent = "Aa";
-                } else {
-                    thumb.textContent = it.icono;
-                }
-                card.appendChild(thumb);
-
-                const name = document.createElement("div");
-                name.className = "inv-name";
-                name.textContent = it.nombre;
-                card.appendChild(name);
-
-                const cat = document.createElement("div");
-                cat.className = "inv-cat";
-                cat.textContent = t("invCat" + it.tipo.charAt(0).toUpperCase() + it.tipo.slice(1));
-                card.appendChild(cat);
-
-                // De dónde salió: comprado en la tienda o ganado jugando
-                const src = document.createElement("div");
-                src.className = "inv-src " + (it.deLogro ? "src-ach" : "src-shop");
-                src.textContent = it.deLogro ? t("invFromAch") : t("invFromShop");
-                card.appendChild(src);
-
-                const use = document.createElement("div");
-                use.className = "inv-use";
-                use.textContent = it.enUso ? t("invInUse") : t("invNotInUse");
-                card.appendChild(use);
-
-                invGrid.appendChild(card);
+            secciones.forEach(sec => {
+                if (!sec.grid) return;
+                sec.grid.innerHTML = "";
+                items.filter(sec.test).forEach(it => sec.grid.appendChild(invCard(it)));
+                const vacia = sec.grid.children.length === 0;
+                sec.grid.classList.toggle("hidden", vacia);
+                if (sec.title) sec.title.classList.toggle("hidden", vacia);
             });
 
             // Contador del encabezado y aviso si no hay nada todavía
@@ -4013,6 +4083,7 @@ export function initTeclear() {
             inventario.classList.toggle("hidden", !invOpen);
             btnInv.classList.toggle("active", invOpen);
             if (invOpen) {
+                if (invMsg) invMsg.textContent = "";   // aviso de la acción anterior
                 renderInv();
                 // El panel queda por debajo: se lleva a la vista para que se note
                 if (inventario.scrollIntoView) {
@@ -4109,6 +4180,12 @@ export function initTeclear() {
             btnInv.textContent = t("btnInv");
             document.getElementById("invTitle").textContent = t("invTitle");
             document.getElementById("invHint").textContent = t("invHint");
+            // Títulos de las secciones (los mismos que en la tienda)
+            if (invEventTitle) invEventTitle.textContent = t("invEventTitle");
+            if (invFontsTitle) invFontsTitle.textContent = t("invFontsTitle");
+            if (invBgsTitle) invBgsTitle.textContent = t("invBgsTitle");
+            if (invExtrasTitle) invExtrasTitle.textContent = t("invExtrasTitle");
+            if (invFxTitle) invFxTitle.textContent = t("invFxTitle");
             if (invOpen) renderInv();
             applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent =
@@ -4263,6 +4340,7 @@ export function initTeclear() {
             // El chip «General» es fijo en el HTML: su contenido se repinta aquí
             setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
             if (shopOpen) renderBgShop();       // miniaturas de la tienda
+            if (invOpen) renderInv();           // … y las del Inventario
         }
 
         function setVeyon(next) {
@@ -4605,16 +4683,13 @@ export function initTeclear() {
             try {
                 localStorage.setItem("teclear.fondo", bg);
             } catch (e) { /* sin almacenamiento disponible */ }
-            applyLang();
+            applyLang();       // repinta el selector, la tienda y el Inventario
             renderBgShop();
-            shopMsg.textContent = t("shopEquippedBgMsg");
+            invSay(t("shopEquippedBgMsg"));
         }
 
         function buyBg(b) {
-            if (ownedBgs.includes(b.id)) {
-                setBgEquipped(b.id);
-                return;
-            }
+            if (ownedBgs.includes(b.id)) return;   // ya está en el Inventario
             // Los fondos ganados con un logro no se compran con monedas
             if (b.ach) {
                 shopMsg.textContent = t("achNeed");
@@ -4622,14 +4697,10 @@ export function initTeclear() {
             }
             if (!cobra(b)) return;
             ownedBgs.push(b.id);
-            bg = b.id;
+            // La compra solo DESBLOQUEA: usarse se hace en el Inventario
             saveShop();
-            try {
-                localStorage.setItem("teclear.fondo", bg);
-            } catch (e) { /* sin almacenamiento disponible */ }
-            applyLang();
+            renderBgChips();    // el fondo ya aparece en el selector
             updateCoins();
-            renderBgShop();
             shopMsg.textContent = t("shopBoughtBg");
         }
 
@@ -5758,16 +5829,20 @@ export function initTeclear() {
                 const dy = Math.sin(ang) * pow + fx.rise * (.6 + Math.random() * .8);
                 const cada = fx.glyphEvery || 3;   // de vez en cuando, el emoji
                 const emoji = fx.glyph && i % cada === 0;
-                // Punto redondo... o cubo, si el efecto es de bloques (Explosión),
-                // o gota, si es de sangre (tienda de evento de Halloween)
-                p.className = "fx-p" + (emoji ? "" :
+                // Punto redondo… o cubo, si el efecto es de bloques (Explosión),
+                // o gota, si es de sangre (tienda de evento de Halloween),
+                // o llama, si es de fuego (dibujada, sin emoji)
+                const forma = emoji ? "" :
                     (fx.shape === "block" ? " block" :
-                     fx.shape === "drop" ? " drop" : " dot"));
+                     fx.shape === "drop" ? " drop" :
+                     fx.shape === "flame" ? " flame" : " dot");
+                p.className = "fx-p" + forma;
                 p.style.left = (a.x + Math.random() * 12 - 6) + "px";
                 p.style.top = (a.y + Math.random() * 12 - 6) + "px";
                 p.style.setProperty("--fx-dx", dx.toFixed(1) + "px");
                 p.style.setProperty("--fx-dy", dy.toFixed(1) + "px");
-                p.style.setProperty("--fx-rot", (Math.random() * 360 - 180).toFixed(0) + "deg");
+                p.style.setProperty("--fx-rot", fx.shape === "flame" ? "0deg" :
+                    (Math.random() * 360 - 180).toFixed(0) + "deg");   // las llamas no giran
                 p.style.setProperty("--fx-life", life + "ms");
                 if (emoji) {
                     p.textContent = fx.glyph;
@@ -5775,8 +5850,10 @@ export function initTeclear() {
                 } else {
                     p.style.setProperty("--fx-color", fx.colors[i % fx.colors.length]);
                     // la chispa es más pequeña que el emoji para no tapar la letra;
-                    // los cubos de la Explosión casi igualan al emoji (son bloques)
-                    const escala = fx.shape === "block" ? .85 : .6;
+                    // los cubos de la Explosión casi igualan al emoji (son bloques);
+                    // las LLAMAS salen con tamaño variado, que así se ve más viva
+                    const escala = fx.shape === "block" ? .85 :
+                        fx.shape === "flame" ? (.45 + Math.random() * .8) : .6;
                     p.style.setProperty("--fx-size", Math.max(6, Math.round(fx.size * escala)) + "px");
                 }
                 fxLayer.appendChild(p);
