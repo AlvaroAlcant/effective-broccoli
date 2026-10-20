@@ -42,4 +42,27 @@ export class GameMode {
 
     // Cronómetro con el que arranca la partida (null = el de siempre)
     timerStart() { return null; }
+
+    // Velocidad a la que corre el reloj en este modo
+    tickSpeed() { return 1; }
+
+    // Filtra la lista de palabras candidatas (null = sin filtro propio)
+    filterPool(pool) { return null; }
+
+    // Multiplicador de puntos del modo (base = el de la racha)
+    multiplier(base) { return base; }
+
+    // Fallo de tecla: "shield" = absorbido, "grace" = pasa sin romper
+    // racha, null = penalización normal
+    onBadKey() { return null; }
+
+    // Multiplicadores de recompensa mientras duren sus efectos
+    scoreMult() { return 1; }
+    coinMult() { return 1; }
+
+    // Recompensa propia al terminar una palabra (tiempo, xp…)
+    onReward(points) {}
+
+    // Milisegundos que el modo ha mantenido la partida en pausa
+    pausedMs() { return 0; }
 }

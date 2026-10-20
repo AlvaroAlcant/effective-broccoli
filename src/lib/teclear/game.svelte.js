@@ -12,7 +12,6 @@ import { acc } from './services/account.js';
 import { modes } from './modes/index.js';
 import {
     GAME_TIME, MAX_MISSES, SPEEDRUN_MS, BONUS_TIME_ELPRICO, SOUP_GIVEN,
-    ADV_TIME, ADV_EVERY, ADV_EVERY_MAX, ADV_SPEED_STEP, ADV_SPEED_MAX, ADV_SCORE_SLACK,
     SUP_LIVES, SUP_XP_WORD,
     RANK_URL, RANK_ADV_URL, NAMES_URL, RESETS_URL, RANK_MAX, NAMES_MAX,
     RANK_TIMEOUT, NAME_MAX, MAX_SCORE, MAX_WORDS, PTS_PER_WORD, SCORE_BOOST,
@@ -115,29 +114,24 @@ export function initTeclear() {
 
         let gameStartAt = 0;       // instante en que empezó la partida
         let gameDuration = 0;      // duración real de la partida (segundos)
-      // lo tecleado con teclas REALES (no se puede rellenar a mano)
-
-        // ---------- Estado del modo Aventura ----------
-          // hay una ventaja en pantalla (el reloj no corre)
-             // las tres ventajas sorteadas para elegir
-        let pausedTotal = 0;       // ms que el reloj ha estado en pausa (elegir ventaja)
-        let pausedAt = 0;          // instante en que empezó la pausa actual
-        let advShield = 0;         // fallos que el escudo todavía absorbe
-        let advShort = 0;          // palabras cortas que quedan por regalar
-        let advFreeze = 0;         // fin de la congelación (performance.now)
-        let advDouble = 0;         // fin del doble de puntos (performance.now)
-        let advTurbo = 0;          // fin del turbo de tiempo (performance.now)
-        let advCoins = 0;          // fin del doble de monedas (performance.now)
-        let advRevive = 0;         // salvavidas guardados para el final
-        let advTimeGained = 0;     // segundos ganados con las palabras
-        let advGold = 0;           // fin de la "racha dorada" (multiplicador x5)
-        let advGrace = 0;          // fin de la "indulgencia" (fallo sin perder racha)
-        let advRelief = 0;         // palabras que no cuentan para subir de nivel
-        let advReliefFrom = 0;     // completed en el momento del "remanso"
-        let advPicks = 1;          // ventajas que se pueden elegir en esta parada
-        let advExtraPick = 0;      // paradas dobles pendientes ("doble elección")
-        let advStops = 0;          // paradas de ventaja ya celebradas
-        let advNextPerk = ADV_EVERY;  // palabras escritas en las que toca parar
+       // ms que el reloj ha estado en pausa (elegir ventaja)
+          // instante en que empezó la pausa actual
+         // fallos que el escudo todavía absorbe
+          // palabras cortas que quedan por regalar
+         // fin de la congelación (performance.now)
+         // fin del doble de puntos (performance.now)
+          // fin del turbo de tiempo (performance.now)
+          // fin del doble de monedas (performance.now)
+         // salvavidas guardados para el final
+     // segundos ganados con las palabras
+           // fin de la "racha dorada" (multiplicador x5)
+          // fin de la "indulgencia" (fallo sin perder racha)
+         // palabras que no cuentan para subir de nivel
+     // completed en el momento del "remanso"
+          // ventajas que se pueden elegir en esta parada
+      // paradas dobles pendientes ("doble elección")
+          // paradas de ventaja ya celebradas
+  // palabras escritas en las que toca parar
 
        // id incremental de cada palabra en pantalla
       // palabra a la que apunta el teclado
@@ -295,28 +289,12 @@ export function initTeclear() {
                 return { kind: "off" };
             },
             maxMisses:   () => MAX_MISSES,
-            // Efectos activos del modo Aventura (se recalculan con cada tick
-            // porque leen timeLeft aunque no lo muestren)
+            // Efectos activos del modo Aventura (los calcula el modo; se
+            // recalculan con cada tick porque leen timeLeft aunque no lo muestren)
             advChips:    () => {
                 S.timeLeft;
-                if (S.mode !== "aventura" || S.state !== "playing") return [];
-                const chips = [{ txt: "⏱️ +" + timePerWord() + "s/" + t("advWord"), on: false }];
-                const vel = tickSpeed();
-                if (vel > 1.001) chips.push({ txt: "⏩ x" + vel.toFixed(1)
-                    .replace(".", uiLang() === "es" ? "," : "."), on: true });
-                if (advShield > 0) chips.push({ txt: "🛡️ x" + advShield, on: true });
-                if (advShort > 0) chips.push({ txt: "🛤️ x" + advShort, on: true });
-                if (advRevive > 0) chips.push({ txt: "🆘 x" + advRevive, on: true });
-                const quedanRelief = Math.max(0, advRelief - (S.completed - advReliefFrom));
-                if (quedanRelief > 0) chips.push({ txt: "🌊 x" + quedanRelief, on: true });
-                const ahora = performance.now();
-                if (ahora < advFreeze) chips.push({ txt: "❄️ " + Math.ceil((advFreeze - ahora) / 1000), on: true });
-                if (ahora < advDouble) chips.push({ txt: "💥 x2 " + Math.ceil((advDouble - ahora) / 1000), on: true });
-                if (ahora < advTurbo) chips.push({ txt: "🏃 x2s " + Math.ceil((advTurbo - ahora) / 1000), on: true });
-                if (ahora < advCoins) chips.push({ txt: "🧲 x2🪙 " + Math.ceil((advCoins - ahora) / 1000), on: true });
-                if (ahora < advGold) chips.push({ txt: "💎 x5 " + Math.ceil((advGold - ahora) / 1000), on: true });
-                if (ahora < advGrace) chips.push({ txt: "😇 " + Math.ceil((advGrace - ahora) / 1000), on: true });
-                return chips;
+                if (S.mode !== "aventura") return [];
+                return modes.aventura.chips();
             },
             // Tarjetas de la tienda (compra; usarse es cosa del Inventario)
             shopFonts:   () => FONT_STYLES.map(st => ({
@@ -478,7 +456,7 @@ export function initTeclear() {
             buyFx: id => eco.buyFx(eco.fxById(id)),
             startGame: startGame,
             saveScore: saveScore,
-            choosePerk: choosePerk,
+            choosePerk: p => modes.aventura.choosePerk(p),
             supAim: n => {
                 modes.supervivencia.aimByN(n);
                 if (typing) typing.focus();
@@ -534,7 +512,7 @@ export function initTeclear() {
             saveScore,
             getHits: () => S.hits,
             getGameDuration: () => gameDuration,
-            getAdvTimeGained: () => advTimeGained,
+            getAdvTimeGained: () => modes.aventura.timeGained,
         });
 
         // Los modos reciben la interfaz del motor: elementos que tocan
@@ -542,7 +520,8 @@ export function initTeclear() {
         Object.values(modes).forEach(m => {
             m.engine = {
                 typing, board,
-                nextWord, endGame, updateHud, pagaPalabra, typeInput
+                nextWord, endGame, updateHud, pagaPalabra, typeInput,
+                completeWord
             };
         });
 
@@ -844,34 +823,21 @@ export function initTeclear() {
         // ---------- Utilidades ----------
         function level() {
             // Los modos con dificultad propia la calculan ellos
+            // (Aventura acelera con las palabras, Supervivencia con el reloj)
             const lv = modes[S.mode].level();
             if (lv != null) return lv;
-            // En el modo Aventura la dificultad sube más deprisa: con cada
-            // palabra escrita toca antes una más larga y menos pistas.
-            // La ventaja "remanso" descuenta palabras para que no suba tanto.
-            if (S.mode === "aventura") {
-                return 1 + Math.floor(Math.max(0, S.completed - advRelief) / 3);
-            }
             return 1 + Math.floor(S.completed / 5);
         }
 
-        // ---------- Modo Aventura ----------
-        // Segundos que regala cada palabra: van bajando a medida que sube el
-        // nivel, así que las palabras dan menos tiempo justo cuando son más largas.
-        function timePerWord() {
-            const base = Math.max(1, 4 - Math.floor((level() - 1) / 3));
-            // Ventaja "turbo": durante unos segundos cada palabra dobla su tiempo
-            return performance.now() < advTurbo ? base * 2 : base;
-        }
 
         // Velocidad a la que corre el reloj: en Aventura va acelerando con el
         // nivel (hasta el doble), así que el tiempo se consume cada vez más
         // deprisa justo cuando las palabras son más largas y valen menos.
         // En el resto de modos el reloj siempre va a velocidad normal.
         function tickSpeed() {
-            if (S.mode !== "aventura") return 1;
-            const extra = (level() - 1) * ADV_SPEED_STEP;
-            return Math.min(ADV_SPEED_MAX, 1 + extra);
+            // En Aventura el reloj acelera con el nivel (el modo lo calcula);
+            // en el resto siempre va a velocidad normal
+            return modes[S.mode].tickSpeed();
         }
 
 
@@ -879,209 +845,7 @@ export function initTeclear() {
 
 
 
-        // Palabras que faltan para la próxima parada de ventaja: el hueco va
-        // creciendo de dos en dos palabras cada vez que se para, hasta
-        // ADV_EVERY_MAX, de modo que las ventajas salen cada vez menos a menudo.
-        // (Las dos primeras paradas siguen siendo a las 5 y a las 10 palabras)
-        function perkEvery() {
-            return Math.min(ADV_EVERY + Math.floor(advStops / 2), ADV_EVERY_MAX);
-        }
 
-        // Suma segundos al cronómetro (palabras y ventajas del modo Aventura)
-        function gainTime(sec) {
-            S.timeLeft += sec;
-            advTimeGained += sec;
-            showSeconds(sec);
-        }
-
-        // Aviso flotante de los segundos ganados (celeste, sobre el tablero)
-        function showSeconds(sec) {
-            const p = document.createElement("div");
-            p.className = "points time";
-            p.textContent = "+" + sec + "s";
-            stage.appendChild(p);
-            setTimeout(() => p.remove(), 900);
-        }
-
-        // Banque de ventajas (17 en total): cada ADV_EVERY palabras se sortean
-        // tres y el jugador se queda con una. El texto va en castellano y en inglés.
-        const ADVENTURE_PERKS = [
-            {
-                id: "tiempo", icon: "⏱️",
-                es: "+10 segundos", en: "+10 seconds",
-                descEs: "Diez segundos más en el cronómetro.", descEn: "Ten more seconds on the clock.",
-                apply: function () { gainTime(10); }
-            },
-            {
-                id: "escudo", icon: "🛡️",
-                es: "Escudo", en: "Shield",
-                descEs: "Absorbe tu próximo fallo: ni puntos ni racha.", descEn: "Absorbs your next mistake: no points or streak lost.",
-                apply: function () { advShield++; }
-            },
-            {
-                id: "congelar", icon: "❄️",
-                es: "Tiempo congelado", en: "Frozen clock",
-                descEs: "El cronómetro no baja durante 6 segundos.", descEn: "The clock does not tick for 6 seconds.",
-                apply: function () { advFreeze = performance.now() + 6000; }
-            },
-            {
-                id: "doble", icon: "💥",
-                es: "Puntos x2", en: "Double points",
-                descEs: "Duplica tus puntos durante 15 segundos.", descEn: "Doubles your points for 15 seconds.",
-                apply: function () { advDouble = performance.now() + 15000; }
-            },
-            {
-                id: "turbo", icon: "🏃",
-                es: "Turbo", en: "Turbo",
-                descEs: "10 segundos en los que cada palabra dobla el tiempo que regala.", descEn: "10 seconds where every word gives double time.",
-                apply: function () { advTurbo = performance.now() + 10000; }
-            },
-            {
-                id: "monedas2", icon: "🧲",
-                es: "Monedas dobles", en: "Double coins",
-                descEs: "15 segundos ganando el doble de monedas en cada palabra.", descEn: "15 seconds earning double coins on every word.",
-                apply: function () { advCoins = performance.now() + 15000; }
-            },
-            {
-                id: "salvavidas", icon: "🆘",
-                es: "Salvavidas", en: "Lifeline",
-                descEs: "Si el cronómetro llega a cero, salta a 15 segundos.", descEn: "If the clock reaches zero, it jumps to 15 seconds.",
-                apply: function () { advRevive++; }
-            },
-            {
-                id: "regalada", icon: "🎁",
-                es: "Palabra regalada", en: "Free word",
-                descEs: "La palabra de delante se completa sola si no la tocas.", descEn: "The word in front of you completes itself if you leave it alone.",
-                apply: function () {
-                    const w = S.word;
-                    let intentos = 0;
-                    // Espera a que se cierre la parada (una doble "doble
-                    // elección" puede dejar la ventana abierta un rato)
-                    const intento = function () {
-                        if (S.state !== "playing") return;
-                        if (S.perkOpen && intentos++ < 40) { setTimeout(intento, 300); return; }
-                        if (S.perkOpen) return;
-                        if (S.word !== w || typing.value.length > 0) return;
-                        S.statusTxt = t("statusFreeWord");
-                        completeWord();
-                    };
-                    setTimeout(intento, 600);
-                }
-            },
-            {
-                id: "suerte", icon: "🎲",
-                es: "Suerte del todo", en: "Wild card",
-                descEs: "Te toca otra ventaja al azar del banque.", descEn: "You get another random advantage from the deck.",
-                apply: function () {
-                    const otras = ADVENTURE_PERKS.filter(p => p.id !== "suerte");
-                    otras[Math.floor(Math.random() * otras.length)].apply();
-                }
-            },
-            {
-                id: "monedas", icon: "🪙",
-                es: "+25 monedas", en: "+25 coins",
-                descEs: "Te llevas 25 monedas al instante.", descEn: "You get 25 coins right away.",
-                apply: function () { eco.giveCoins(25); fx.showCoin(25); }
-            },
-            {
-                id: "racha", icon: "🔥",
-                es: "Racha +5", en: "Streak +5",
-                descEs: "Tu racha sube de golpe cinco palabras.", descEn: "Your streak jumps five words ahead.",
-                apply: function () { S.streak += 5; }
-            },
-            {
-                id: "corto", icon: "🛤️",
-                es: "Camino corto", en: "Short cut",
-                descEs: "Las próximas 3 palabras serán cortas.", descEn: "The next 3 words will be short ones.",
-                apply: function () { advShort += 3; }
-            },
-            {
-                id: "dobleEleccion", icon: "🎒",
-                es: "Doble elección", en: "Double pick",
-                descEs: "Tu próxima parada es doble: te llevas dos ventajas seguidas.", descEn: "Your next stop is a double one: you get two advantages in a row.",
-                apply: function () { advExtraPick++; }
-            },
-            {
-                id: "remanso", icon: "🌊",
-                es: "Remanso", en: "Lull",
-                descEs: "Las próximas 12 palabras no cuentan para subir de nivel: bajan las palabras y sube el tiempo por palabra.", descEn: "The next 12 words don't count toward the level: easier words and more time each.",
-                apply: function () { advRelief += 12; advReliefFrom = S.completed; }
-            },
-            {
-                id: "dorada", icon: "💎",
-                es: "Racha dorada", en: "Golden streak",
-                descEs: "15 segundos con el multiplicador en x5, aunque falles.", descEn: "15 seconds with the multiplier at x5, even if you miss.",
-                apply: function () { advGold = performance.now() + 15000; }
-            },
-            {
-                id: "bolsa", icon: "🧧",
-                es: "Bolsa de monedas", en: "Coin pouch",
-                descEs: "Monedas al instante: diez veces tu racha actual (mínimo 20).", descEn: "Coins right away: ten times your current streak (at least 20).",
-                apply: function () {
-                    const n = Math.max(20, S.streak * 10);
-                    eco.giveCoins(n);
-                    fx.showCoin(n);
-                }
-            },
-            {
-                id: "indulgencia", icon: "😇",
-                es: "Indulgencia", en: "Grace",
-                descEs: "15 segundos en los que fallar no rompe tu racha (sí resta 5 puntos).", descEn: "15 seconds where missing doesn't break your streak (still -5 points).",
-                apply: function () { advGrace = performance.now() + 15000; }
-            }
-        ];
-
-        // Reparte tres ventajas distintas al azar entre las que elegir
-        function sortPerks() {
-            const pool = ADVENTURE_PERKS.slice();
-            for (let i = pool.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                const tmp = pool[i];
-                pool[i] = pool[j];
-                pool[j] = tmp;
-            }
-            return pool.slice(0, 3);
-        }
-
-        // Abre la parada de la aventura: mientras el jugador elige, el reloj
-        // no corre y la entrada de texto queda bloqueada.
-        function openPerkChoice() {
-            if (S.state !== "playing") return;
-            // Segunda ventaja de una parada doble ("doble elección"): la
-            // ventana sigue abierta y solo hacen falta otras tres al azar
-            if (S.perkOpen) { S.perkOpts = sortPerks(); return; }
-            advPicks = advExtraPick > 0 ? 2 : 1;
-            advExtraPick = 0;
-            S.perkOpts = sortPerks();
-            S.perkOpen = true;
-            pausedAt = Date.now();
-            typing.blur();
-            S.statusTxt = t("perkTitle");
-        }
-
-        // Aplica la ventaja elegida y devuelve el control al jugador
-        function choosePerk(p) {
-            if (!S.perkOpen) return;
-            const segunda = advPicks > 1;   // la parada deja otra ventaja más
-            if (segunda) {
-                advPicks--;
-            } else {
-                advPicks = 1;
-                S.perkOpen = false;
-                pausedTotal += Date.now() - pausedAt;   // la pausa no cuenta como partida
-                pausedAt = 0;
-            }
-            p.apply();
-            const nombre = p.icon + " " + (uiLang() === "en" ? p.en : p.es);
-            if (segunda) {
-                openPerkChoice();          // se sortean tres ventajas más
-                S.statusTxt = t("perkSecond") + nombre;
-            } else {
-                typing.focus();
-                S.statusTxt = t("perkChosen") + nombre;
-            }
-            updateHud();   // refresca el tiempo y los efectos activos
-        }
 
         // Lista de la que sale la siguiente palabra. Con el modo picante
         // activado, aproximadamente la mitad de las palabras de la partida
@@ -1188,11 +952,11 @@ export function initTeclear() {
             const list = wordPool();
             const lvl = level();
             let pool;
-            // Ventaja "camino corto" del modo Aventura: palabras cortas
-            if (S.mode === "aventura" && advShort > 0) {
-                advShort--;
-                pool = list.filter(w => w.length <= 5);
-            } else if (lvl <= 1) pool = list.filter(w => w.length <= 5);
+            // El modo puede imponer su filtro (ventaja "camino corto" de
+            // Aventura: palabras cortas mientras dure)
+            const filtered = modes[S.mode].filterPool(list);
+            if (filtered) pool = filtered;
+            else if (lvl <= 1) pool = list.filter(w => w.length <= 5);
             else if (lvl <= 3) pool = list.filter(w => w.length <= 7);
             else if (lvl <= 6) pool = list.filter(w => w.length >= 5);
             else pool = list.filter(w => w.length >= 6);
@@ -1208,10 +972,10 @@ export function initTeclear() {
         }
 
         function multiplier() {
-            // Ventaja "racha dorada": mientras dura, el multiplicador se
-            // queda clavado en su máximo aunque la racha se caiga
-            if (S.mode === "aventura" && performance.now() < advGold) return 5;
-            return Math.min(1 + Math.floor(S.streak / 4), 5);
+            // El modo puede pisar el multiplicador (ventaja "racha
+            // dorada" de Aventura: clavado en x5 mientras dure)
+            const base = Math.min(1 + Math.floor(S.streak / 4), 5);
+            return modes[S.mode].multiplier(base);
         }
 
 
@@ -1352,9 +1116,8 @@ export function initTeclear() {
             // palabras largas (más de 7 letras) y General dobla las monedas
             const largo = S.word.length > 7;
             const triple = eco.bgPower("esteso") && largo;
-            // Ventaja "puntos x2" del modo Aventura: solo durante su ventana
-            const x2 = (S.mode === "aventura" && performance.now() < advDouble) ? 2 : 1;
-            const points = S.word.length * 10 * mult * (triple ? SCORE_BOOST : 1) * x2;
+            // Multiplicadores propios del modo (ventana de "puntos x2")
+            const points = S.word.length * 10 * mult * (triple ? SCORE_BOOST : 1) * modes[S.mode].scoreMult();
             S.score += points;
             fx.showPoints(points);
             // Monedas al estilo experiencia: la racha multiplica lo que ganas.
@@ -1363,30 +1126,23 @@ export function initTeclear() {
             const coinGain = mult *
                 (triple ? SCORE_BOOST : 1) *
                 (eco.bgPower("franco") ? 2 : 1) *
-                // Ventaja "monedas dobles": solo durante su ventana
-                ((S.mode === "aventura" && performance.now() < advCoins) ? 2 : 1) *
+                // Multiplicador propio del modo (ventana de "monedas dobles")
+                modes[S.mode].coinMult() *
                 // Modo Truco o trato (evento de Halloween): DOBLE de monedas
                 (eco.extraActive("truco") ? 2 : 1);
             eco.giveCoins(coinGain);
             fx.showCoin(coinGain);
-            // Modo Supervivencia: cada palabra disparada paga su experiencia
-            // en caliente (el total se confirma al acabar la partida)
-            if (S.mode === "supervivencia") fx.showXp(SUP_XP_WORD + Math.floor(points / 10));
-            // Modo Aventura: cada palabra regala segundos al cronómetro
-            if (S.mode === "aventura") gainTime(timePerWord());
+            // Recompensa propia del modo (Supervivencia: XP en caliente;
+            // Aventura: segundos al cronómetro)
+            modes[S.mode].onReward(points);
         }
 
         function completeWord() {
             pagaPalabra();
             newWord();
-            // ... y llegado el momento hay una parada para elegir una ventaja.
-            // Cada parada alarga el hueco siguiente: al principio cada 5
-            // palabras y después cada vez más.
-            if (S.mode === "aventura" && S.completed >= advNextPerk) {
-                advStops++;
-                advNextPerk = S.completed + perkEvery();
-                openPerkChoice();
-            }
+            // El modo reacciona a la palabra completada (Aventura: cada
+            // ciertas palabras hay una parada para elegir una ventaja)
+            modes[S.mode].onWordComplete();
         }
 
         // (La vida perdida cuando se escapa una palabra la resta supEscape(),
@@ -1410,30 +1166,8 @@ export function initTeclear() {
             modes[S.mode].enter();
             // El modo Aventura se juega contra un cronómetro propio: 50 s
             // En Supervivencia el reloj es el de la palabra apuntada
-            S.timeLeft = modes[S.mode].timerStart() ??
-                (S.mode === "aventura" ? ADV_TIME : gameTime());
+            S.timeLeft = modes[S.mode].timerStart() ?? gameTime();
             S.coinsRun = 0;
-            // Estado del modo Aventura: ventajas y pausas a cero
-            S.perkOpen = false;
-            pausedTotal = 0;
-            pausedAt = 0;
-            advShield = 0;
-            advShort = 0;
-            advFreeze = 0;
-            advDouble = 0;
-            advTurbo = 0;
-            advCoins = 0;
-            advRevive = 0;
-            advTimeGained = 0;
-            advGold = 0;
-            advGrace = 0;
-            advRelief = 0;
-            advReliefFrom = 0;
-            advPicks = 1;
-            advExtraPick = 0;
-            advStops = 0;             // aún no se ha parado a elegir ventaja
-            advNextPerk = ADV_EVERY;  // primera parada: a las 5 palabras
-            S.perkOpts = [];
             // Telemetría anti-automatización: se reinicia en cada partida
             acc.keyStamps = [];
             acc.inputEvents = 0;
@@ -1505,38 +1239,22 @@ export function initTeclear() {
 
         function tick() {
             const now = performance.now();
-            // Modo Aventura: mientras se elige ventaja el reloj no corre…
+            // Modo Aventura: mientras se elige ventaja el reloj no corre
             if (S.perkOpen) {
                 lastTick = now;
                 return;
             }
-            // …y con la ventaja "tiempo congelado" tampoco baja unos segundos
-            if (now < advFreeze) {
-                lastTick = now;
-                updateHud();
-                return;
-            }
             // Los modos con pulso propio se ocupan solos (Supervivencia
-            // mueve su campo de palabras y su reloj particular)
+            // mueve su campo, Aventura su congelación y su salvavidas)
             const dt = now - lastTick;
             if (modes[S.mode].tick(now, dt)) {
                 lastTick = now;
                 return;
             }
-            // En Aventura el reloj va acelerando con el nivel: el tiempo que
-            // queda se consume cada vez más deprisa (velocidad normal en el
-            // resto de modos, donde tickSpeed() devuelve 1)
+            // El tiempo que queda se consume a la velocidad del modo
+            // (Aventura acelera con el nivel; el resto, velocidad normal)
             S.timeLeft -= dt / 1000 * tickSpeed();
             lastTick = now;
-            // Ventaja "salvavidas": el cronómetro no muere de golpe, salta a 15 s
-            if (S.timeLeft <= 0 && advRevive > 0) {
-                advRevive--;
-                const salvado = Math.max(1, 15 - S.timeLeft);
-                S.timeLeft += salvado;
-                advTimeGained += salvado;
-                showSeconds(Math.round(salvado));
-                S.statusTxt = t("statusRevive");
-            }
 
             if (S.timeLeft <= 0) {
                 S.timeLeft = 0;
@@ -1553,17 +1271,12 @@ export function initTeclear() {
             // para alargarla y sumar puntos, esto lo delata. Las paradas del
             // modo Aventura (elegir ventaja) no se cuentan como tiempo jugado.
             gameDuration = gameStartAt > 0
-                ? Math.max(0, (Date.now() - gameStartAt - pausedTotal) / 1000)
+                ? Math.max(0, (Date.now() - gameStartAt - modes[S.mode].pausedMs()) / 1000)
                 : gameTime();
             S.state = "over";
             // Cada modo retira lo suyo (el tablero de Supervivencia, la
-            // pantalla grande, sus contadores…)
+            // pantalla grande, las ventanas de ventajas…)
             modes[S.mode].exit();
-            // Por si se termina con la ventana de ventajas abierta
-            if (S.perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
-            S.perkOpen = false;
-            S.perkOpts = [];
-            pausedAt = 0;
             // Modo Al azar: al acabar se olvida lo sorteado en esta partida
             if (extraRun) {
                 extraRun = null;
@@ -1672,18 +1385,17 @@ export function initTeclear() {
             if (bad !== -1) {
                 val = val.slice(0, bad);
                 typing.value = val;
-                // Ventaja "escudo" del modo Aventura: el fallo no se paga
-                if (advShield > 0) {
-                    advShield--;
+                // El modo puede absorber el fallo (escudo de Aventura) o
+                // dejarlo pasar sin romper la racha (indulgencia)
+                const absorbed = modes[S.mode].onBadKey();
+                if (absorbed === "shield") {
                     S.statusTxt = t("statusShield");
                 } else {
                     S.errors++;
-                    // Ventaja "indulgencia": un rato sin que el fallo rompa la racha
-                    const indul = S.mode === "aventura" && performance.now() < advGrace;
-                    if (!indul) S.streak = 0;
+                    if (absorbed !== "grace") S.streak = 0;
                     S.score = Math.max(0, S.score - 5);
                     fx.shake();
-                    S.statusTxt = indul ? t("statusGrace") : t("statusError");
+                    S.statusTxt = absorbed === "grace" ? t("statusGrace") : t("statusError");
                     // Modo Truco o trato (evento de Halloween): cada tecla
                     // fallada cuesta el DOBLE, en tiempo y en experiencia
                     if (eco.extraActive("truco")) {
@@ -2021,8 +1733,8 @@ export function initTeclear() {
                 // Equilibrio de Aventura (solo lectura): velocidad del reloj y
                 // palabras que faltan para la próxima parada de ventaja
                 velocidadReloj: function () { return tickSpeed(); },
-                proximaVentaja: function () { return perkEvery(); },
-                paradasHechas: function () { return advStops; },
+                proximaVentaja: function () { return modes.aventura.perkEvery(); },
+                paradasHechas: function () { return modes.aventura.stops; },
                 // Perfiles (solo lectura de fuera: registrar/entrar/salir)
                 sha256: function (s) { return identity.sha256hex(String(s)); },
                 derivePass: function (p, s) { return identity.derivePass(String(p), String(s)); },

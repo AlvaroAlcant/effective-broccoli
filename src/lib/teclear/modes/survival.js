@@ -239,6 +239,12 @@ export class SurvivalMode extends GameMode {
         this.engine.updateHud();
     }
 
+    // Cada palabra disparada paga su experiencia en caliente (el total
+    // se confirma al acabar la partida)
+    onReward(points) {
+        fx.showXp(SUP_XP_WORD + Math.floor(points / 10));
+    }
+
     // Letra acertada en el modo Encantado: su recompensa son caramelos.
     // Cuenta para nivel, racha y resultados, pero NUNCA da monedas ni
     // experiencia (el modo se paga solo en la moneda del evento).
