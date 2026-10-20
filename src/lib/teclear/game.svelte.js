@@ -8,12 +8,39 @@ import imgLogo from '#lib/img/estesoTeclea.png';
 import { getSetting, setSetting } from './settings.js';
 
 // ---------- Fachada reactiva (runes) ----------
-// Estado del juego expuesto a los componentes: initTeclear() publica
-// aquí getters sobre sus variables $state, de modo que cualquier
-// componente Svelte puede leer G.score, G.coins… y re-renderizarse
-// solo cuando ese dato cambia. El objeto es plano a propósito: la
-// reactividad la proporcionan los getters sobre las variables $state.
-export const G = {};
+// Estado del juego expuesto a los componentes. Cada lectura de G.x la
+// resuelve el proxy llamando a impl[x], que initTeclear() registra como
+// una función que lee la variable $state real — así la lectura queda
+// suscrita al dato que usa y Svelte re-renderiza solo lo que cambia.
+// «rev» marca cuándo la fachada ya está lista: los componentes
+// renderizan antes del onMount (donde corre initTeclear), así que sus
+// primeras lecturas caen en los stubs; al subir rev se repintan solos.
+const impl = {};
+let rev = $state(0);
+const STUBS = {
+    t: k => k,
+    owned: [], ownedBgs: [], ownedExtras: [], ownedFx: [],
+    extraOn: {}, achData: {},
+    // View-models que la vista recorre o desempaqueta antes de que la
+    // fachada esté lista (SSR y primer render): formas vacías equivalentes
+    boardView: { kind: "hint", txt: "" },
+    missesView: { kind: "off", wrong: [] },
+    res: {}, rank: {
+        normal: { entries: [], online: false, loaded: false, tampered: false },
+        aventura: { entries: [], online: false, loaded: false, tampered: false }
+    },
+    advChips: [], perkOpts: [],
+    shopFonts: [], shopBgs: [], shopExtras: [], shopFxs: [], shopEvents: [],
+    invSections: [], achCards: [], modeOptions: [], supOptions: [], bgChips: [],
+    supMax: 0, maxMisses: 0,
+    rankDate: () => "", a: {}
+};
+export const G = new Proxy({}, {
+    get: (_, k) => {
+        rev;   // toda lectura queda suscrita al momento «fachada lista»
+        return k in impl ? impl[k]() : STUBS[k];
+    }
+});
         // TODO el juego vive dentro de este closure: las variables internas
         // (puntuación, palabras, teclas, contadores) no son accesibles desde la
         // consola del navegador, así que no se pueden manipular con comandos.
@@ -1050,7 +1077,6 @@ export function initTeclear() {
                 shopBgsTitle: "🖼️ Wallpapers",
                 modeClassic: "⌨️ Classic typing",
                 modeClassicMsg: "Classic typing: no extras, just words in the chosen language. ⌨️",
-                modeClassicMsg: "Classic typing: no extras, just words in the chosen language. ⌨️",
                 modeSelectHint: "Pick the typing variant you bought in the shop",
                 modeSelectEmpty: "Buy extras in the shop to unlock more typing modes",
                 modeSelectOff: "Shop extras can only be picked in ⌨️ Typing mode",
@@ -1249,18 +1275,18 @@ export function initTeclear() {
         const VEYON_FAVICON = imgVeyonFavicon;
         const VEYON_BGS = ["franco", "esteso"];
         let state = $state("idle");      // idle | playing | over
-        let word = "";
-        let currentImg = null;   // imagen en pantalla (modo Imágenes)
-        let mask = [];          // modo adivinar: "start" | "hidden" | "found"
-        let wrongLetters = [];  // modo adivinar
-        let misses = 0;         // modo adivinar
+        let word = $state("");
+        let currentImg = $state(null);   // imagen en pantalla (modo Imágenes)
+        let mask = $state([]);          // modo adivinar: "start" | "hidden" | "found"
+        let wrongLetters = $state([]);  // modo adivinar
+        let misses = $state(0);         // modo adivinar
         let score = $state(0);
         let streak = $state(0);
         let hits = 0;           // teclas / letras acertadas
         let errors = 0;         // fallos
         let completed = $state(0);
-        let prevLen = 0;        // longitud aceptada en el modo tecleo
-        let timeLeft = GAME_TIME;
+        let prevLen = $state(0);        // longitud aceptada en el modo tecleo
+        let timeLeft = $state(GAME_TIME);
         let lastTick = 0;
         let timerId = null;
         let best = $state(0);
@@ -1292,7 +1318,7 @@ export function initTeclear() {
         let achData = $state({});          // id → { p: progreso, done: completado }
         let srAt = 0;              // instante en que arrancó la ventana del logro Speedrunner
         let srWords = 0;           // palabras escritas dentro de esa ventana de 8 segundos
-        let rankBusy = false;      // evita guardar la puntuación dos veces
+        let rankBusy = $state(false);  // evita guardar la puntuación dos veces
         let playerId = "";         // identificador del jugador en este dispositivo
         let savedScore = false;    // la puntuación de esta partida ya se ha guardado
         // Telemetría de la partida: sirve para detectar escritura automática
@@ -1327,17 +1353,18 @@ export function initTeclear() {
         // Tabla destacada del panel: al guardar una marca se resalta la suya
         let rankFocus = $state("normal");
         // Estado de cada tabla: filas válidas, conexión, aviso de alteración
-        const rankData = {
+        const rankData = $state({
             normal: { entries: [], online: false, loaded: false, tampered: false },
             aventura: { entries: [], online: false, loaded: false, tampered: false }
-        };
+        });
         let gameStartAt = 0;       // instante en que empezó la partida
         let gameDuration = 0;      // duración real de la partida (segundos)
-        let verifyCode = "";       // código aleatorio de verificación humana
+        let verifyCode = $state("");   // código aleatorio de verificación humana
         let verifyTyped = "";      // lo tecleado con teclas REALES (no se puede rellenar a mano)
 
         // ---------- Estado del modo Aventura ----------
-        let perkOpen = false;      // hay una ventaja en pantalla (el reloj no corre)
+        let perkOpen = $state(false);  // hay una ventaja en pantalla (el reloj no corre)
+        let perkOpts = $state([]);     // las tres ventajas sorteadas para elegir
         let pausedTotal = 0;       // ms que el reloj ha estado en pausa (elegir ventaja)
         let pausedAt = 0;          // instante en que empezó la pausa actual
         let advShield = 0;         // fallos que el escudo todavía absorbe
@@ -1358,61 +1385,375 @@ export function initTeclear() {
         let advNextPerk = ADV_EVERY;  // palabras escritas en las que toca parar
 
         // ---------- Estado del modo Supervivencia ----------
-        let supLives = SUP_LIVES;  // vidas que quedan (5 al empezar)
+        let supLives = $state(SUP_LIVES);  // vidas que quedan (5 al empezar)
         // Palabras que hay ahora en pantalla. Cada una lleva lo suyo: la
         // palabra, las letras ya disparadas, su hueco y sus segundos restantes
         let supItems = [];
+        // Reloj que repinta el campo de Supervivencia: los ítems mutan cada
+        // tick (bajan, reciben letras), así que la vista se suscribe a este
+        // contador y relee el array en cada pulso — sin proxies de por medio
+        let supTick = $state(0);
+        let supSerial = 0;       // id incremental de cada palabra en pantalla
         let supTarget = null;      // palabra a la que apunta el teclado
         let supStartAt = 0;        // instante en que empezó la partida (dificultad)
 
         // ---------- Perfil de usuario ----------
         let accOpen = $state(false);       // panel de perfil abierto
         let accMode = $state("reg");       // reg | login  (formulario que se está mostrando)
-        let accBusy = false;       // evita registrar/entrar dos veces a la vez
+        let accBusy = $state(false); // evita registrar/entrar dos veces a la vez
         let accSession = $state(null);     // { id, n } de la cuenta con sesión abierta
+        let accMsgTxt = $state("");        // aviso del formulario / datos
+        let accMsgWarn = $state(false);    // el aviso es de error (rojo)
+
+        // ---------- Estado pintado por Svelte (la UI ya no se escribe a mano) ----------
+        let statusTxt = $state("");    // línea de estado bajo el tablero
+        let startTxt = $state("");     // texto del botón principal (Jugar/…)
+        let shopMsgTxt = $state("");   // avisos de compra en la tienda
+        let invMsgTxt = $state("");    // avisos de «usar» en el inventario
+        let rankMsgTxt = $state("");   // aviso junto al botón de guardar marca
+        let rankMsgOff = $state(false);// el aviso es de rechazo (rojo)
+        let resOpen = $state(false);   // panel de resultados visible
+        let res = $state({});          // { score,words,acc,ppm,coins,candy,xp,best,msg,record }
+        let eventCountTxt = $state("");// cuenta atrás del evento de Halloween
+        let halloween = $state(false); // el evento está activo ahora mismo
+        let logoPhraseTxt = $state("");// frase del logo tras cada toque
+        let logoShow = $state(false);  // la frase está visible (se apaga sola)
+        let typedStr = $state("");     // lo tecleado hasta ahora (letras del tablero)
+        let picErr = $state(false);    // la foto del modo Imágenes no ha cargado
         let xp = $state(0);                // experiencia acumulada en todas las partidas
         let gamesPlayed = $state(0);       // partidas terminadas
         let wordsTotal = $state(0);        // palabras escritas en total
 
-        // Publicación del estado para los componentes: cada propiedad de
-        // G es un getter que lee la variable $state correspondiente, así
-        // que Svelte re-renderiza solo cuando cambia ese dato.
-        Object.defineProperties(G, {
-            lang:        { get: () => lang },
-            mode:        { get: () => mode },
-            state:       { get: () => state },
-            supVariant:  { get: () => supVariant },
-            bg:          { get: () => bg },
-            veyon:       { get: () => veyon },
-            score:       { get: () => score },
-            streak:      { get: () => streak },
-            completed:   { get: () => completed },
-            best:        { get: () => best },
-            bestWords:   { get: () => bestWords },
-            coins:       { get: () => coins },
-            coinsRun:    { get: () => coinsRun },
-            caramelos:   { get: () => caramelos },
-            candyRun:    { get: () => candyRun },
-            owned:       { get: () => owned },
-            equipped:    { get: () => equipped },
-            ownedBgs:    { get: () => ownedBgs },
-            ownedExtras: { get: () => ownedExtras },
-            extraOn:     { get: () => extraOn },
-            ownedFx:     { get: () => ownedFx },
-            fxEquipped:  { get: () => fxEquipped },
-            achData:     { get: () => achData },
-            xp:          { get: () => xp },
-            gamesPlayed: { get: () => gamesPlayed },
-            wordsTotal:  { get: () => wordsTotal },
-            shopOpen:    { get: () => shopOpen },
-            rankOpen:    { get: () => rankOpen },
-            logrosOpen:  { get: () => logrosOpen },
-            invOpen:     { get: () => invOpen },
-            accOpen:     { get: () => accOpen },
-            accMode:     { get: () => accMode },
-            accSession:  { get: () => accSession },
-            rankFocus:   { get: () => rankFocus }
+        // Publicación del estado para los componentes: impl[k] devuelve
+        // el valor actual del dato k leyendo las variables $state (los
+        // derivados se reevalúan al cambiar cualquiera que lean dentro).
+        Object.assign(impl, {
+            lang:        () => lang,
+            mode:        () => mode,
+            state:       () => state,
+            supVariant:  () => supVariant,
+            bg:          () => bg,
+            veyon:       () => veyon,
+            score:       () => score,
+            streak:      () => streak,
+            completed:   () => completed,
+            best:        () => best,
+            bestWords:   () => bestWords,
+            coins:       () => coins,
+            coinsRun:    () => coinsRun,
+            caramelos:   () => caramelos,
+            candyRun:    () => candyRun,
+            owned:       () => owned,
+            equipped:    () => equipped,
+            ownedBgs:    () => ownedBgs,
+            ownedExtras: () => ownedExtras,
+            extraOn:     () => extraOn,
+            ownedFx:     () => ownedFx,
+            fxEquipped:  () => fxEquipped,
+            achData:     () => achData,
+            xp:          () => xp,
+            gamesPlayed: () => gamesPlayed,
+            wordsTotal:  () => wordsTotal,
+            shopOpen:    () => shopOpen,
+            rankOpen:    () => rankOpen,
+            logrosOpen:  () => logrosOpen,
+            invOpen:     () => invOpen,
+            accOpen:     () => accOpen,
+            accMode:     () => accMode,
+            accSession:  () => accSession,
+            rankFocus:   () => rankFocus,
+            t:           () => t,
+            uiEn:        () => uiLang() === "en",
+            subtitle:    () => mode === "imagen" ? t("subtitleI") :
+                             mode === "guess" ? t("subtitleG") :
+                             mode === "aventura" ? t("subtitleA") :
+                             mode === "supervivencia" ? t("subtitleS") :
+                             lang === "mur" ? t("subtitleM") : t("subtitleT"),
+            streakTxt:   () => streak + " (x" + multiplier() + ")",
+            level:       () => level(),
+            timeTxt:     () => Math.max(0, Math.ceil(timeLeft)),
+            timeLow:     () => state === "playing" &&
+                             (mode === "supervivencia" ? timeLeft <= 4 : timeLeft <= 10),
+            coinsTxt:    () => fmtCoins(coins),
+            accHintTxt:  () => accSession ? t("accDataHint") : t("accHint"),
+            btnRegTxt:   () => accSession ? t("btnProfile") : t("btnRegister"),
+            candyTxt:    () => fmtCandy(caramelos),
+            achCountTxt: () => Object.values(achData).filter(d => d.done).length +
+                             "/" + ACHIEVEMENTS.length,
+            invCountTxt: () => invItems().length,
+
+            // ---------- Estado que la UI pinta directamente ----------
+            statusTxt:   () => statusTxt,
+            startTxt:    () => startTxt,
+            shopMsgTxt:  () => shopMsgTxt,
+            invMsgTxt:   () => invMsgTxt,
+            rankMsgTxt:  () => rankMsgTxt,
+            rankMsgOff:  () => rankMsgOff,
+            accMsgTxt:   () => accMsgTxt,
+            accMsgWarn:  () => accMsgWarn,
+            res:         () => res,
+            resOpen:     () => resOpen,
+            verifyCode:  () => verifyCode,
+            rankBusy:    () => rankBusy,
+            savedScore:  () => savedScore,
+            eventCountTxt: () => eventCountTxt,
+            halloween:   () => halloween,
+            logoPhraseTxt: () => logoPhraseTxt,
+            logoShow:    () => logoShow,
+            playing:     () => state === "playing",
+            typingDis:   () => state !== "playing" || perkOpen,
+            esAdmin:     () => esAdmin(),
+            accBusy:     () => accBusy,
+            accWhoTxt:   () => accSession ? t("accWho") + accSession.n : "-",
+            accSubmitTxt:() => accMode === "reg" ? t("accSubmitReg") : t("accSubmitLogin"),
+            accSwitchTxt:() => accMode === "reg" ? t("accSwitchToLogin") : t("accSwitchToReg"),
+            rankWhoTxt:  () => accSession ? t("accRankWith") + accSession.n : t("accRankNo"),
+            perkOpen:    () => perkOpen,
+            perkOpts:    () => perkOpts,
+            supTargetN:  () => supTarget ? supTarget.n : -1,
+            supLives:    () => supLives,
+            supMax:      () => SUP_LIVES,
+            picErr:      () => picErr,
+
+            // ---------- View-models (listas que la UI recorre) ----------
+            // El tablero: qué tipo de contenido toca y sus datos
+            boardView:   () => {
+                if (state !== "playing") {
+                    return { kind: "hint", txt: state === "over" ? t("boardEnd") : t("boardIdle") };
+                }
+                if (mode === "supervivencia") {
+                    supTick;   // se repinta con cada pulso del campo
+                    // Los ítems mutan en sitio (bajan, reciben letras), así que
+                    // la vista recibe una COPIA de cada uno: al cambiar la
+                    // referencia, el {#each} con clave vuelve a pintar la caja
+                    return { kind: "sup",
+                             items: supItems.map(it => ({
+                                 n: it.n, w: it.w, typed: it.typed,
+                                 shotFrom: it.shotFrom, lane: it.lane,
+                                 span: it.span, y: it.y, fresh: it.fresh
+                             })),
+                             targetN: supTarget ? supTarget.n : -1,
+                             enc: encOn(), shotMs: SHOT_MS, shotGap: SHOT_GAP };
+                }
+                if (mode === "imagen") {
+                    return { kind: "img", em: currentImg ? currentImg.em : "🖼️",
+                             src: currentImg ? emojiSrc(currentImg.em) : "" };
+                }
+                if (mode === "guess") {
+                    const firstHidden = mask.indexOf("hidden");
+                    return { kind: "letters", letters: word.split("").map((ch, i) => ({
+                        ch: mask[i] === "hidden" ? "_" : ch,
+                        cls: mask[i] === "hidden" ? "blank" + (i === firstHidden ? " cursor" : "")
+                             : (mask[i] === "found" ? "ok" : "")
+                    })) };
+                }
+                return { kind: "letters", letters: word.split("").map((ch, i) => ({
+                    ch: ch,
+                    cls: i < typedStr.length ? (typedStr[i] === ch ? "ok" : "bad")
+                         : (i === typedStr.length ? "cursor" : "")
+                })) };
+            },
+            // Vidas de Supervivencia / fallos de Adivinar, en el mismo hueco
+            missesView:  () => {
+                if (mode === "supervivencia") return { kind: "lives", n: supLives };
+                if (mode === "guess") return { kind: "guess", n: misses, wrong: wrongLetters };
+                return { kind: "off" };
+            },
+            maxMisses:   () => MAX_MISSES,
+            // Efectos activos del modo Aventura (se recalculan con cada tick
+            // porque leen timeLeft aunque no lo muestren)
+            advChips:    () => {
+                timeLeft;
+                if (mode !== "aventura" || state !== "playing") return [];
+                const chips = [{ txt: "⏱️ +" + timePerWord() + "s/" + t("advWord"), on: false }];
+                const vel = tickSpeed();
+                if (vel > 1.001) chips.push({ txt: "⏩ x" + vel.toFixed(1)
+                    .replace(".", uiLang() === "es" ? "," : "."), on: true });
+                if (advShield > 0) chips.push({ txt: "🛡️ x" + advShield, on: true });
+                if (advShort > 0) chips.push({ txt: "🛤️ x" + advShort, on: true });
+                if (advRevive > 0) chips.push({ txt: "🆘 x" + advRevive, on: true });
+                const quedanRelief = Math.max(0, advRelief - (completed - advReliefFrom));
+                if (quedanRelief > 0) chips.push({ txt: "🌊 x" + quedanRelief, on: true });
+                const ahora = performance.now();
+                if (ahora < advFreeze) chips.push({ txt: "❄️ " + Math.ceil((advFreeze - ahora) / 1000), on: true });
+                if (ahora < advDouble) chips.push({ txt: "💥 x2 " + Math.ceil((advDouble - ahora) / 1000), on: true });
+                if (ahora < advTurbo) chips.push({ txt: "🏃 x2s " + Math.ceil((advTurbo - ahora) / 1000), on: true });
+                if (ahora < advCoins) chips.push({ txt: "🧲 x2🪙 " + Math.ceil((advCoins - ahora) / 1000), on: true });
+                if (ahora < advGold) chips.push({ txt: "💎 x5 " + Math.ceil((advGold - ahora) / 1000), on: true });
+                if (ahora < advGrace) chips.push({ txt: "😇 " + Math.ceil((advGrace - ahora) / 1000), on: true });
+                return chips;
+            },
+            // Tarjetas de la tienda (compra; usarse es cosa del Inventario)
+            shopFonts:   () => FONT_STYLES.map(st => ({
+                id: st.id, cls: st.cls, font: st.font,
+                name: uiLang() === "es" ? st.es : st.en,
+                equipped: equipped === st.id,
+                own: owned.includes(st.id), ach: !!st.ach,
+                price: st.price, cant: !esAdmin() && coins < st.price
+            })),
+            shopBgs:     () => BACKGROUNDS
+                .filter(b => !b.event || (!halloween && ownedBgs.includes(b.id)))
+                .map(b => ({
+                    id: b.id, icon: b.icon || "🌙",
+                    img: veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
+                    name: uiLang() === "es" ? b.es : b.en,
+                    desc: uiLang() === "es" ? b.descEs : b.descEn,
+                    equipped: bg === b.id,
+                    own: ownedBgs.includes(b.id), ach: !!b.ach,
+                    price: b.price, cant: !esAdmin() && coins < b.price
+                })),
+            shopExtras:  () => EXTRAS
+                .filter(x => !x.event || (!halloween && ownsExtra(x.id)))
+                .map(x => ({
+                    id: x.id, icon: x.icon,
+                    name: uiLang() === "es" ? x.es : x.en,
+                    desc: uiLang() === "es" ? x.descEs : x.descEn,
+                    on: ownsExtra(x.id) && !!extraOn[x.id],
+                    own: ownsExtra(x.id),
+                    price: x.price, cant: !esAdmin() && coins < x.price
+                })),
+            shopFxs:     () => TYPE_EFFECTS
+                .filter(f => !f.event || (!halloween && ownsFx(f.id)))
+                .map(f => ({
+                    id: f.id, icon: f.icon, art: f.art, color: f.color,
+                    name: uiLang() === "es" ? f.es : f.en,
+                    desc: uiLang() === "es" ? f.descEs : f.descEn,
+                    on: ownsFx(f.id) && fxEquipped === f.id,
+                    own: ownsFx(f.id), ach: !!f.ach,
+                    price: f.price, cant: !esAdmin() && coins < f.price
+                })),
+            // Los tres artículos de la tienda de evento (Halloween)
+            shopEvents:  () => {
+                if (!halloween) return [];
+                const en = uiLang() === "en";
+                const out = [];
+                const b = BACKGROUNDS.find(x => x.id === "fivenights");
+                if (b) out.push({
+                    kind: "bg", id: b.id, icon: b.icon || "📼",
+                    name: en ? b.en : b.es, desc: en ? b.descEn : b.descEs,
+                    img: b.img, equipped: bg === b.id,
+                    own: ownedBgs.includes(b.id), price: b.price,
+                    cant: !esAdmin() && caramelos < b.price
+                });
+                const f = fxById("sangre");
+                if (f) out.push({
+                    kind: "fx", id: f.id, icon: f.icon, color: f.color,
+                    name: en ? f.en : f.es, desc: en ? f.descEn : f.descEs,
+                    on: ownsFx(f.id) && fxEquipped === f.id,
+                    own: ownsFx(f.id), price: f.price,
+                    cant: !esAdmin() && caramelos < f.price
+                });
+                const x = EXTRAS.find(e => e.id === "truco");
+                if (x) out.push({
+                    kind: "extra", id: x.id, icon: x.icon,
+                    name: en ? x.en : x.es, desc: en ? x.descEn : x.descEs,
+                    on: ownsExtra(x.id) && !!extraOn[x.id],
+                    own: ownsExtra(x.id), price: x.price,
+                    cant: !esAdmin() && caramelos < x.price
+                });
+                return out;
+            },
+            // Inventario seccionado (mismas secciones que la tienda + evento)
+            invSections: () => {
+                const items = invItems();
+                const esEvento = it => halloween && it.event;
+                return [
+                    { key: "event", title: t("invEventTitle"),
+                      items: items.filter(esEvento) },
+                    { key: "font", title: t("invFontsTitle"),
+                      items: items.filter(it => it.tipo === "font" && !esEvento(it)) },
+                    { key: "bg", title: t("invBgsTitle"),
+                      items: items.filter(it => it.tipo === "bg" && !esEvento(it)) },
+                    { key: "extra", title: t("invExtrasTitle"),
+                      items: items.filter(it => it.tipo === "extra" && !esEvento(it)) },
+                    { key: "fx", title: t("invFxTitle"),
+                      items: items.filter(it => it.tipo === "fx" && !esEvento(it)) }
+                ];
+            },
+            // Tarjetas del panel de logros
+            achCards:    () => ACHIEVEMENTS.map(a => {
+                const d = achData[a.id] || { p: 0, done: false };
+                return {
+                    id: a.id, icon: a.icon,
+                    name: uiLang() === "es" ? a.es : a.en,
+                    desc: uiLang() === "es" ? a.descEs : a.descEn,
+                    p: d.p, goal: a.goal,
+                    pct: Math.round((d.p / a.goal) * 100),
+                    done: !!d.done, reward: rewardLabel(a)
+                };
+            }),
+            // Las dos tablas de ranking y quién soy en ellas
+            rank:        () => rankData,
+            myId:        () => currentPlayerId(),
+            rankDate:    () => rankDate,
+            // Desplegables de variantes (extras de Tecleo / Supervivencia)
+            modeOptions: () => [{ v: "", txt: t("modeClassic") }]
+                .concat(EXTRAS.filter(x => ownsExtra(x.id))
+                    .map(x => ({ v: x.id, txt: x.icon + " " + (uiLang() === "es" ? x.es : x.en) }))),
+            modeSel:     () => activeExtraId(),
+            modeSelDis:  () => EXTRAS.every(x => !ownsExtra(x.id)) ||
+                             mode !== "type" || state === "playing",
+            modeSelTitle:() => EXTRAS.every(x => !ownsExtra(x.id)) ? t("modeSelectEmpty")
+                             : (mode !== "type" ? t("modeSelectOff") : t("modeSelectHint")),
+            supOptions:  () => {
+                const out = [{ v: "clasico", txt: t("supVarClasico") }];
+                if (halloween) out.push({ v: "encantado", txt: t("supVarEncantado") });
+                return out;
+            },
+            supSelDis:   () => mode !== "supervivencia" || state === "playing",
+            supSelTitle: () => mode !== "supervivencia" ? t("supSelectOff") : t("supVarHint"),
+            // Chips de fondos comprados (fila de Apariencia)
+            bgChips:     () => BACKGROUNDS
+                .filter(b => b.id !== "dark" && b.id !== "franco" && ownedBgs.includes(b.id))
+                .map(b => ({
+                    id: b.id,
+                    hidden: veyonHiddenBg(b.id),
+                    label: (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
+                           (uiLang() === "es" ? b.es : b.en),
+                    active: bg === b.id
+                })),
+            francoHidden:() => veyonHiddenBg("franco"),
+            veyonImg:    () => VEYON_PLACEHOLDER,
+            a:           () => A
         });
+        rev++;   // fachada lista: los componentes pasan de stubs a datos
+
+        // Acciones que la UI invoca (G.a.x): la mutación sigue siendo cosa
+        // del juego; el componente solo llama y Svelte repinta lo que cambie.
+        const A = {
+            setLang: setLang,
+            setMode: setMode,
+            setBg: setBg,
+            chooseExtra: chooseExtra,
+            setSupVariant: setSupVariant,
+            toggleVeyon: () => setVeyon(!veyon),
+            toggleShop: toggleShop,
+            toggleInv: toggleInv,
+            toggleLogros: toggleLogros,
+            toggleRanking: () => toggleRanking(),
+            toggleAccount: toggleAccount,
+            closeAccount: closeAccount,
+            submitAccount: submitAccount,
+            accSwitchMode: accSwitchMode,
+            accSave: accSaveProfile,
+            accOut: () => doLogout(),
+            buyStyle: id => buyStyle(FONT_STYLES.find(s => s.id === id)),
+            buyBg: id => buyBg(BACKGROUNDS.find(b => b.id === id)),
+            buyExtra: id => buyExtra(EXTRAS.find(x => x.id === id)),
+            buyFx: id => buyFx(fxById(id)),
+            startGame: startGame,
+            saveScore: saveScore,
+            choosePerk: choosePerk,
+            supAim: n => {
+                supAim(supItems.find(x => x.n === n));
+                if (typing) typing.focus();
+            },
+            verifyKey: verifyKey,
+            verifyInput: verifyInputText,
+            verifyPaste: verifyPaste,
+            picError: () => { picErr = true; },
+            showLogoPhrase: showLogoPhrase
+        };
 
         // El murciano es un dialecto: los textos, récords y fechas se guardan
         // igual que en español, pero las palabras salen del diccionario murciano.
@@ -1427,121 +1768,20 @@ export function initTeclear() {
         }
 
         // ---------- Elementos ----------
+        // Solo quedan los nodos que el juego toca de verdad: los paneles para
+        // llevarlos a la vista, el tablero (sacudida y disparos) y los campos
+        // cuyo valor se lee o se rellena. Todo lo demás lo pinta Svelte.
         const stage = document.getElementById("stage");
         const board = document.getElementById("board");
-        const missesEl = document.getElementById("misses");
         const typing = document.getElementById("typing");
-        const startBtn = document.getElementById("startBtn");
-        const status = document.getElementById("status");
-        const scoreEl = document.getElementById("score");
-        const timeEl = document.getElementById("time");
-        const timeBox = document.getElementById("timeBox");
-        const streakEl = document.getElementById("streak");
-        const levelEl = document.getElementById("level");
-        const bestEl = document.getElementById("best");
-        const bestWordsEl = document.getElementById("bestWords");
-        const coinsEl = document.getElementById("coins");
-        const shop = document.getElementById("shop");
-        const shopGrid = document.getElementById("shopGrid");
-        const shopBgGrid = document.getElementById("shopBgGrid");
-        const bgExtra = document.getElementById("bgExtra");
-        const modeSelect = document.getElementById("modeSelect");
-        const supSelect = document.getElementById("supSelect");
-        const shopExtraGrid = document.getElementById("shopExtraGrid");
-        const shopFxGrid = document.getElementById("shopFxGrid");
-        const shopEventTitle = document.getElementById("shopEventTitle");
-        const shopEventGrid = document.getElementById("shopEventGrid");
-        const eventBar = document.getElementById("eventBar");
-        const eventText = document.getElementById("eventText");
-        const eventCount = document.getElementById("eventCount");
-        const shopMsg = document.getElementById("shopMsg");
-        const shopCoins = document.getElementById("shopCoins");
-        const candyStat = document.getElementById("candyStat");
-        const candyEl = document.getElementById("candy");
-        const shopCandy = document.getElementById("shopCandy");
-        const eventCash = document.getElementById("eventCash");
-        const eventCashTxt = document.getElementById("eventCashTxt");
-        const rCandyRow = document.getElementById("rCandyRow");
-        const rCandy = document.getElementById("rCandy");
-        const btnShop = document.getElementById("btnShop");
-        const btnRanking = document.getElementById("btnRanking");
-        const btnLogros = document.getElementById("btnLogros");
         const logros = document.getElementById("logros");
-        const btnInv = document.getElementById("btnInv");
         const inventario = document.getElementById("inventario");
-        // Secciones del inventario: una rejilla y un título por categoría,
-        // con la misma estructura que las secciones de la tienda
-        const invEventGrid = document.getElementById("invEventGrid");
-        const invEventTitle = document.getElementById("invEventTitle");
-        const invFontGrid = document.getElementById("invFontGrid");
-        const invBgGrid = document.getElementById("invBgGrid");
-        const invExtraGrid = document.getElementById("invExtraGrid");
-        const invFxGrid = document.getElementById("invFxGrid");
-        const invFontsTitle = document.getElementById("invFontsTitle");
-        const invBgsTitle = document.getElementById("invBgsTitle");
-        const invExtrasTitle = document.getElementById("invExtrasTitle");
-        const invFxTitle = document.getElementById("invFxTitle");
-        const invMsg = document.getElementById("invMsg");
-        const invEmpty = document.getElementById("invEmpty");
-        const invCount = document.getElementById("invCount");
-        const achGrid = document.getElementById("achGrid");
-        const achCount = document.getElementById("achCount");
-        const btnRegister = document.getElementById("btnRegister");
-        const btnLogin = document.getElementById("btnLogin");
         const perfil = document.getElementById("perfil");
-        const accForm = document.getElementById("accForm");
-        const accData = document.getElementById("accData");
-        const accMsg = document.getElementById("accMsg");
-        const accHint = document.getElementById("accHint");
-        const accRole = document.getElementById("accRole");
         const accName = document.getElementById("accName");
         const accPass = document.getElementById("accPass");
         const accPass2 = document.getElementById("accPass2");
-        const accPass2Box = document.getElementById("accPass2Box");
-        const accSubmit = document.getElementById("accSubmit");
-        const accSwitch = document.getElementById("accSwitch");
-        const accClose = document.getElementById("accClose");
-        const accClose2 = document.getElementById("accClose2");
-        const accSave = document.getElementById("accSave");
-        const accOut = document.getElementById("accOut");
-        const accWho = document.getElementById("accWho");
-        const accCoins = document.getElementById("accCoins");
         const ranking = document.getElementById("ranking");
-        const rankForm = document.getElementById("rankForm");
-        const rankSaved = document.getElementById("rankSaved");
-        const rankWho = document.getElementById("rankWho");
-        const saveScoreBtn = document.getElementById("saveScoreBtn");
         const verifyInput = document.getElementById("verifyInput");
-        const verifyCodeEl = document.getElementById("verifyCode");
-        const verifyLabel = document.getElementById("verifyLabel");
-        const results = document.getElementById("results");
-        const btnEs = document.getElementById("btnEs");
-        const btnEn = document.getElementById("btnEn");
-        const btnType = document.getElementById("btnType");
-        const btnGuess = document.getElementById("btnGuess");
-        const btnImagen = document.getElementById("btnImagen");
-        const btnAventura = document.getElementById("btnAventura");
-        const btnSup = document.getElementById("btnSup");
-        const btnMurciano = document.getElementById("btnMurciano");
-        const btnBgDark = document.getElementById("btnBgDark");
-        const btnBgFranco = document.getElementById("btnBgFranco");
-        const btnVeyon = document.getElementById("btnVeyon");
-        const advBar = document.getElementById("advBar");
-        const perkVeil = document.getElementById("perkVeil");
-        const perkGrid = document.getElementById("perkGrid");
-        const perkHint = document.getElementById("perkHint");
-        const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, supSelect, btnGuess, btnImagen, btnAventura, btnSup,
-            btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon];
-        // Celdas con datos del perfil (etiqueta + valor)
-        const accCells = [
-            ["accKCoins", "accVCoins", "kCoins"],
-            ["accKXp", "accVXp", "accXp"],
-            ["accKLevel", "accVLevel", "kLevel"],
-            ["accKGames", "accVGames", "accGames"],
-            ["accKWords", "accVWords", "accWords"],
-            ["accKBest", "accVBest", "kBest"]
-        ];
-
         // ---------- Récord por idioma ----------
         function loadBest() {
             try {
@@ -1622,7 +1862,6 @@ export function initTeclear() {
             try {
                 localStorage.setItem("teclear.nombre", name);
             } catch (e) { /* sin almacenamiento disponible */ }
-            updateCoins();   // el rol (Administrador) depende del nombre
         }
 
         function loadLocalRanking(tab) {
@@ -2251,9 +2490,7 @@ export function initTeclear() {
             saveProfileStats();
             applyStyle();
             applyFx();
-            updateCoins();
             applyLang();
-            renderAccount();
             // Los logros completados siguen mandando su recompensa: si la
             // cuenta trae estilos o fondos sin los ganados jugando, se
             // vuelven a poner en su sitio
@@ -2345,43 +2582,10 @@ export function initTeclear() {
         }
 
         // ---------- Panel de cuenta ----------
+        // (El panel se dibuja solo leyendo G: aquí solo queda su lógica)
         function setAccMsg(key, warn) {
-            if (!accMsg) return;
-            accMsg.textContent = key ? t(key) : "";
-            accMsg.classList.toggle("warn", !!warn);
-        }
-
-        function renderAccount() {
-            if (!perfil) return;
-            const logged = !!accSession;
-            accForm.classList.toggle("hidden", logged);
-            accData.classList.toggle("hidden", !logged);
-            accHint.textContent = logged ? t("accDataHint") : t("accHint");
-            // La insignia del rol solo la ven los Administradores
-            if (accRole) accRole.classList.toggle("hidden", !esAdmin());
-
-            if (logged) {
-                accWho.textContent = t("accWho") + accSession.n;
-                const vals = {
-                    accVCoins: fmtCoins(coins), accVXp: xp, accVLevel: Math.floor(xp / 500) + 1,
-                    accVGames: gamesPlayed, accVWords: wordsTotal, accVBest: best
-                };
-                Object.keys(vals).forEach(id => {
-                    const e = document.getElementById(id);
-                    if (e) e.textContent = String(vals[id]);
-                });
-                if (accCoins) accCoins.textContent = fmtCoins(coins);
-            } else {
-                accSubmit.textContent = accMode === "reg" ? t("accSubmitReg") : t("accSubmitLogin");
-                accSwitch.textContent = accMode === "reg" ? t("accSwitchToLogin") : t("accSwitchToReg");
-                accPass2Box.classList.toggle("hidden", accMode !== "reg");
-            }
-            btnRegister.classList.toggle("active", accOpen && !logged && accMode === "reg");
-            btnLogin.classList.toggle("active", accOpen && !logged && accMode === "login");
-            // Con la sesión abierta el botón pasa a «Mi perfil» y ya no se ofrece entrar
-            btnRegister.textContent = logged ? t("btnProfile") : t("btnRegister");
-            btnLogin.classList.toggle("hidden", logged);
-            updateRankWho();   // los resultados avisan con quién se guardará
+            accMsgTxt = key ? t(key) : "";
+            accMsgWarn = !!warn;
         }
 
         function openAccount(mode) {
@@ -2392,16 +2596,11 @@ export function initTeclear() {
                 setAccMsg("", false);
             }
             accOpen = true;
-            perfil.classList.remove("hidden");
-            renderAccount();
             if (perfil.scrollIntoView) perfil.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
 
         function closeAccount() {
             accOpen = false;
-            if (perfil) perfil.classList.add("hidden");
-            if (btnRegister) btnRegister.classList.remove("active");
-            if (btnLogin) btnLogin.classList.remove("active");
         }
 
         function toggleAccount(mode) {
@@ -2414,10 +2613,26 @@ export function initTeclear() {
             if (accOpen) closeAccount();
         }
 
+        // Cambia entre registro y entrada dentro del panel de perfil
+        function accSwitchMode() {
+            accMode = accMode === "reg" ? "login" : "reg";
+            if (accPass2) accPass2.value = "";
+            setAccMsg("", false);
+        }
+
+        // «Guardar ahora»: sube el progreso a la nube estando ya dentro
+        function accSaveProfile() {
+            if (!accSession) { setAccMsg("accNoSession", true); return; }
+            setAccMsg("accSaving", false);
+            saveProfile().then(res2 => {
+                setAccMsg(res2.saved ? "accSaved" : (res2.local ? "accSavedLocal" : "accNoSession"),
+                    !res2.saved && !res2.local);
+            });
+        }
+
         // ---------- Registrar / entrar / salir ----------
         function finishAccount(res) {
             accBusy = false;
-            if (accSubmit) accSubmit.disabled = false;
             return res;
         }
 
@@ -2434,7 +2649,6 @@ export function initTeclear() {
             if (pass !== pass2) return Promise.resolve(accountFail("accPassDiff"));
 
             accBusy = true;
-            if (accSubmit) accSubmit.disabled = true;
             setAccMsg("accSaving", false);
 
             const id = profileId(name);
@@ -2472,8 +2686,6 @@ export function initTeclear() {
                 if (accPass2) accPass2.value = "";
                 finishAccount({ ok: true, key: "accCreated" });
                 setAccMsg("accCreated", false);
-                renderAccount();
-                renderRanking();
                 refreshRanking();
                 return { ok: true, key: "accCreated" };
             }).catch(err => {
@@ -2485,8 +2697,6 @@ export function initTeclear() {
                     if (accPass2) accPass2.value = "";
                     finishAccount({ ok: true, key: err.key });
                     setAccMsg(err.key, false);
-                    renderAccount();
-                    renderRanking();
                     refreshRanking();
                     return { ok: true, key: err.key };
                 }
@@ -2500,7 +2710,6 @@ export function initTeclear() {
             if (!pass) return Promise.resolve(accountFail("accPassShort"));
 
             accBusy = true;
-            if (accSubmit) accSubmit.disabled = true;
             setAccMsg("accSaving", false);
 
             return profilesStage().then(stage => {
@@ -2517,7 +2726,6 @@ export function initTeclear() {
                 if (accPass2) accPass2.value = "";
                 finishAccount({ ok: true, key: "accLoggedIn" });
                 setAccMsg("accLoggedIn", false);
-                renderAccount();
                 refreshRanking();
                 return { ok: true, key: "accLoggedIn", name: u.n };
             }).catch(err => {
@@ -2533,8 +2741,6 @@ export function initTeclear() {
                 accSession = null;
                 saveSession(null);
                 setAccMsg("accLoggedOut", false);
-                renderAccount();
-                renderRanking();
                 refreshRanking();
                 return { ok: true, key: "accLoggedOut" };
             });
@@ -2550,29 +2756,7 @@ export function initTeclear() {
             }
         }
 
-        if (btnRegister) btnRegister.addEventListener("click", () => toggleAccount("reg"));
-        if (btnLogin) btnLogin.addEventListener("click", () => toggleAccount("login"));
-        if (accClose) accClose.addEventListener("click", closeAccount);
-        if (accClose2) accClose2.addEventListener("click", closeAccount);
-        if (accSwitch) accSwitch.addEventListener("click", () => {
-            accMode = accMode === "reg" ? "login" : "reg";
-            if (accPass2) accPass2.value = "";
-            setAccMsg("", false);
-            renderAccount();
-        });
-        if (accForm) accForm.addEventListener("submit", function (e) {
-            e.preventDefault();
-            submitAccount();
-        });
-        if (accOut) accOut.addEventListener("click", function () { doLogout(); });
-        if (accSave) accSave.addEventListener("click", function () {
-            if (!accSession) { setAccMsg("accNoSession", true); return; }
-            setAccMsg("accSaving", false);
-            saveProfile().then(res => {
-                setAccMsg(res.saved ? "accSaved" : (res.local ? "accSavedLocal" : "accNoSession"),
-                    !res.saved && !res.local);
-            });
-        });
+        // (los clics del panel de cuenta los llaman los componentes vía G.a)
 
         // ---------- Verificación humana antes de guardar ----------
         // Código aleatorio de 4 caracteres que hay que escribir con teclas REALES.
@@ -2596,7 +2780,6 @@ export function initTeclear() {
             }
             verifyCode = s;
             verifyTyped = "";
-            if (verifyCodeEl) verifyCodeEl.textContent = s;
             if (verifyInput) verifyInput.value = "";
         }
 
@@ -2605,31 +2788,33 @@ export function initTeclear() {
             return verifyTyped.trim().toLowerCase() === verifyCode.toLowerCase();
         }
 
-        if (verifyInput) {
-            verifyInput.addEventListener("keydown", function (e) {
-                if (e.isTrusted && typeof e.key === "string") {
-                    if (e.key === "Backspace") verifyTyped = verifyTyped.slice(0, -1);
-                    else if (e.key.length === 1 && verifyTyped.length < 8) verifyTyped += e.key;
-                }
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    saveScoreBtn.click();
-                }
-            });
-            // Teclados virtuales (móvil): a veces no informan de la tecla pulsada
-            // pero sí del texto que ha escrito la persona. Manda el valor real
-            // del campo, que solo puede llenarse tecleando (pegar está bloqueado).
-            verifyInput.addEventListener("input", function (e) {
-                if (e && e.isTrusted) {
-                    verifyTyped = String(verifyInput.value || "").slice(0, 8);
-                }
-            });
-            // Pegar el código tampoco vale: hay que teclearlo
-            verifyInput.addEventListener("paste", function (e) {
+        // Los eventos del campo de verificación llegan por la vista (G.a.verify*):
+        // solo cuentan las teclas REALES — ni pegar ni rellenar por script valen
+        function verifyKey(e) {
+            if (e.isTrusted && typeof e.key === "string") {
+                if (e.key === "Backspace") verifyTyped = verifyTyped.slice(0, -1);
+                else if (e.key.length === 1 && verifyTyped.length < 8) verifyTyped += e.key;
+            }
+            if (e.key === "Enter") {
                 e.preventDefault();
-                rankSaved.classList.add("off");
-                rankSaved.textContent = t("rankHuman");
-            });
+                saveScore();
+            }
+        }
+
+        // Teclados virtuales (móvil): a veces no informan de la tecla pulsada
+        // pero sí del texto que ha escrito la persona. Manda el valor real
+        // del campo, que solo puede llenarse tecleando (pegar está bloqueado).
+        function verifyInputText(e) {
+            if (e && e.isTrusted) {
+                verifyTyped = String(verifyInput.value || "").slice(0, 8);
+            }
+        }
+
+        // Pegar el código tampoco vale: hay que teclearlo
+        function verifyPaste(e) {
+            e.preventDefault();
+            rankMsgOff = true;
+            rankMsgTxt = t("rankHuman");
         }
 
         // ---------- Control de escritura automática ----------
@@ -2759,7 +2944,6 @@ export function initTeclear() {
                 })
                 .then(() => {
                     data.loaded = true;
-                    renderRanking();
                 });
         }
 
@@ -2798,7 +2982,6 @@ export function initTeclear() {
                             data.entries = merged;
                             saveLocalRanking(merged, tab);
                             data.online = true;
-                            renderRanking();
                             // Si alguien subió a la vez y alguna marca del
                             // servidor ha desaparecido, se vuelve a fusionar.
                             if (rep >= 2) return undefined;
@@ -2819,7 +3002,6 @@ export function initTeclear() {
                                 .then(() => attempt(triesLeft - 1));
                         }
                         data.online = false;
-                        renderRanking();
                     });
             }
 
@@ -2827,7 +3009,6 @@ export function initTeclear() {
                 data.entries = normalizeRank(
                     loadLocalRanking(tab).concat([entry]), null, tab);
                 saveLocalRanking(data.entries, tab);   // purga las marcas reiniciadas
-                renderRanking();
                 return attempt(2);
             });
         }
@@ -2845,97 +3026,22 @@ export function initTeclear() {
         // Dibuja las dos tablas: la global (modos clásicos) y la de Aventura.
         // Ambas muestran los MISMOS datos: posición, nombre, puntos, palabras
         // y fecha; solo cambia el documento del que salen las filas.
-        function renderRanking() {
-            RANK_TABS.forEach(renderRankTab);
-        }
-
-        function renderRankTab(tab) {
-            const conf = RANK_TAB_CONF[tab];
-            const listEl = document.getElementById(conf.list);
-            const emptyEl = document.getElementById(conf.empty);
-            const statusEl = document.getElementById(conf.status);
-            if (!listEl) return;
-            const data = rankData[tab];
-            const myId = currentPlayerId();
-            listEl.innerHTML = "";
-
-            data.entries.forEach((e, i) => {
-                const li = document.createElement("li");
-                if (e.id === myId) li.classList.add("me");
-
-                const pos = document.createElement("span");
-                pos.className = "rank-pos";
-                pos.textContent = uiLang() === "es" ? (i + 1) + "º" : "#" + (i + 1);
-
-                const name = document.createElement("span");
-                name.className = "rank-name";
-                name.textContent = e.n;
-
-                const pts = document.createElement("span");
-                pts.className = "rank-score";
-                pts.textContent = e.s;
-
-                const words = document.createElement("span");
-                words.className = "rank-words";
-                words.textContent = "📝 " + e.w;
-
-                const date = document.createElement("span");
-                date.className = "rank-date";
-                date.textContent = rankDate(e.d);
-
-                li.append(pos, name, pts, words, date);
-                listEl.appendChild(li);
-            });
-
-            if (emptyEl) emptyEl.classList.toggle("hidden", data.entries.length > 0);
-            let st = !data.loaded ? ""
-                : data.online ? t("rankSync") : t("rankLocal");
-            // 🔒 datos verificados con su huella · ⚠️ el JSON venía alterado
-            if (st && data.online) st += data.tampered ? " ⚠️" : " 🔒";
-            if (statusEl) statusEl.textContent = st;
-        }
-
-        // Cambia el texto de las dos tablas (títulos, avisos y rangos) al
-        // idioma vigente: cada ranking tiene las suyas propias.
-        function renderRankLabels() {
-            RANK_TABS.forEach(tab => {
-                const conf = RANK_TAB_CONF[tab];
-                const tit = document.getElementById(conf.title);
-                const hin = document.getElementById(conf.hint);
-                const emp = document.getElementById(conf.empty);
-                if (tit) tit.textContent = t(conf.title);
-                if (hin) hin.textContent = t(conf.hint);
-                if (emp) emp.textContent = t(conf.empty);
-            });
-        }
-
+        // (Las dos tablas de ranking las pinta Svelte desde G.rank; aquí
+        //  solo queda abrir/cerrar el panel y refrescar los datos)
         function toggleRanking(tab) {
             if (state === "playing") return;
             rankOpen = !rankOpen;
-            ranking.classList.toggle("hidden", !rankOpen);
-            btnRanking.classList.toggle("active", rankOpen);
             if (rankOpen) {
                 refreshRanking();
                 // Si se guarda una marca, su tabla se resalta (una partida de
                 // Aventura se mira en el ranking de Aventura, no en el global)
                 if (tab) rankFocus = tab;
-                renderRankFocus();
                 // El panel queda por debajo: se lleva a la vista para que se note
                 if (ranking.scrollIntoView) {
                     ranking.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 }
             }
         }
-
-        // Tabla destacada del panel (por defecto, la global)
-        function renderRankFocus() {
-            RANK_TABS.forEach(tab => {
-                const box = document.getElementById(RANK_TAB_CONF[tab].box);
-                if (box) box.classList.toggle("rank-focus", tab === rankFocus);
-            });
-        }
-
-        btnRanking.addEventListener("click", toggleRanking);
 
         // ---------- Monedas y tienda: persistencia ----------
         function loadShop() {
@@ -3002,10 +3108,6 @@ export function initTeclear() {
                 localStorage.setItem("teclear.efectosTecleo", JSON.stringify(ownedFx));
                 localStorage.setItem("teclear.efectoTecleo", fxEquipped);
             } catch (e) { /* sin almacenamiento disponible */ }
-            // El inventario se recalcula con lo que posees: si está abierto,
-            // se vuelve a pintar para que se note al instante cada compra
-            // o cada recompensa de logro recién ganada
-            if (invOpen) renderInv();
         }
 
         // ---------- Caramelos: la moneda del evento de Halloween ----------
@@ -3038,7 +3140,6 @@ export function initTeclear() {
             // La partida actual apunta el saldo neto para los resultados
             if (state === "playing") candyRun += caramelos - antes;
             saveCandy();
-            updateCoins();
         }
 
         // Cobra el precio de un artículo de la tienda. Los artículos del
@@ -3048,7 +3149,7 @@ export function initTeclear() {
             const ev = !!item.event;
             const saldo = ev ? caramelos : coins;
             if (!esAdmin() && saldo < item.price) {
-                shopMsg.textContent = ev ? t("shopNoCandy") : t("shopNoMoney");
+                shopMsgTxt = ev ? t("shopNoCandy") : t("shopNoMoney");
                 return false;
             }
             if (esAdmin()) return true;
@@ -3059,19 +3160,6 @@ export function initTeclear() {
                 coins -= item.price;                              // se pagan en monedas
             }
             return true;
-        }
-
-        function updateCoins() {
-            const txt = fmtCoins(coins);   // ∞ si se es Administrador
-            coinsEl.textContent = txt;
-            shopCoins.textContent = txt;
-            if (accCoins) accCoins.textContent = txt;
-            // Caramelos (moneda del evento): HUD, tienda de evento y perfil
-            const caram = fmtCandy(caramelos);
-            if (candyEl) candyEl.textContent = caram;
-            if (shopCandy) shopCandy.textContent = caram;
-            if (shopOpen) renderShop();
-            if (accOpen && accSession) renderAccount();
         }
 
         // Otorga monedas por cada palabra completada sin errores.
@@ -3086,7 +3174,6 @@ export function initTeclear() {
             // monedas y con la MISMA cantidad (los gasta la tienda de evento)
             giveCandy(n);
             saveShop();
-            updateCoins();
         }
 
         function styleById(id) {
@@ -3103,9 +3190,8 @@ export function initTeclear() {
         function setEquipped(id) {
             if (!owned.includes(id)) return;
             equipped = id;
-            saveShop();          // repinta el Inventario si está abierto
+            saveShop();
             applyStyle();
-            renderShop();        // … y la tienda, para marcarlo «En uso»
             invSay(t("shopEquippedMsg"));
         }
 
@@ -3113,139 +3199,18 @@ export function initTeclear() {
             if (owned.includes(st.id)) return;   // ya está en el Inventario
             // Los estilos ganados con un logro no se compran con monedas
             if (st.ach) {
-                shopMsg.textContent = t("achNeed");
+                shopMsgTxt = t("achNeed");
                 return;
             }
             if (!esAdmin() && coins < st.price) {
-                shopMsg.textContent = t("shopNoMoney");
+                shopMsgTxt = t("shopNoMoney");
                 return;
             }
             if (!esAdmin()) coins -= st.price;   // el Administrador no gasta
             owned.push(st.id);
             // La compra solo DESBLOQUEA: quién se pone se elige en el Inventario
             saveShop();
-            updateCoins();
-            shopMsg.textContent = t("shopBought");
-        }
-
-        function renderShop() {
-            if (!shopGrid) return;
-            shopGrid.innerHTML = "";
-            FONT_STYLES.forEach(st => {
-                const card = document.createElement("div");
-                card.className = "shop-card " + st.cls;
-                if (st.id === equipped) card.classList.add("equipped");
-
-                const prev = document.createElement("div");
-                prev.className = "shop-preview font-preview";
-                prev.style.fontFamily = st.font;
-                prev.textContent = "Aa";
-                card.appendChild(prev);
-
-                const name = document.createElement("div");
-                name.className = "shop-name";
-                name.textContent = uiLang() === "es" ? st.es : st.en;
-                card.appendChild(name);
-
-                const price = document.createElement("div");
-                price.className = "shop-price";
-                // Los estilos de logro no se compran: o están desbloqueados
-                // o se llega a ellos jugando (nunca aparece un precio)
-                price.textContent = owned.includes(st.id) ? "✓ " + t("shopOwned")
-                    : (st.ach ? t("shopAchPrice") : "🪙 " + st.price);
-                card.appendChild(price);
-
-                const btn = document.createElement("button");
-                btn.className = "chip-btn shop-btn";
-                if (st.id === equipped) {
-                    btn.textContent = t("shopEquipped");
-                    btn.disabled = true;
-                } else if (owned.includes(st.id)) {
-                    // La tienda solo COMPRA: usarse se hace en el Inventario
-                    btn.textContent = t("shopInInv");
-                    btn.title = t("shopInInvHint");
-                    btn.disabled = true;
-                } else if (st.ach) {
-                    // Bloqueado: solo se desbloquea completando su logro
-                    btn.textContent = t("achNeed");
-                    btn.disabled = true;
-                    btn.classList.add("cant");
-                } else {
-                    btn.textContent = t("shopBuy");
-                    if (!esAdmin() && coins < st.price) btn.classList.add("cant");
-                    btn.addEventListener("click", () => buyStyle(st));
-                }
-                card.appendChild(btn);
-                shopGrid.appendChild(card);
-            });
-            renderBgShop();
-            renderExtraShop();
-            renderFxShop();
-            renderEventShop();   // tienda de evento (solo durante Halloween)
-        }
-
-        function renderBgShop() {
-            if (!shopBgGrid) return;
-            shopBgGrid.innerHTML = "";
-            // Los artículos del evento de Halloween se compran en su propia
-            // sección (la tienda de evento): mientras dura el evento no salen
-            // aquí, y cuando se acaba solo los COMPRADOS siguen apareciendo
-            // para poder equiparlos (ya no se pueden comprar con caramelos)
-            BACKGROUNDS.filter(b => !b.event || (!halloweenOn() && ownedBgs.includes(b.id))).forEach(b => {
-                const card = document.createElement("div");
-                card.className = "shop-card";
-                if (b.id === bg) card.classList.add("equipped");
-
-                const thumb = document.createElement("div");
-                thumb.className = "shop-thumb";
-                // Con el Modo Veyon activo, «General» e «Ia» muestran la
-                // imagen de repuesto en vez de la suya
-                if (veyonHiddenBg(b.id)) thumb.style.backgroundImage = 'url("' + VEYON_PLACEHOLDER + '")';
-                else if (b.img) thumb.style.backgroundImage = 'url("' + b.img + '")';
-                else thumb.textContent = b.icon || "🌙";
-                card.appendChild(thumb);
-
-                const name = document.createElement("div");
-                name.className = "shop-name";
-                name.textContent = uiLang() === "es" ? b.es : b.en;
-                card.appendChild(name);
-
-                const price = document.createElement("div");
-                price.className = "shop-price";
-                // Los fondos de logro no se compran: o están desbloqueados
-                // o se llega a ellos jugando (nunca aparece un precio)
-                price.textContent = ownedBgs.includes(b.id) ? "✓ " + t("shopOwned")
-                    : (b.ach ? t("shopAchPrice") : "🪙 " + b.price);
-                card.appendChild(price);
-
-                const desc = document.createElement("div");
-                desc.className = "shop-desc";
-                desc.textContent = uiLang() === "es" ? b.descEs : b.descEn;
-                card.appendChild(desc);
-
-                const btn = document.createElement("button");
-                btn.className = "chip-btn shop-btn";
-                if (b.id === bg) {
-                    btn.textContent = t("shopEquipped");
-                    btn.disabled = true;
-                } else if (ownedBgs.includes(b.id)) {
-                    // La tienda solo COMPRA: usarse se hace en el Inventario
-                    btn.textContent = t("shopInInv");
-                    btn.title = t("shopInInvHint");
-                    btn.disabled = true;
-                } else if (b.ach) {
-                    // Bloqueado: solo se desbloquea completando su logro
-                    btn.textContent = t("achNeed");
-                    btn.disabled = true;
-                    btn.classList.add("cant");
-                } else {
-                    btn.textContent = t("shopBuy");
-                    if (!esAdmin() && coins < b.price) btn.classList.add("cant");
-                    btn.addEventListener("click", () => buyBg(b));
-                }
-                card.appendChild(btn);
-                shopBgGrid.appendChild(card);
-            });
+            shopMsgTxt = t("shopBought");
         }
 
         // ---------- Extras de juego (picante, caos, php…) ----------
@@ -3274,35 +3239,6 @@ export function initTeclear() {
             return x ? x.id : "";
         }
 
-        // Rellena el menú de variante de Tecleo con los modos comprados
-        function renderModeSelect() {
-            if (!modeSelect) return;
-            const chosen = activeExtraId();
-            modeSelect.innerHTML = "";
-
-            const opt = (val, txt) => {
-                const o = document.createElement("option");
-                o.value = val;
-                o.textContent = txt;
-                modeSelect.appendChild(o);
-            };
-
-            opt("", t("modeClassic"));
-            EXTRAS.forEach(x => {
-                if (!ownsExtra(x.id)) return;   // solo los comprados
-                opt(x.id, x.icon + " " + (uiLang() === "es" ? x.es : x.en));
-            });
-
-            modeSelect.value = chosen;
-            // El menú solo se puede tocar en el modo Tecleo: los extras no
-            // están disponibles en el resto de modos de juego
-            const soloTecleo = mode !== "type";
-            const sinExtras = EXTRAS.every(x => !ownsExtra(x.id));
-            modeSelect.disabled = sinExtras || soloTecleo || state === "playing";
-            modeSelect.title = sinExtras ? t("modeSelectEmpty") :
-                (soloTecleo ? t("modeSelectOff") : t("modeSelectHint"));
-        }
-
         // ---------- Variante del modo Supervivencia ----------
         // "Clásico" es la supervivencia de siempre (palabras que bajan) y
         // "Encantado" es la variante del evento: letras con fantasmas que
@@ -3312,45 +3248,19 @@ export function initTeclear() {
             return mode === "supervivencia" && supVariant === "encantado";
         }
 
-        function renderSupSelect() {
-            if (!supSelect) return;
-            // Si el evento ya se acabó, la variante Encantada deja de existir
-            if (supVariant === "encantado" && !halloweenOn() && state !== "playing") {
-                supVariant = "clasico";
-            }
-            supSelect.innerHTML = "";
-            const opt = (val, txt) => {
-                const o = document.createElement("option");
-                o.value = val;
-                o.textContent = txt;
-                supSelect.appendChild(o);
-            };
-            opt("clasico", t("supVarClasico"));
-            if (halloweenOn()) opt("encantado", t("supVarEncantado"));
-            supSelect.value = supVariant;
-            const fuera = mode !== "supervivencia";
-            supSelect.disabled = fuera || state === "playing";
-            supSelect.title = fuera ? t("supSelectOff") : t("supVarHint");
-        }
-
         function setSupVariant(v) {
             if (state === "playing") return;
             supVariant = (v === "encantado" && halloweenOn()) ? "encantado" : "clasico";
             try {
                 localStorage.setItem("teclear.supVariante", supVariant);
             } catch (e) { /* sin almacenamiento disponible */ }
-            renderSupSelect();
         }
 
-        if (supSelect) supSelect.addEventListener("change", () => setSupVariant(supSelect.value));
-
-        // Refresca el desplegable, la fila de extras y el tablero
+        // Marca en el body qué extras actúan ahora (ilumina el tablero)
         function applyExtras() {
             EXTRAS.forEach(x => {
                 document.body.classList.toggle(x.id + "-on", extraActive(x.id));
             });
-            renderModeSelect();
-            renderSupSelect();   // el menú de variantes de Supervivencia también
         }
 
         function setExtra(id, on) {
@@ -3363,7 +3273,6 @@ export function initTeclear() {
             }
             saveShop();
             applyExtras();
-            if (shopOpen) renderExtraShop();
             const x = EXTRAS.find(e => e.id === id);
             if (x) invSay(t(on ? x.msgOn : x.msgOff));
         }
@@ -3375,9 +3284,8 @@ export function initTeclear() {
             EXTRAS.forEach(x => extraOn[x.id] = (x.id === id));
             saveShop();
             applyExtras();
-            if (shopOpen) renderExtraShop();
             const x = EXTRAS.find(e => e.id === id);
-            shopMsg.textContent = x ? t(x.msgOn) : t("modeClassicMsg");
+            shopMsgTxt = x ? t(x.msgOn) : t("modeClassicMsg");
         }
 
         function buyExtra(x) {
@@ -3387,65 +3295,7 @@ export function initTeclear() {
             // La compra solo DESBLOQUEA: activarla se hace en el Inventario
             saveShop();
             applyExtras();     // el nuevo extra entra en el menú de variantes
-            updateCoins();
-            shopMsg.textContent = t(x.msgBuy);
-        }
-
-        function renderExtraShop() {
-            if (!shopExtraGrid) return;
-            shopExtraGrid.innerHTML = "";
-            // El modo Truco o trato se compra en la tienda de EVENTO
-            // (Halloween): mientras dura el evento no aparece aquí y, cuando
-            // se acaba, solo los COMPRADOS siguen para poder activarlos
-            EXTRAS.filter(x => !x.event || (!halloweenOn() && ownsExtra(x.id))).forEach(x => {
-                const ownedX = ownsExtra(x.id);
-                // Lo que se enseña es lo ELEGIDO en el menú, no si ahora actúa:
-                // el extra puede estar puesto y jugarse en un modo donde no se
-                // aplica (los extras solo valen en el modo Tecleo)
-                const on = ownedX && !!extraOn[x.id];
-
-                const card = document.createElement("div");
-                card.className = "shop-card card-" + x.id;
-                if (on) card.classList.add("extra-on");
-
-                const prev = document.createElement("div");
-                prev.className = "shop-preview extra";
-                prev.textContent = x.icon;
-                card.appendChild(prev);
-
-                const name = document.createElement("div");
-                name.className = "shop-name";
-                name.textContent = uiLang() === "es" ? x.es : x.en;
-                card.appendChild(name);
-
-                const price = document.createElement("div");
-                price.className = "shop-price";
-                price.textContent = ownedX ? "✓ " + t("shopOwned") : "🪙 " + x.price;
-                card.appendChild(price);
-
-                const desc = document.createElement("div");
-                desc.className = "shop-desc";
-                desc.textContent = uiLang() === "es" ? x.descEs : x.descEn;
-                card.appendChild(desc);
-
-                const btn = document.createElement("button");
-                btn.className = "chip-btn shop-btn";
-                if (on) {
-                    btn.textContent = t("shopEquipped");
-                    btn.disabled = true;
-                } else if (ownedX) {
-                    // La tienda solo COMPRA: activarse se hace en el Inventario
-                    btn.textContent = t("shopInInv");
-                    btn.title = t("shopInInvHint");
-                    btn.disabled = true;
-                } else {
-                    btn.textContent = t("shopBuy");
-                    if (!esAdmin() && coins < x.price) btn.classList.add("cant");
-                    btn.addEventListener("click", () => buyExtra(x));
-                }
-                card.appendChild(btn);
-                shopExtraGrid.appendChild(card);
-            });
+            shopMsgTxt = t(x.msgBuy);
         }
 
         // ---------- Efectos de tecleo (chispas con cada letra) ----------
@@ -3479,7 +3329,6 @@ export function initTeclear() {
             fxEquipped = id || "";
             saveShop();
             applyFx();
-            if (shopOpen) renderFxShop();
             invSay(t(fxEquipped ? "shopEquippedFxMsg" : "shopDeactivatedFxMsg"));
         }
 
@@ -3490,71 +3339,7 @@ export function initTeclear() {
             ownedFx.push(f.id);
             // La compra solo DESBLOQUEA: ponerlo en uso se hace en el Inventario
             saveShop();
-            updateCoins();
-            shopMsg.textContent = t("shopBoughtFx");
-        }
-
-        function renderFxShop() {
-            if (!shopFxGrid) return;
-            shopFxGrid.innerHTML = "";
-            // El efecto Sangre se compra en la tienda de EVENTO (Halloween):
-            // mientras dura el evento no aparece aquí y, cuando se acaba,
-            // solo los COMPRADOS siguen para poder equiparlos
-            TYPE_EFFECTS.filter(f => !f.event || (!halloweenOn() && ownsFx(f.id))).forEach(f => {
-                const own = ownsFx(f.id);
-                const on = own && fxEquipped === f.id;
-
-                const card = document.createElement("div");
-                card.className = "shop-card card-fx card-fx-" + f.id;
-                if (on) card.classList.add("fx-on");
-                card.style.setProperty("--fx-c", f.color);
-
-                const prev = document.createElement("div");
-                prev.className = "shop-preview fx-preview";
-                // El efecto Fuego no usa emoji: su miniatura es una llama
-                // dibujada con CSS (lo mismo que en el Inventario)
-                if (f.art === "flame") prev.appendChild(flameArt());
-                else prev.textContent = f.icon;
-                card.appendChild(prev);
-
-                const name = document.createElement("div");
-                name.className = "shop-name";
-                name.textContent = uiLang() === "es" ? f.es : f.en;
-                card.appendChild(name);
-
-                const price = document.createElement("div");
-                price.className = "shop-price";
-                // Los efectos de logro no se compran: o están desbloqueados
-                // o se llega a ellos jugando (nunca aparece un precio)
-                price.textContent = own ? "✓ " + t("shopOwned")
-                    : (f.ach ? t("shopAchPrice") : "🪙 " + f.price);
-                card.appendChild(price);
-
-                const desc = document.createElement("div");
-                desc.className = "shop-desc";
-                desc.textContent = uiLang() === "es" ? f.descEs : f.descEn;
-                card.appendChild(desc);
-
-                const btn = document.createElement("button");
-                btn.className = "chip-btn shop-btn";
-                if (own) {
-                    // La tienda solo COMPRA: usarse o apagarse en el Inventario
-                    btn.textContent = t("shopInInv");
-                    btn.title = t("shopInInvHint");
-                    btn.disabled = true;
-                } else if (f.ach) {
-                    // Bloqueado: solo se desbloquea completando su logro
-                    btn.textContent = t("achNeed");
-                    btn.disabled = true;
-                    btn.classList.add("cant");
-                } else {
-                    btn.textContent = t("shopBuy");
-                    if (!esAdmin() && coins < f.price) btn.classList.add("cant");
-                    btn.addEventListener("click", () => buyFx(f));
-                }
-                card.appendChild(btn);
-                shopFxGrid.appendChild(card);
-            });
+            shopMsgTxt = t("shopBoughtFx");
         }
 
         // ---------- Evento de Halloween: temática y tienda de evento ----------
@@ -3565,28 +3350,21 @@ export function initTeclear() {
         // artículos comprados siguen en sus secciones normales, desbloqueados.
         let halloweenTimer = null;   // cuenta atrás del evento
 
-        // Viste de Halloween el logo y el menú, y abre o cierra la tienda
-        // de evento según la fecha. La llama applyLang() en cada cambio.
+        // Viste de Halloween la página según la fecha (barra de evento,
+        // caramelos y tienda de evento las muestra Svelte leyendo G.halloween)
         function applyHalloween() {
-            const on = halloweenOn();
-            document.body.classList.toggle("halloween", on);
-            if (eventBar) eventBar.classList.toggle("hidden", !on);
-            if (shopEventTitle) shopEventTitle.classList.toggle("hidden", !on);
-            if (shopEventGrid) shopEventGrid.classList.toggle("hidden", !on);
-            // Los caramelos (moneda del evento) solo se ven mientras dura Halloween
-            if (candyStat) candyStat.classList.toggle("hidden", !on);
-            if (eventCash) eventCash.classList.toggle("hidden", !on);
-            if (on) {
-                renderEventShop();
+            halloween = halloweenOn();
+            document.body.classList.toggle("halloween", halloween);
+            // Al acabar el evento desaparece la variante Encantada del menú
+            if (supVariant === "encantado" && !halloween && state !== "playing") {
+                supVariant = "clasico";
+            }
+            if (halloween) {
                 tickHalloween();
                 // Si el evento termina con la página abierta, la barra y la
                 // tienda de evento se cierran solas en el próximo segundo
                 if (!halloweenTimer) halloweenTimer = setInterval(tickHalloween, 1000);
             }
-            // Al acabar el evento desaparece la variante Encantada del menú
-            renderSupSelect();
-            // … y los artículos del evento se reagrupan en el Inventario
-            if (invOpen) renderInv();
         }
 
         // Cuenta atrás hasta el final del evento (3 de noviembre a las 12:00)
@@ -3596,144 +3374,22 @@ export function initTeclear() {
                 clearInterval(halloweenTimer);
                 halloweenTimer = null;
                 applyHalloween();            // se apaga la temática…
-                if (shopOpen) renderShop();   // … y la tienda de evento
                 return;
             }
-            if (!eventCount) return;
             const fin = eventEndDate(ahora.getFullYear());
             const ms = fin - ahora;
             const d = Math.floor(ms / 86400000);
             const h = Math.floor((ms % 86400000) / 3600000);
             const m = Math.floor((ms % 3600000) / 60000);
             const s = Math.floor((ms % 60000) / 1000);
-            eventCount.textContent = "⏳ " + d + "d " + h + "h " + m + "m " + s + "s";
-        }
-
-        // Tarjeta base de la tienda de evento: miniatura, nombre, precio,
-        // descripción y un botón que cada artículo rellena a su manera
-        function eventCardBox(icono, nombre, precio, desc) {
-            const card = document.createElement("div");
-            card.className = "shop-card event-card";
-
-            const prev = document.createElement("div");
-            prev.className = "shop-preview";
-            prev.textContent = icono;
-
-            const name = document.createElement("div");
-            name.className = "shop-name";
-            name.textContent = nombre;
-
-            const price = document.createElement("div");
-            price.className = "shop-price";
-            price.textContent = precio;
-
-            const d = document.createElement("div");
-            d.className = "shop-desc";
-            d.textContent = desc;
-
-            const btn = document.createElement("button");
-            btn.className = "chip-btn shop-btn";
-
-            card.append(prev, name, price, d, btn);
-            return { card: card, btn: btn };
-        }
-
-        // Pinta los tres artículos del evento: Five Nigths (1987), Sangre
-        // (666) y Truco o trato (2040). Cada uno se compra con la función
-        // de su sección normal, así que el comportamiento es idéntico.
-        function renderEventShop() {
-            if (!shopEventGrid || !halloweenOn()) return;
-            shopEventGrid.innerHTML = "";
-            const en = uiLang() === "en";
-            const D = (o, campo) => en ? o[campo + "En"] : o[campo + "Es"];
-
-            // 1) Fondo Five Nigths (fredi.gif, 1987 monedas)
-            const b = BACKGROUNDS.find(x => x.id === "fivenights");
-            if (b) {
-                const own = ownedBgs.includes(b.id);
-                const c = eventCardBox(b.icon || "📼",
-                    en ? b.en : b.es,
-                    own ? "✓ " + t("shopOwned") : "🍬 " + b.price,
-                    D(b, "desc"));
-                const prev = c.card.querySelector(".shop-preview");
-                prev.classList.add("event-thumb");
-                prev.style.backgroundImage = 'url("' + b.img + '")';
-                if (bg === b.id) c.card.classList.add("equipped");
-                if (own) {
-                    // La tienda solo COMPRA: usarse se hace en el Inventario
-                    c.btn.textContent = t("shopInInv");
-                    c.btn.title = t("shopInInvHint");
-                    c.btn.disabled = true;
-                } else {
-                    c.btn.textContent = t("shopBuy");
-                    if (!esAdmin() && caramelos < b.price) c.btn.classList.add("cant");
-                    c.btn.addEventListener("click", () => buyBg(b));
-                }
-                shopEventGrid.appendChild(c.card);
-            }
-
-            // 2) Efecto de tecleo Sangre (666 monedas)
-            const f = fxById("sangre");
-            if (f) {
-                const own = ownsFx(f.id);
-                const on = own && fxEquipped === f.id;
-                const c = eventCardBox(f.icon,
-                    en ? f.en : f.es,
-                    own ? "✓ " + t("shopOwned") : "🍬 " + f.price,
-                    D(f, "desc"));
-                c.card.classList.add("card-fx", "card-fx-sangre");
-                if (on) c.card.classList.add("fx-on");
-                c.card.style.setProperty("--fx-c", f.color);
-                if (own) {
-                    // La tienda solo COMPRA: usarse o apagarse en el Inventario
-                    c.btn.textContent = t("shopInInv");
-                    c.btn.title = t("shopInInvHint");
-                    c.btn.disabled = true;
-                } else {
-                    c.btn.textContent = t("shopBuy");
-                    if (!esAdmin() && caramelos < f.price) c.btn.classList.add("cant");
-                    c.btn.addEventListener("click", () => buyFx(f));
-                }
-                shopEventGrid.appendChild(c.card);
-            }
-
-            // 3) Modo Truco o trato (2040 monedas)
-            const x = EXTRAS.find(e => e.id === "truco");
-            if (x) {
-                const own = ownsExtra(x.id);
-                const on = own && !!extraOn[x.id];
-                const c = eventCardBox(x.icon,
-                    en ? x.en : x.es,
-                    own ? "✓ " + t("shopOwned") : "🍬 " + x.price,
-                    D(x, "desc"));
-                c.card.classList.add("card-truco");
-                if (on) c.card.classList.add("extra-on");
-                if (own) {
-                    // La tienda solo COMPRA: activarse se hace en el Inventario
-                    c.btn.textContent = t("shopInInv");
-                    c.btn.title = t("shopInInvHint");
-                    c.btn.disabled = true;
-                } else {
-                    c.btn.textContent = t("shopBuy");
-                    if (!esAdmin() && caramelos < x.price) c.btn.classList.add("cant");
-                    c.btn.addEventListener("click", () => buyExtra(x));
-                }
-                shopEventGrid.appendChild(c.card);
-            }
+            eventCountTxt = "⏳ " + d + "d " + h + "h " + m + "m " + s + "s";
         }
 
         function toggleShop() {
             if (state === "playing") return;
             shopOpen = !shopOpen;
-            shop.classList.toggle("hidden", !shopOpen);
-            btnShop.classList.toggle("active", shopOpen);
-            if (shopOpen) {
-                shopMsg.textContent = "";
-                renderShop();
-            }
+            if (shopOpen) shopMsgTxt = "";
         }
-
-        btnShop.addEventListener("click", toggleShop);
 
         // ---------- Logros: progreso, recompensas y panel ----------
         // Cada logro lleva su propio progreso (guardado en localStorage).
@@ -3797,7 +3453,6 @@ export function initTeclear() {
                     fxEquipped = r.id;
                     saveShop();
                     applyFx();
-                    if (shopOpen) renderFxShop();
                 }
             } else if (r.type === "font") {
                 if (!owned.includes(r.id)) {
@@ -3805,14 +3460,11 @@ export function initTeclear() {
                     equipped = r.id;    // recién ganado: sale aplicado
                     saveShop();
                     applyStyle();
-                    if (shopOpen) renderShop();
                 }
             } else if (r.type === "bg") {
                 if (!ownedBgs.includes(r.id)) {
                     ownedBgs.push(r.id);
                     saveShop();
-                    renderBgChips();    // aparece en el selector de fondos
-                    if (shopOpen) renderBgShop();
                 }
             }
 
@@ -3864,90 +3516,21 @@ export function initTeclear() {
             if (completo) d.done = true;
             achSave();
             if (completo) grantAchReward(ach, false);
-            if (logrosOpen) renderLogros();
-        }
-
-        // Tarjetas de los logros: icono, reto, barra de progreso y recompensa
-        function renderLogros() {
-            if (!achGrid) return;
-            achGrid.innerHTML = "";
-            let hechos = 0;
-
-            ACHIEVEMENTS.forEach(a => {
-                const d = achData[a.id] || { p: 0, done: false };
-                const done = !!d.done;
-                if (done) hechos++;
-                const pct = Math.round((d.p / a.goal) * 100);
-
-                const card = document.createElement("div");
-                card.className = "ach-card" + (done ? " done" : "");
-
-                const head = document.createElement("div");
-                head.className = "ach-head";
-                const icon = document.createElement("span");
-                icon.className = "ach-icon";
-                icon.textContent = a.icon;
-                const name = document.createElement("strong");
-                name.className = "ach-name";
-                name.textContent = uiLang() === "es" ? a.es : a.en;
-                head.append(icon, name);
-                card.appendChild(head);
-
-                const desc = document.createElement("p");
-                desc.className = "ach-desc";
-                desc.textContent = uiLang() === "es" ? a.descEs : a.descEn;
-                card.appendChild(desc);
-
-                const bar = document.createElement("div");
-                bar.className = "ach-bar";
-                const fill = document.createElement("i");
-                fill.style.width = pct + "%";
-                bar.appendChild(fill);
-                card.appendChild(bar);
-
-                const num = document.createElement("div");
-                num.className = "ach-num";
-                num.textContent = d.p + " / " + a.goal;
-                card.appendChild(num);
-
-                const reward = document.createElement("div");
-                reward.className = "ach-reward";
-                reward.textContent = "🎁 " + t("achReward") + ": " + rewardLabel(a);
-                card.appendChild(reward);
-
-                const st = document.createElement("div");
-                st.className = "ach-state";
-                st.textContent = done ? t("achDone") : t("achDoing");
-                card.appendChild(st);
-
-                achGrid.appendChild(card);
-            });
-
-            if (achCount) achCount.textContent = hechos + "/" + ACHIEVEMENTS.length;
         }
 
         function toggleLogros() {
             if (state === "playing") return;
             logrosOpen = !logrosOpen;
-            logros.classList.toggle("hidden", !logrosOpen);
-            btnLogros.classList.toggle("active", logrosOpen);
-            if (logrosOpen) {
-                renderLogros();
+            if (logrosOpen && logros.scrollIntoView) {
                 // El panel queda por debajo: se lleva a la vista para que se note
-                if (logros.scrollIntoView) {
-                    logros.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                }
+                logros.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
         }
-
-        btnLogros.addEventListener("click", toggleLogros);
 
         // El panel de logros se cierra al empezar una partida
         function closeLogrosOnPlay() {
             if (!logrosOpen) return;
             logrosOpen = false;
-            logros.classList.add("hidden");
-            btnLogros.classList.remove("active");
         }
 
         // ---------- Inventario: todo lo comprado y todo lo ganado ----------
@@ -3964,16 +3547,7 @@ export function initTeclear() {
         // Aviso del panel: los mensajes de «elegir artículo» van aquí (la
         // tienda se queda los de compra)
         function invSay(txt) {
-            if (invMsg) invMsg.textContent = txt;
-        }
-
-        // Miniatura dibujada (sin emoji): la llama del efecto Fuego, hecha
-        // con CSS: gota con el núcleo caliente dentro y halo encendido
-        function flameArt() {
-            const i = document.createElement("i");
-            i.className = "flame-art";
-            i.setAttribute("aria-hidden", "true");
-            return i;
+            invMsgTxt = txt;
         }
 
         // Devuelve la lista completa de artículos con su estado:
@@ -4000,7 +3574,10 @@ export function initTeclear() {
                 out.push({
                     tipo: "bg", id: b.id,
                     nombre: en ? b.en : b.es,
-                    icono: b.icon || "🖼️", img: b.img,
+                    icono: b.icon || "🖼️",
+                    // Con el Modo Veyon, «General» e «Ia» enseñan la imagen de
+                    // repuesto, igual que en la tienda y en el selector
+                    img: veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
                     enUso: bg === b.id,
                     deLogro: !!b.ach, event: !!b.event,
                     // Igual que los estilos: siempre hay un fondo puesto
@@ -4039,100 +3616,11 @@ export function initTeclear() {
             return out;
         }
 
-        // Tarjeta de una sección del inventario: miniatura, nombre,
-        // procedencia (tienda o logro) y el botón con el que se PONE EN USO
-        function invCard(it) {
-            const card = document.createElement("div");
-            card.className = "inv-card" + (it.enUso ? " in-use" : "");
-
-            // Miniatura: la foto del fondo, la «Aa» del estilo o su arte
-            const thumb = document.createElement("div");
-            thumb.className = "inv-thumb " + (it.cls || "");
-            if (it.tipo === "bg" && it.img) {
-                // Con el Modo Veyon, «General» e «Ia» enseñan la imagen de
-                // repuesto, igual que en la tienda y en el selector
-                thumb.style.backgroundImage =
-                    'url("' + (veyonHiddenBg(it.id) ? VEYON_PLACEHOLDER : it.img) + '")';
-            } else if (it.tipo === "font") {
-                thumb.classList.add("font-preview");
-                thumb.style.fontFamily = it.previewFont;
-                thumb.textContent = "Aa";
-            } else if (it.art === "flame") {
-                thumb.appendChild(flameArt());
-            } else {
-                thumb.textContent = it.icono;
-            }
-            card.appendChild(thumb);
-
-            const name = document.createElement("div");
-            name.className = "inv-name";
-            name.textContent = it.nombre;
-            card.appendChild(name);
-
-            // De dónde salió: comprado en la tienda o ganado jugando
-            const src = document.createElement("div");
-            src.className = "inv-src " + (it.deLogro ? "src-ach" : "src-shop");
-            src.textContent = it.deLogro ? t("invFromAch") : t("invFromShop");
-            card.appendChild(src);
-
-            // Aquí (y solo aquí) se elige qué se lleva puesto
-            const btn = document.createElement("button");
-            btn.className = "chip-btn shop-btn";
-            if (it.enUso && !it.apagar) {
-                btn.textContent = t("shopEquipped");
-                btn.disabled = true;
-            } else if (it.enUso) {
-                btn.textContent = t("invOff");
-                btn.addEventListener("click", it.apagar);
-            } else {
-                btn.textContent = t("shopEquip");
-                btn.addEventListener("click", it.usar);
-            }
-            card.appendChild(btn);
-
-            return card;
-        }
-
-        // Dibuja el inventario completo, SECCIONADO igual que la tienda:
-        // un título y una rejilla por categoría, y los artículos del EVENTO
-        // en su propia sección mientras dura Halloween (al acabar vuelven a
-        // la suya). Las secciones vacías se ocultan enteras.
-        function renderInv() {
-            if (!invFontGrid) return;
-            const items = invItems();
-            const hwn = halloweenOn();
-            const esEvento = it => hwn && it.event;
-
-            const secciones = [
-                { grid: invFontGrid, title: invFontsTitle, test: it => it.tipo === "font" && !esEvento(it) },
-                { grid: invBgGrid, title: invBgsTitle, test: it => it.tipo === "bg" && !esEvento(it) },
-                { grid: invExtraGrid, title: invExtrasTitle, test: it => it.tipo === "extra" && !esEvento(it) },
-                { grid: invFxGrid, title: invFxTitle, test: it => it.tipo === "fx" && !esEvento(it) },
-                { grid: invEventGrid, title: invEventTitle, test: esEvento }
-            ];
-
-            secciones.forEach(sec => {
-                if (!sec.grid) return;
-                sec.grid.innerHTML = "";
-                items.filter(sec.test).forEach(it => sec.grid.appendChild(invCard(it)));
-                const vacia = sec.grid.children.length === 0;
-                sec.grid.classList.toggle("hidden", vacia);
-                if (sec.title) sec.title.classList.toggle("hidden", vacia);
-            });
-
-            // Contador del encabezado y aviso si no hay nada todavía
-            if (invCount) invCount.textContent = items.length;
-            if (invEmpty) invEmpty.classList.toggle("hidden", items.length > 0);
-        }
-
         function toggleInv() {
             if (state === "playing") return;
             invOpen = !invOpen;
-            inventario.classList.toggle("hidden", !invOpen);
-            btnInv.classList.toggle("active", invOpen);
             if (invOpen) {
-                if (invMsg) invMsg.textContent = "";   // aviso de la acción anterior
-                renderInv();
+                invMsgTxt = "";   // aviso de la acción anterior
                 // El panel queda por debajo: se lleva a la vista para que se note
                 if (inventario.scrollIntoView) {
                     inventario.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -4140,177 +3628,44 @@ export function initTeclear() {
             }
         }
 
-        btnInv.addEventListener("click", toggleInv);
-
         // El panel de inventario se cierra al empezar una partida
         function closeInvOnPlay() {
             if (!invOpen) return;
             invOpen = false;
-            inventario.classList.add("hidden");
-            btnInv.classList.remove("active");
         }
 
         // ---------- Idioma y modo ----------
+        // applyLang ya no repinta la interfaz (eso lo hace Svelte leyendo G):
+        // solo sincroniza lo que vive fuera de los componentes — el <html>,
+        // las clases de fondo del <body>, los canvas y los récords cargados.
         function applyLang() {
             document.documentElement.lang = uiLang();
             document.title = t("docTitle");
 
-            document.getElementById("title").textContent = t("title");
-            document.getElementById("subtitle").textContent =
-                mode === "imagen" ? t("subtitleI") :
-                mode === "guess" ? t("subtitleG") :
-                mode === "aventura" ? t("subtitleA") :
-                mode === "supervivencia" ? t("subtitleS") :
-                lang === "mur" ? t("subtitleM") : t("subtitleT");
-            document.getElementById("modeLabel").textContent = t("modeLabel");
-            btnType.textContent = t("btnType");
-            btnGuess.textContent = t("btnGuess");
-            btnImagen.textContent = t("btnImagen");
-            if (btnAventura) btnAventura.textContent = t("btnAventura");
-            if (btnSup) btnSup.textContent = t("btnSup");
-            btnMurciano.textContent = t("btnMurciano");
-            document.getElementById("bgLabel").textContent =
-                t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
-            document.getElementById("progLabel").textContent = t("progLabel");
-            document.getElementById("userLabel").textContent = t("userLabel");
-            if (modeSelect) modeSelect.setAttribute("aria-label", t("modeSelectAria"));
-            btnBgDark.textContent = t("bgDark");
-            setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
-            document.getElementById("kScore").textContent = t("kScore");
-            // En Supervivencia el reloj marca lo que queda de la palabra apuntada
-            document.getElementById("kTime").textContent =
-                mode === "supervivencia" ? t("kTimeWord") : t("kTime");
-            document.getElementById("kStreak").textContent = t("kStreak");
-            document.getElementById("kLevel").textContent = t("kLevel");
-            document.getElementById("kBest").textContent = t("kBest");
-            document.getElementById("kCoins").textContent = t("kCoins");
-            document.getElementById("kCandy").textContent = t("kCandy");
-            document.getElementById("kBestWords").textContent = t("kBestWords");
-            btnShop.textContent = t("btnShop");
-            btnRanking.textContent = t("btnRanking");
-            renderRankLabels();   // títulos y avisos de los dos rankings
-            if (verifyLabel) verifyLabel.textContent = t("verifyLabel");
-            saveScoreBtn.textContent = t("rankSave");
-            btnRegister.textContent = t("btnRegister");
-            btnLogin.textContent = t("btnLogin");
-            if (btnVeyon) btnVeyon.textContent = t("veyon");
-            renderRanking();
-            // Textos del panel de perfil
-            document.getElementById("accTitle").textContent = t("accTitle");
-            if (accRole) accRole.textContent = t("accRole");
-            document.getElementById("accNameLabel").textContent = t("accNameLabel");
-            document.getElementById("accPassLabel").textContent = t("accPassLabel");
-            document.getElementById("accPass2Label").textContent = t("accPass2Label");
-            accClose.textContent = t("accClose");
-            accClose2.textContent = t("accClose");
-            accSave.textContent = t("accSave");
-            accOut.textContent = t("accOut");
-            accCells.forEach(c => {
-                const e = document.getElementById(c[0]);
-                if (e) e.textContent = t(c[2]);
-            });
-            document.getElementById("rkXp").textContent = t("accXpGain");
-            renderAccount();
-            document.getElementById("shopTitle").textContent = t("shopTitle");
-            document.getElementById("shopHint").textContent = t("shopHint");
-            document.getElementById("shopFontsTitle").textContent = t("shopFontsTitle");
-            document.getElementById("shopBgsTitle").textContent =
-                t("shopBgsTitle") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
-            document.getElementById("shopExtrasTitle").textContent = t("shopExtrasTitle");
-            document.getElementById("shopFxTitle").textContent = t("shopFxTitle");
-            if (shopEventTitle) shopEventTitle.textContent = t("shopEventTitle");
-            if (eventText) eventText.textContent = t("eventBar");
-            if (eventCashTxt) eventCashTxt.textContent = t("eventCashTxt");
-            btnLogros.textContent = t("btnLogros");
-            document.getElementById("achTitle").textContent = t("achTitle");
-            document.getElementById("achHint").textContent = t("achHint");
-            if (logrosOpen) renderLogros();
-            btnInv.textContent = t("btnInv");
-            document.getElementById("invTitle").textContent = t("invTitle");
-            document.getElementById("invHint").textContent = t("invHint");
-            // Títulos de las secciones (los mismos que en la tienda)
-            if (invEventTitle) invEventTitle.textContent = t("invEventTitle");
-            if (invFontsTitle) invFontsTitle.textContent = t("invFontsTitle");
-            if (invBgsTitle) invBgsTitle.textContent = t("invBgsTitle");
-            if (invExtrasTitle) invExtrasTitle.textContent = t("invExtrasTitle");
-            if (invFxTitle) invFxTitle.textContent = t("invFxTitle");
-            if (invOpen) renderInv();
-            applyExtras();   // chips de los extras + acento de color del tablero
-            document.getElementById("rTitle").textContent =
-                mode === "supervivencia" ? t("rTitleLives") : t("rTitle");
-            document.getElementById("rkScore").textContent = t("rkScore");
-            document.getElementById("rkWords").textContent =
-                mode === "guess" ? t("rkWordsG") : t("rkWords");
-            document.getElementById("rkAcc").textContent = t("rkAcc");
-            document.getElementById("rkPpm").textContent = t("rkPpm");
-            document.getElementById("rkCoins").textContent = t("rkCoins");
-            document.getElementById("rkCandy").textContent = t("rkCandy");
-            document.getElementById("rkBestWords").textContent = t("rkBestWords");
-            document.getElementById("footer").innerHTML = t("footer");
-
-            typing.placeholder = t("placeholder");
-            btnEs.classList.toggle("active", lang === "es");
-            btnEn.classList.toggle("active", lang === "en");
-            btnMurciano.classList.toggle("active", lang === "mur");
-            btnType.classList.toggle("active", mode === "type");
-            btnGuess.classList.toggle("active", mode === "guess");
-            btnImagen.classList.toggle("active", mode === "imagen");
-            if (btnAventura) btnAventura.classList.toggle("active", mode === "aventura");
-            if (btnSup) btnSup.classList.toggle("active", mode === "supervivencia");
-            // En Aventura no se juega con fondos: el selector queda fuera de
-            // servicio y el cuerpo lleva el fondo propio del modo (sin habilidad)
+            // En Aventura no se juega con fondos: el cuerpo lleva el fondo
+            // propio del modo (sin habilidad)
             const sinFondos = mode === "aventura";
-            btnBgDark.disabled = sinFondos;
-            btnBgDark.classList.toggle("active", !sinFondos && bg === "dark");
-            // El fondo de Franco solo aparece en el selector si está desbloqueado
-            const hasFranco = ownedBgs.includes("franco");
-            btnBgFranco.style.display = hasFranco ? "" : "none";
-            btnBgFranco.disabled = sinFondos;
-            btnBgFranco.classList.toggle("active", !sinFondos && bg === "franco");
             BACKGROUNDS.forEach(b => {
                 document.body.classList.toggle("bg-" + b.id, !sinFondos && bg === b.id);
             });
             document.body.classList.toggle("bg-aventura", sinFondos);
-            renderBgChips();
             syncLetterSoup(!sinFondos && bg === "sopa");   // letras rebotando solo con ese fondo
             syncHacker(!sinFondos && bg === "hacker");     // binario verde solo con ese fondo
 
             best = loadBest();
-            bestEl.textContent = best;
             bestWords = loadBestWords();
-            bestWordsEl.textContent = bestWords;
-
-            renderMisses();
-
-            // Textos de la ventana de ventajas del modo Aventura
-            if (perkHint) perkHint.textContent = t("perkHint");
-            const perkTitleEl = document.getElementById("perkTitle");
-            if (perkTitleEl) perkTitleEl.textContent = t("perkTitle");
-            renderAdvBar();
+            applyExtras();   // acento de color de los extras activos
 
             // Textos según el estado actual de la partida
             if (state === "idle") {
-                board.innerHTML = '<em class="hint">' + t("boardIdle") + "</em>";
-                status.textContent = t("statusIdle");
-                startBtn.textContent = t("btnStart");
+                statusTxt = t("statusIdle");
+                startTxt = t("btnStart");
             } else if (state === "over") {
-                board.innerHTML = '<em class="hint">' + t("boardEnd") + "</em>";
-                status.textContent = t("statusEnd");
-                startBtn.textContent = t("btnAgain");
+                statusTxt = t("statusEnd");
+                startTxt = t("btnAgain");
             }
 
-            if (shopOpen) renderShop();
-            applyHalloween();   // temática y tienda de evento (solo en Halloween)
-            updateRankWho();   // quién firma la puntuación también cambia de idioma
-            // Durante la partida no se cambia nada: los botones están bloqueados
-        }
-
-        // Quién aparecerá en el ranking al guardar la puntuación de esta partida
-        function updateRankWho() {
-            if (!rankWho) return;
-            rankWho.textContent = accSession
-                ? t("accRankWith") + accSession.n
-                : t("accRankNo");
+            applyHalloween();   // temática del evento (solo en Halloween)
         }
 
         function setLang(next) {
@@ -4325,14 +3680,7 @@ export function initTeclear() {
             applyLang();
         }
 
-        btnEs.addEventListener("click", () => setLang("es"));
-        btnEn.addEventListener("click", () => setLang("en"));
-        btnMurciano.addEventListener("click", () => setLang("mur"));
-        btnType.addEventListener("click", () => setMode("type"));
-        btnGuess.addEventListener("click", () => setMode("guess"));
-        btnImagen.addEventListener("click", () => setMode("imagen"));
-        if (btnAventura) btnAventura.addEventListener("click", () => setMode("aventura"));
-        if (btnSup) btnSup.addEventListener("click", () => setMode("supervivencia"));
+        // (los botones de idioma, modo y fondo llaman a G.a.setX desde la vista)
 
         // ---------- Fondo de pantalla ----------
         function setBg(next) {
@@ -4345,9 +3693,6 @@ export function initTeclear() {
             applyLang();
         }
 
-        btnBgDark.addEventListener("click", () => setBg("dark"));
-        btnBgFranco.addEventListener("click", () => setBg("franco"));
-
         // ---------- Modo Veyon ----------
         // El botón «Modo Veyon» oculta el icono de estesoTeclea (el logo de
         // la cabecera) y las imágenes de los fondos «General» (franco) e
@@ -4358,70 +3703,18 @@ export function initTeclear() {
             return veyon && VEYON_BGS.includes(id);
         }
 
-        // Contenido de un chip de fondo en el selector: con el Modo Veyon
-        // activo, «General» e «Ia» enseñan la imagen de repuesto en lugar
-        // de su icono (el nombre del fondo se queda para poder usarlo).
-        function setBgChipContent(btn, id, label) {
-            if (!btn) return;
-            const hidden = veyonHiddenBg(id);
-            btn.textContent = hidden ? label.replace(/^\S+\s+/, "") : label;
-            if (hidden) {
-                const img = document.createElement("img");
-                img.className = "chip-img";
-                img.src = VEYON_PLACEHOLDER;
-                img.alt = "";
-                btn.insertBefore(img, btn.firstChild);
-            }
-        }
-
         function applyVeyon() {
             document.body.classList.toggle("veyon-on", veyon);
             // Icono de la ventana (pestaña): con el modo activo deja de
             // verse el de estesoTeclea y se pone el de repuesto
             document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')
                 .forEach(l => { l.href = veyon ? VEYON_FAVICON : imgLogo; });
-            if (btnVeyon) {
-                btnVeyon.classList.toggle("active", veyon);
-                btnVeyon.setAttribute("aria-pressed", veyon ? "true" : "false");
-            }
-            renderBgChips();                    // iconos del selector de fondos
-            // El chip «General» es fijo en el HTML: su contenido se repinta aquí
-            setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
-            if (shopOpen) renderBgShop();       // miniaturas de la tienda
-            if (invOpen) renderInv();           // … y las del Inventario
         }
 
         function setVeyon(next) {
             veyon = !!next;
             setSetting("veyon", veyon);
             applyVeyon();
-        }
-
-        if (btnVeyon) {
-            btnVeyon.addEventListener("click", () => setVeyon(!veyon));
-        }
-
-        // La variante de Tecleo se cambia en el menú desplegable
-        if (modeSelect) {
-            modeSelect.addEventListener("change", () => chooseExtra(modeSelect.value));
-        }
-
-        // Añade al selector los fondos comprados en la tienda
-        function renderBgChips() {
-            bgExtra.innerHTML = "";
-            BACKGROUNDS.forEach(b => {
-                if (b.id === "dark" || b.id === "franco") return;
-                if (!ownedBgs.includes(b.id)) return;
-                const btn = document.createElement("button");
-                btn.className = "chip-btn";
-                setBgChipContent(btn, b.id,
-                    (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
-                    (uiLang() === "es" ? b.es : b.en));
-                btn.classList.toggle("active", bg === b.id);
-                btn.disabled = mode === "aventura";   // los fondos no actúan en Aventura
-                btn.addEventListener("click", () => setBg(b.id));
-                bgExtra.appendChild(btn);
-            });
         }
 
         // ---------- Fondo "Sopa de Letras": letras que rebotan ----------
@@ -4731,8 +4024,7 @@ export function initTeclear() {
             try {
                 localStorage.setItem("teclear.fondo", bg);
             } catch (e) { /* sin almacenamiento disponible */ }
-            applyLang();       // repinta el selector, la tienda y el Inventario
-            renderBgShop();
+            applyLang();
             invSay(t("shopEquippedBgMsg"));
         }
 
@@ -4740,16 +4032,14 @@ export function initTeclear() {
             if (ownedBgs.includes(b.id)) return;   // ya está en el Inventario
             // Los fondos ganados con un logro no se compran con monedas
             if (b.ach) {
-                shopMsg.textContent = t("achNeed");
+                shopMsgTxt = t("achNeed");
                 return;
             }
             if (!cobra(b)) return;
             ownedBgs.push(b.id);
             // La compra solo DESBLOQUEA: usarse se hace en el Inventario
             saveShop();
-            renderBgChips();    // el fondo ya aparece en el selector
-            updateCoins();
-            shopMsg.textContent = t("shopBoughtBg");
+            shopMsgTxt = t("shopBoughtBg");
         }
 
         // ---------- Utilidades ----------
@@ -4923,7 +4213,7 @@ export function initTeclear() {
                         if (perkOpen && intentos++ < 40) { setTimeout(intento, 300); return; }
                         if (perkOpen) return;
                         if (word !== w || typing.value.length > 0) return;
-                        status.textContent = t("statusFreeWord");
+                        statusTxt = t("statusFreeWord");
                         completeWord();
                     };
                     setTimeout(intento, 600);
@@ -5004,47 +4294,20 @@ export function initTeclear() {
             return pool.slice(0, 3);
         }
 
-        // Dibuja las tres ventajas entre las que se puede elegir ahora mismo
-        function renderPerkOptions() {
-            const picks = sortPerks();
-            perkGrid.innerHTML = "";
-            const en = uiLang() === "en";
-            picks.forEach(p => {
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "perk-opt";
-                const icon = document.createElement("span");
-                icon.className = "perk-icon";
-                icon.textContent = p.icon;
-                const name = document.createElement("strong");
-                name.textContent = en ? p.en : p.es;
-                const desc = document.createElement("span");
-                desc.textContent = en ? p.descEn : p.descEs;
-                btn.appendChild(icon);
-                btn.appendChild(name);
-                btn.appendChild(desc);
-                btn.addEventListener("click", () => choosePerk(p));
-                perkGrid.appendChild(btn);
-            });
-        }
-
         // Abre la parada de la aventura: mientras el jugador elige, el reloj
         // no corre y la entrada de texto queda bloqueada.
         function openPerkChoice() {
             if (state !== "playing") return;
             // Segunda ventaja de una parada doble ("doble elección"): la
             // ventana sigue abierta y solo hacen falta otras tres al azar
-            if (perkOpen) { renderPerkOptions(); return; }
+            if (perkOpen) { perkOpts = sortPerks(); return; }
             advPicks = advExtraPick > 0 ? 2 : 1;
             advExtraPick = 0;
+            perkOpts = sortPerks();
             perkOpen = true;
             pausedAt = Date.now();
-            typing.disabled = true;
             typing.blur();
-            renderPerkOptions();
-            perkVeil.classList.remove("hidden");
-            status.textContent = t("perkTitle");
-            renderAdvBar();
+            statusTxt = t("perkTitle");
         }
 
         // Aplica la ventaja elegida y devuelve el control al jugador
@@ -5056,7 +4319,6 @@ export function initTeclear() {
             } else {
                 advPicks = 1;
                 perkOpen = false;
-                perkVeil.classList.add("hidden");
                 pausedTotal += Date.now() - pausedAt;   // la pausa no cuenta como partida
                 pausedAt = 0;
             }
@@ -5064,51 +4326,12 @@ export function initTeclear() {
             const nombre = p.icon + " " + (uiLang() === "en" ? p.en : p.es);
             if (segunda) {
                 openPerkChoice();          // se sortean tres ventajas más
-                status.textContent = t("perkSecond") + nombre;
+                statusTxt = t("perkSecond") + nombre;
             } else {
-                typing.disabled = false;
                 typing.focus();
-                status.textContent = t("perkChosen") + nombre;
+                statusTxt = t("perkChosen") + nombre;
             }
             updateHud();   // refresca el tiempo y los efectos activos
-        }
-
-        // Efectos activos del modo Aventura, bajo el tablero
-        function renderAdvBar() {
-            if (!advBar) return;
-            if (mode !== "aventura" || state !== "playing") {
-                advBar.classList.add("is-off");
-                advBar.innerHTML = "";
-                return;
-            }
-            advBar.classList.remove("is-off");
-            advBar.innerHTML = "";
-            const add = (txt, on) => {
-                const s = document.createElement("span");
-                s.className = "adv-chip" + (on ? " on" : "");
-                s.textContent = txt;
-                advBar.appendChild(s);
-            };
-            add("⏱️ +" + timePerWord() + "s/" + t("advWord"));
-            // Velocidad del reloj: en Aventura acelera con el nivel
-            const vel = tickSpeed();
-            if (vel > 1.001) {
-                add("⏩ x" + vel.toFixed(1).replace(".", uiLang() === "es" ? "," : "."),
-                    true);
-            }
-            if (advShield > 0) add("🛡️ x" + advShield, true);
-            if (advShort > 0) add("🛤️ x" + advShort, true);
-            if (advRevive > 0) add("🆘 x" + advRevive, true);
-            // Palabras que faltan para que el "remanso" deje de actuar
-            const quedanRelief = Math.max(0, advRelief - (completed - advReliefFrom));
-            if (quedanRelief > 0) add("🌊 x" + quedanRelief, true);
-            const ahora = performance.now();
-            if (ahora < advFreeze) add("❄️ " + Math.ceil((advFreeze - ahora) / 1000), true);
-            if (ahora < advDouble) add("💥 x2 " + Math.ceil((advDouble - ahora) / 1000), true);
-            if (ahora < advTurbo) add("🏃 x2s " + Math.ceil((advTurbo - ahora) / 1000), true);
-            if (ahora < advCoins) add("🧲 x2🪙 " + Math.ceil((advCoins - ahora) / 1000), true);
-            if (ahora < advGold) add("💎 x5 " + Math.ceil((advGold - ahora) / 1000), true);
-            if (ahora < advGrace) add("😇 " + Math.ceil((advGrace - ahora) / 1000), true);
         }
 
         // Lista de la que sale la siguiente palabra. Con el modo picante
@@ -5207,6 +4430,7 @@ export function initTeclear() {
                 im = pool[Math.floor(Math.random() * pool.length)];
             } while (im === currentImg && pool.length > 1);
             currentImg = im;
+            picErr = false;   // imagen nueva: de momento se confía en que cargue
             return imageWord(im);
         }
 
@@ -5290,6 +4514,7 @@ export function initTeclear() {
             const give = soupGiven();
             if (!give) return;
             typing.value = word.slice(0, give);
+            typedStr = typing.value;
             prevLen = give;   // ya tecleadas: no suman golpes ni fallos
         }
 
@@ -5315,40 +4540,13 @@ export function initTeclear() {
         }
 
         function updateHud() {
-            scoreEl.textContent = score;
-            streakEl.textContent = streak + " (x" + multiplier() + ")";
-            levelEl.textContent = level();
-            timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
-            // En Supervivencia el "bajo" avisa de la última parte del plazo
-            // de la palabra a la que apuntas
-            timeBox.classList.toggle("low",
-                state === "playing" &&
-                (mode === "supervivencia" ? timeLeft <= 4 : timeLeft <= 10));
-            if (mode === "aventura") renderAdvBar();   // efectos y tiempo por palabra
-            // (las barras de todas las palabras se repintan en cada tick)
+            // (todo el HUD lo pinta Svelte leyendo G; el pulso repinta el
+            // campo de Supervivencia, cuyas cajas se mueven a cada tick)
+            supTick++;
             // Logro «Hacker»: se anota la mejor puntuación de UNA partida.
             // Este es el sitio donde se refleja el marcador de todos los
             // modos, así que aquí se comprueba la meta de 10.000 puntos.
             achBest("hacker", score);
-        }
-
-        // Dibuja las letras de la palabra (con el cursor y lo ya tecleado)
-        function fillLetters(typed) {
-            for (let i = 0; i < word.length; i++) {
-                const s = document.createElement("span");
-                s.textContent = word[i];
-                if (i < typed.length) {
-                    s.className = typed[i] === word[i] ? "ok" : "bad";
-                } else if (i === typed.length) {
-                    s.className = "cursor";
-                }
-                board.appendChild(s);
-            }
-        }
-
-        function renderWord(typed) {
-            board.innerHTML = "";
-            fillLetters(typed);
         }
 
         // ---------- Modo Supervivencia: palabras que bajan desde arriba ----------
@@ -5358,94 +4556,14 @@ export function initTeclear() {
         // se teclea. Se apunta con el clic o con Tab, y si una llega hasta
         // abajo se pierde una vida.
 
-        // Letras de UNA palabra: disparadas (tachadas), explosión de la última
-        // y cursor donde entra la siguiente
-        function supRenderLetters(it) {
-            if (!it.letras) return;
-            it.letras.innerHTML = "";
-            for (let i = 0; i < it.w.length; i++) {
-                const s = document.createElement("span");
-                s.textContent = it.w[i];
-                if (i < it.typed) {
-                    s.className = "shot" + (i === it.typed - 1 ? " blast" : "");
-                } else if (i === it.typed) {
-                    s.className = "cursor";
-                }
-                it.letras.appendChild(s);
-            }
-        }
+        // (Las cajas de las palabras las dibuja Svelte con un {#each} sobre
+        //  supItems: posición, letras disparadas y barra salen de los datos)
 
-        // Barra de descenso de UNA palabra: cuánto le queda de camino hasta
-        // el fondo (se repinta en cada tick)
-        function supPaintBar(it) {
-            if (!it.fill) return;
-            const quedan = Math.max(0, (1 - it.y) * it.span);
-            const pct = Math.max(0, Math.min(100, (quedan / Math.max(0.1, it.span)) * 100));
-            it.fill.style.width = pct + "%";
-            const cerca = quedan <= 4;      // a punto de tocar el fondo
-            it.fill.classList.toggle("low", cerca);
-            if (it.el) it.el.classList.toggle("danger", cerca);
-        }
-
-        // Baja la caja de la palabra por su columna hasta el fondo
-        function supMove(it) {
-            supPlace(it);
-        }
-
-        // Coloca la caja en su altura: nace arriba del todo (y = 0) y va
-        // bajando hasta que su base toca el fondo del tablero (y = 1)
-        function supPlace(it) {
-            if (!it.el || !board) return;
-            const viaje = Math.max(0, board.clientHeight - it.el.offsetHeight - 4);
-            it.el.style.top = Math.max(0, Math.min(1, it.y)) * viaje + "px";
-        }
-
-        // Caja de una palabra en pantalla: letras, barra y señalamiento
-        function supRenderBox(it, fresh) {
-            const box = document.createElement("div");
-            box.className = "sup-word" + (fresh ? " fresh" : "") +
-                (it === supTarget ? " target" : "") +
-                (encOn() ? " ghost" : "");   // el fantasma del modo Encantado
-            box.style.left = it.lane;                 // su columna
-            box.style.top = (it.y * 100) + "%";       // arriba al nacer (se corrige al colocarla)
-
-            const letras = document.createElement("div");
-            letras.className = "sup-letters";
-            box.appendChild(letras);
-
-            const bar = document.createElement("div");
-            bar.className = "sup-bar";
-            const fill = document.createElement("i");
-            fill.className = "sup-fill";
-            bar.appendChild(fill);
-            box.appendChild(bar);
-
-            it.el = box;
-            it.letras = letras;
-            it.fill = fill;
-            supRenderLetters(it);
-            supPaintBar(it);
-
-            // Al señalar la caja con el ratón se apunta a esa palabra: el
-            // mousedown no quita el foco, así que las teclas siguen llegando
-            box.addEventListener("mousedown", function (e) {
-                if (e && e.preventDefault) e.preventDefault();
-            });
-            box.addEventListener("click", function () {
-                supAim(it);
-                if (typing) typing.focus();
-            });
-            return box;
-        }
-
-        // Vuelve a pintar TODO el tablero (al empezar la partida)
-        function supRenderAll(fresh) {
-            board.innerHTML = "";
-            for (const it of supItems) {
-                it.el = null; it.letras = null; it.fill = null;
-                board.appendChild(supRenderBox(it, fresh === true));
-                supPlace(it);        // cada una en su altura, ya medida
-            }
+        // El span de la letra i de una palabra en pantalla (para el disparo)
+        function supLetterEl(it, i) {
+            const box = board && board.querySelector('[data-n="' + it.n + '"]');
+            const ls = box && box.querySelector(".sup-letters");
+            return ls ? (ls.children[i] || null) : null;
         }
 
         // Letra aleatoria que baja en el modo Encantado (con su fantasma)
@@ -5454,8 +4572,7 @@ export function initTeclear() {
         }
 
         // Nueva palabra: nace arriba del todo en la columna que tenga más
-        // aire (solo datos, la caja la pinta quien la llama: el tablero
-        // entero o la caja suelta de la palabra nueva)
+        // aire (solo datos, la caja la pinta Svelte al entrar en la lista)
         function supSpawn() {
             if (supItems.length >= supMaxWords()) return null;
             const lanes = board && board.clientWidth < 520
@@ -5481,21 +4598,13 @@ export function initTeclear() {
 
             const seg = supWordTime();
             const it = {
-                w: w, typed: 0,
+                n: ++supSerial,      // id estable para el {#each} y el disparo
+                w: w, typed: 0, shotFrom: 0, fresh: true,
                 lane: lane,
-                span: seg, y: 0,     // y: 0 = arriba del todo, 1 = fondo
-                el: null, letras: null, fill: null
+                span: seg, y: 0      // y: 0 = arriba del todo, 1 = fondo
             };
             supItems.push(it);
             return it;
-        }
-
-        // La caja de una palabra recién aparecida entra por arriba del todo
-        function supArrive(it) {
-            if (it && state === "playing" && board) {
-                board.appendChild(supRenderBox(it, true));
-                supPlace(it);
-            }
         }
 
         // Rellena el tablero hasta el tope del nivel: cada vez hay más
@@ -5506,7 +4615,6 @@ export function initTeclear() {
                 const it = supSpawn();
                 if (!it) break;
                 nueva = it;
-                supArrive(it);
             }
             return nueva;
         }
@@ -5515,12 +4623,6 @@ export function initTeclear() {
         function supRemove(it) {
             const i = supItems.indexOf(it);
             if (i >= 0) supItems.splice(i, 1);
-            const el = it.el;
-            if (el) {
-                if (el.parentNode && el.parentNode.removeChild) el.parentNode.removeChild(el);
-                else if (board && board.removeChild) board.removeChild(el);
-            }
-            it.el = null; it.letras = null; it.fill = null;
             if (supTarget === it) supTarget = null;
         }
 
@@ -5532,11 +4634,8 @@ export function initTeclear() {
             supTarget = it;
             word = it.w;                     // las recompensas trabajan sobre `word`
             prevLen = it.typed;
-            typing.value = it.w.slice(0, it.typed);
-            for (const x of supItems) {
-                if (x.el) x.el.classList.toggle("target", x === it);
-            }
-            supRenderLetters(it);
+            typedStr = it.w.slice(0, it.typed);
+            typing.value = typedStr;
             timeLeft = supLeft(it);
             updateHud();
         }
@@ -5579,7 +4678,7 @@ export function initTeclear() {
             score += 10;
             giveCandy(ENC_CANDY_HIT);     // +1 caramelos por letra
             showCandy(ENC_CANDY_HIT);
-            status.textContent = t("encHit");
+            statusTxt = t("encHit");
         }
 
         // Una palabra ha llegado hasta el fondo del tablero: se pierde una
@@ -5589,16 +4688,15 @@ export function initTeclear() {
             supRemove(it);
             supLives--;
             shake();
-            renderMisses();
             if (supLives <= 0) {
                 supLives = 0;
                 timeLeft = 0;
-                status.textContent = t("supFailEnd");
+                statusTxt = t("supFailEnd");
                 updateHud();
                 endGame();
                 return;
             }
-            status.textContent = t("supFail") + supLives + " ❤️ · " + t("supFell") + escapada;
+            statusTxt = t("supFail") + supLives + " ❤️ · " + t("supFell") + escapada;
             // En el hueco de la que se ha caído entra otra por arriba y se
             // apunta a ella
             supFillBoard();
@@ -5674,22 +4772,22 @@ export function initTeclear() {
                     const perdidos = Math.min(ENC_CANDY_FAIL, Math.max(0, caramelos));
                     if (perdidos > 0) {
                         giveCandy(-perdidos);
-                        status.textContent = t("encFail") + perdidos + t("encFailEnd");
+                        statusTxt = t("encFail") + perdidos + t("encFailEnd");
                     } else {
-                        status.textContent = t("encFailZero");
+                        statusTxt = t("encFailZero");
                     }
                 } else {
-                    status.textContent = t("statusError");
+                    statusTxt = t("statusError");
                 }
             } else {
                 if (val.length > prevLen) hits += val.length - prevLen;
-                status.textContent = t("statusOk");
+                statusTxt = t("statusOk");
             }
 
             const antes = prevLen;
             prevLen = val.length;
             tgt.typed = val.length;
-            supRenderLetters(tgt);
+            tgt.shotFrom = antes;   // desde dónde llegó esta ráfaga (retardo del blast)
             updateHud();
 
             // Letras recién aceptadas: salen disparadas del campo de
@@ -5697,91 +4795,16 @@ export function initTeclear() {
             if (bad === -1) {
                 for (let i = antes; i < val.length; i++) {
                     const espera = (i - antes) * SHOT_GAP;
-                    const caja = tgt.letras && tgt.letras.children[i];
-                    supShoot(tgt.w[i], caja, espera);
-                    // La explosión de esa casilla espera a que la letra llegue
-                    if (caja) caja.style.animationDelay = (espera + SHOT_MS) + "ms";
+                    supShoot(tgt.w[i], supLetterEl(tgt, i), espera);
                 }
             }
 
             if (val === tgt.w) supComplete();
         }
 
-        // ---------- Modo Imágenes: SOLO la foto, sin letras en pantalla ----------
-        // El jugador tiene que escribir la palabra sin pistas: no se pinta nada
-        // más que la imagen (lo que teclea se ve en el campo de entrada).
-        function renderImage() {
-            board.innerHTML = "";
-
-            const box = document.createElement("div");
-            box.className = "pic";
-
-            const fallback = document.createElement("div");
-            fallback.className = "pic-fallback";
-            fallback.textContent = currentImg ? currentImg.em : "🖼️";
-            fallback.style.display = "none";   // solo se ve si la imagen no carga
-
-            const img = document.createElement("img");
-            img.alt = "";
-            img.addEventListener("error", function () {   // sin internet: emoji
-                img.remove();
-                fallback.style.display = "";
-            });
-            if (currentImg) img.src = emojiSrc(currentImg.em);
-
-            box.appendChild(img);
-            box.appendChild(fallback);
-            board.appendChild(box);
-        }
-
-        function renderGuess() {
-            board.innerHTML = "";
-            const firstHidden = mask.indexOf("hidden");
-            for (let i = 0; i < word.length; i++) {
-                const s = document.createElement("span");
-                if (mask[i] === "hidden") {
-                    s.textContent = "_";
-                    s.className = "blank" + (i === firstHidden ? " cursor" : "");
-                } else {
-                    s.textContent = word[i];
-                    s.className = mask[i] === "found" ? "ok" : "";
-                }
-                board.appendChild(s);
-            }
-        }
-
-        function renderCurrent(fresh) {
-            if (mode === "imagen") renderImage();
-            else if (mode === "guess") renderGuess();
-            else if (mode === "supervivencia") supRenderAll(fresh === true);
-            else renderWord(typing.value);
-        }
-
-        function renderMisses() {
-            // Modo Supervivencia: el mismo hueco sirve para las 5 vidas
-            if (mode === "supervivencia") {
-                missesEl.classList.remove("is-off");
-                let hearts = "";
-                for (let i = 0; i < SUP_LIVES; i++) {
-                    hearts += i < supLives ? "❤️" : "🖤";
-                }
-                missesEl.innerHTML = '<span class="sup-lives">' + t("kLives") + "</span>" + hearts;
-                return;
-            }
-            if (mode !== "guess") {
-                missesEl.classList.add("is-off");
-                return;
-            }
-            missesEl.classList.remove("is-off");
-            let html = "";
-            for (let i = 0; i < MAX_MISSES; i++) {
-                html += i < misses ? "🖤" : "❤️";
-            }
-            if (wrongLetters.length > 0) {
-                html += '<span class="wrong">✕ ' + wrongLetters.join(" · ") + "</span>";
-            }
-            missesEl.innerHTML = html;
-        }
+        // (El tablero — letras, foto del modo Imágenes, máscara de Adivinar
+        //  y el campo de Supervivencia — lo dibuja Svelte desde G.boardView;
+        //  las vidas y los fallos, desde G.missesView)
 
         function showPoints(points) {
             const p = document.createElement("div");
@@ -5850,7 +4873,8 @@ export function initTeclear() {
             } else if (mode === "supervivencia") {
                 // La letra es la de la palabra APUNTADA (la que acaba de
                 // recibir el disparo, o la que está a punto de recibirlo)
-                const caja = supTarget && supTarget.el;
+                const caja = supTarget &&
+                    board.querySelector('[data-n="' + supTarget.n + '"]');
                 el = caja ? (caja.querySelector(".shot.blast") ||
                              caja.querySelector(".cursor")) : null;
             } else if (board.children.length) {
@@ -5918,6 +4942,7 @@ export function initTeclear() {
         // ---------- Ciclo de juego ----------
         function newWord() {
             typing.value = "";
+            typedStr = "";
             prevLen = 0;
             word = nextWord();
             if (mode === "guess") {
@@ -5925,7 +4950,6 @@ export function initTeclear() {
                 misses = 0;
                 wrongLetters = [];
                 soupReveal();    // letras que deja Sopa de Letras
-                renderMisses();
             } else if (mode === "type" || mode === "aventura") {
                 soupPrefill();   // letras que deja Sopa de Letras
             } else if (mode === "supervivencia") {
@@ -5936,7 +4960,6 @@ export function initTeclear() {
                 supSpawn();
                 supAim(supItems[0]);
             }
-            renderCurrent(true);
             updateHud();
         }
 
@@ -6061,7 +5084,7 @@ export function initTeclear() {
             advExtraPick = 0;
             advStops = 0;             // aún no se ha parado a elegir ventaja
             advNextPerk = ADV_EVERY;  // primera parada: a las 5 palabras
-            if (perkVeil) perkVeil.classList.add("hidden");
+            perkOpts = [];
             // Telemetría anti-automatización: se reinicia en cada partida
             keyStamps = [];
             inputEvents = 0;
@@ -6076,16 +5099,13 @@ export function initTeclear() {
 
             if (shopOpen) { // la tienda se cierra al empezar
                 shopOpen = false;
-                shop.classList.add("hidden");
-                btnShop.classList.remove("active");
             }
             closeLogrosOnPlay();   // el panel de logros también
             closeInvOnPlay();      // el panel de inventario también
             closeAccountOnPlay();   // el panel de perfil también
 
-            results.classList.add("hidden");
-            startBtn.textContent = t("btnRestart");
-            selBtns.forEach(b => { b.disabled = true; });
+            resOpen = false;
+            startTxt = t("btnRestart");
 
             // Modo Al azar: se sortean los extras de ESTA partida y se
             // muestran en el tablero antes de que salga la primera palabra
@@ -6104,31 +5124,30 @@ export function initTeclear() {
                 }
             }
 
-            typing.disabled = false;
             typing.value = "";
+            typedStr = "";
             typing.focus();
-            status.textContent =
+            statusTxt =
                 mode === "imagen" ? t("statusPlayI") :
                 mode === "guess" ? t("statusPlayG") :
                 mode === "aventura" ? t("statusPlayA") :
                 mode === "supervivencia" ? t("statusPlayS") :
                 (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
-            if (azarTxt) status.textContent = azarTxt;
+            if (azarTxt) statusTxt = azarTxt;
             // Modo Truco o trato (evento de Halloween): se avisan sus reglas
             // (doble de monedas, pero doble castigo por tecla fallada)
-            if (extraActive("truco")) status.textContent = t("statusTruco");
+            if (extraActive("truco")) statusTxt = t("statusTruco");
             // Aviso de la habilidad que aporta el fondo equipado
             // (en Aventura no actúa ningún fondo: el modo lleva el suyo)
             const poder = bgPowerDesc();
             if (poder && mode !== "aventura") {
-                status.textContent += " · " + poder;
+                statusTxt += " · " + poder;
             }
             // Modo Encantado (evento): sus reglas mandan sobre los avisos previos
-            if (encOn()) status.textContent = t("encStart");
+            if (encOn()) statusTxt = t("encStart");
             lastTick = performance.now();
 
             newWord();
-            renderMisses();
             updateHud();
 
             clearInterval(timerId);
@@ -6163,9 +5182,6 @@ export function initTeclear() {
                     if (it.y >= 1) {
                         supEscape(it);
                         if (state !== "playing") return;      // sin vidas: fin
-                    } else {
-                        supMove(it);
-                        supPaintBar(it);
                     }
                 }
                 // El reloj del HUD marca lo que le falta a la palabra apuntada
@@ -6185,7 +5201,7 @@ export function initTeclear() {
                 timeLeft += salvado;
                 advTimeGained += salvado;
                 showSeconds(Math.round(salvado));
-                status.textContent = t("statusRevive");
+                statusTxt = t("statusRevive");
             }
 
             if (timeLeft <= 0) {
@@ -6215,19 +5231,14 @@ export function initTeclear() {
             // Por si se termina con la ventana de ventajas abierta
             if (perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
             perkOpen = false;
+            perkOpts = [];
             pausedAt = 0;
-            if (perkVeil) perkVeil.classList.add("hidden");
-            renderAdvBar();
-            typing.disabled = true;
-            selBtns.forEach(b => { b.disabled = false; });
             // Modo Al azar: al acabar se olvida lo sorteado en esta partida
             if (extraRun) {
                 extraRun = null;
                 applyExtras();
             }
-            renderModeSelect();   // el menú se vuelve a dejar como toca
-            renderSupSelect();    // …y el de variantes de Supervivencia
-            startBtn.textContent = t("btnAgain");
+            startTxt = t("btnAgain");
 
             const total = hits + errors;
             const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
@@ -6237,33 +5248,17 @@ export function initTeclear() {
             const dur = (fija && gameDuration > 0) ? gameDuration : gameTime();
             const ppm = completed / (dur / 60);
 
-            document.getElementById("rTitle").textContent =
-                mode === "supervivencia" ? t("rTitleLives") : t("rTitle");
-            document.getElementById("rScore").textContent = score;
-            document.getElementById("rWords").textContent = completed;
-            document.getElementById("rAcc").textContent = acc + "%";
-            document.getElementById("rPpm").textContent = Math.round(ppm);
-            document.getElementById("rCoins").textContent = coinsRun;
-            // Caramelos de esta partida (moneda del evento): solo se enseñan
-            // mientras Halloween está activo. En el modo Encantado es lo único
-            // que se gana (puede salir negativo si fallaste más de lo ganado)
-            if (rCandy) rCandy.textContent = candyRun;
-            if (rCandyRow) rCandyRow.classList.toggle("hidden", !halloweenOn());
-
             const newScoreRecord = score > best;
             const newWordsRecord = completed > bestWords;
 
             if (newScoreRecord) {
                 best = score;
                 saveBest();
-                bestEl.textContent = best;
             }
             if (newWordsRecord) {
                 bestWords = completed;
                 saveBestWords();
-                bestWordsEl.textContent = bestWords;
             }
-            document.getElementById("rBestWords").textContent = bestWords;
 
             let msg;
             if (newScoreRecord && newWordsRecord) {
@@ -6279,9 +5274,6 @@ export function initTeclear() {
             } else {
                 msg = t("msgRetry");
             }
-            const rMsgEl = document.getElementById("rMsg");
-            rMsgEl.textContent = msg;
-            rMsgEl.classList.toggle("record", newScoreRecord || newWordsRecord);
 
             // Experiencia ganada en esta partida y totales del perfil:
             // se suman aquí porque es cuando se da por terminada la partida.
@@ -6295,7 +5287,6 @@ export function initTeclear() {
             gamesPlayed += 1;
             wordsTotal += completed;
             saveProfileStats();
-            document.getElementById("rXp").textContent = xpGain;
 
             // Guardado automático del perfil en cada partida terminada
             saveProfile();
@@ -6303,19 +5294,29 @@ export function initTeclear() {
             // Formulario para apuntar la puntuación en el ranking global
             savedScore = false;
             rankBusy = false;
-            rankSaved.textContent = "";
-            rankSaved.classList.remove("off");
-            saveScoreBtn.disabled = false;
-            rankForm.classList.toggle("hidden", score <= 0);
+            rankMsgTxt = "";
+            rankMsgOff = false;
             if (score > 0) newVerifyCode();   // código nuevo para cada puntuación
             // Sin cuenta no hay nombre que escribir: se pide crear un perfil
             if (accOpen) closeAccount();   // los resultados se ven sin el panel encima
-            updateRankWho();
-            if (accOpen) renderAccount();
 
-            board.innerHTML = '<em class="hint">' + t("boardEnd") + "</em>";
-            status.textContent = t("statusEnd");
-            results.classList.remove("hidden");
+            // Todo el panel de resultados lo lee Svelte desde este resumen
+            res = {
+                score: score,
+                words: completed,
+                acc: acc,
+                ppm: Math.round(ppm),
+                coins: coinsRun,
+                // Los caramelos solo se enseñan mientras dura el evento
+                candy: candyRun,
+                xp: xpGain,
+                best: bestWords,
+                msg: msg,
+                record: newScoreRecord || newWordsRecord
+            };
+            statusTxt = t("statusEnd");
+            typing.blur();
+            resOpen = true;
         }
 
         // ---------- Modo tecleo: escribir la palabra completa ----------
@@ -6343,7 +5344,7 @@ export function initTeclear() {
                 // Ventaja "escudo" del modo Aventura: el fallo no se paga
                 if (advShield > 0) {
                     advShield--;
-                    status.textContent = t("statusShield");
+                    statusTxt = t("statusShield");
                 } else {
                     errors++;
                     // Ventaja "indulgencia": un rato sin que el fallo rompa la racha
@@ -6351,23 +5352,22 @@ export function initTeclear() {
                     if (!indul) streak = 0;
                     score = Math.max(0, score - 5);
                     shake();
-                    status.textContent = indul ? t("statusGrace") : t("statusError");
+                    statusTxt = indul ? t("statusGrace") : t("statusError");
                     // Modo Truco o trato (evento de Halloween): cada tecla
                     // fallada cuesta el DOBLE, en tiempo y en experiencia
                     if (extraActive("truco")) {
                         timeLeft = Math.max(0, timeLeft - TT_TIME_PENALTY);
                         ttXpLoss += TT_XP_PENALTY;
-                        status.textContent = t("statusTrucoFail");
+                        statusTxt = t("statusTrucoFail");
                     }
                 }
             } else {
                 if (val.length > prevLen) hits += val.length - prevLen;
-                status.textContent = t("statusOk");
+                statusTxt = t("statusOk");
             }
 
             prevLen = val.length;
-            // En el modo Imágenes no se pinta nada: en el tablero solo está la foto
-            if (mode !== "imagen") renderCurrent(false);
+            typedStr = val;
             updateHud();
 
             if (val === word) {
@@ -6389,10 +5389,10 @@ export function initTeclear() {
                 shake();
 
                 if (misses >= MAX_MISSES) {
-                    status.textContent = t("wordFailed") + word;
+                    statusTxt = t("wordFailed") + word;
                     newWord();
                 } else {
-                    status.textContent = t("statusError");
+                    statusTxt = t("statusError");
                 }
                 updateHud();
                 return;
@@ -6413,10 +5413,8 @@ export function initTeclear() {
             const points = 10 * multiplier() * revealed;
             score += points;
             showPoints(points);
-            status.textContent = t("statusOk");
+            statusTxt = t("statusOk");
 
-            renderGuess();
-            renderMisses();
             updateHud();
 
             if (!mask.includes("hidden")) {
@@ -6471,7 +5469,7 @@ export function initTeclear() {
             if (state !== "playing") return;
             e.preventDefault();
             pasteTried++;
-            status.textContent = t("statusNoPaste");
+            statusTxt = t("statusNoPaste");
         });
         typing.addEventListener("drop", function (e) {
             if (state !== "playing") return;
@@ -6499,35 +5497,29 @@ export function initTeclear() {
             }
         });
 
-        startBtn.addEventListener("click", startGame);
+        // (el botón Jugar y el clic del logo los llama la vista vía G.a)
 
         // ---------- Frases del logo: cada toque muestra una distinta ----------
         const LOGO_PHRASES = [
             "arreglo", "IA", "veyon", "va a botarlo", "yo soy la IA", "enseñe su array"
         ];
         const logoBtn = document.getElementById("logoBtn");
-        const logoPhrase = document.getElementById("logoPhrase");
         let logoLast = -1;      // índice de la última frase mostrada
         let logoHide = 0;       // temporizador para quitar la frase
 
         function showLogoPhrase() {
-            if (!logoPhrase) return;
             // Se descarta la anterior: nunca salen dos frases seguidas iguales
             let i = logoLast;
             while (i === logoLast) {
                 i = Math.floor(Math.random() * LOGO_PHRASES.length);
             }
             logoLast = i;
-            logoPhrase.textContent = LOGO_PHRASES[i];
-
-            // Se retira la clase y se fuerza un reflow para reiniciar la animación
-            logoPhrase.classList.remove("show");
-            void logoPhrase.offsetWidth;
-            logoPhrase.classList.add("show");
+            logoPhraseTxt = LOGO_PHRASES[i];
+            logoShow = true;   // la clase «show» la pone Svelte al cambiar la frase
 
             clearTimeout(logoHide);
             logoHide = setTimeout(function () {
-                logoPhrase.classList.remove("show");
+                logoShow = false;
             }, 2000);
 
             if (logoBtn) {
@@ -6537,21 +5529,24 @@ export function initTeclear() {
             }
         }
 
-        if (logoBtn) logoBtn.addEventListener("click", showLogoPhrase);
-
         // ---------- Guardar la puntuación en el ranking ----------
-        saveScoreBtn.addEventListener("click", function () {
+        // (los avisos los lee Svelte desde rankMsgTxt / rankMsgOff)
+        function rankSay(txt, off) {
+            rankMsgTxt = txt;
+            rankMsgOff = !!off;
+        }
+
+        function saveScore() {
             if (state === "playing" || rankBusy) return;
             if (savedScore) {
-                rankSaved.textContent = t("rankAlready");
+                rankSay(t("rankAlready"));
                 return;
             }
             if (score <= 0) return;
 
             // 1) Sin perfil no hay nombre: se avisa y se abre el registro
             if (!accSession) {
-                rankSaved.classList.add("off");
-                rankSaved.textContent = t("accRankNo");
+                rankSay(t("accRankNo"), true);
                 openAccount("reg");
                 if (accName) { accName.focus(); accName.select(); }
                 return;
@@ -6561,15 +5556,13 @@ export function initTeclear() {
             // 2) Nada de escritura automática ni puntuaciones imposibles
             const why = checkAutoPlay();
             if (why.length > 0) {
-                rankSaved.classList.add("off");
-                rankSaved.textContent = t("rankBot");
+                rankSay(t("rankBot"), true);
                 return;
             }
 
             // 3) Comprobación humana: el código se teclea con las teclas reales
             if (!verifyHuman()) {
-                rankSaved.classList.add("off");
-                rankSaved.textContent = t("rankHuman");
+                rankSay(t("rankHuman"), true);
                 newVerifyCode();       // código nuevo: no se puede probar a ciegas
                 if (verifyInput) verifyInput.focus();
                 return;
@@ -6585,25 +5578,20 @@ export function initTeclear() {
             };
 
             rankBusy = true;
-            saveScoreBtn.disabled = true;
-            rankSaved.classList.remove("off");
-            rankSaved.textContent = t("rankChecking");
+            rankSay(t("rankChecking"));
 
-            reserveName(name, entry.id).then(res => {
-                if (res.taken) {
+            reserveName(name, entry.id).then(r => {
+                if (r.taken) {
                     // El nombre ya es de otro jugador: se avisa sin borrar nada
                     rankBusy = false;
-                    saveScoreBtn.disabled = false;
-                    rankSaved.classList.add("off");
-                    rankSaved.textContent = t("rankNameTaken");
+                    rankSay(t("rankNameTaken"), true);
                     newVerifyCode();
                     return;
                 }
                 savePlayerName(name);
-                rankSaved.textContent = t("rankSaving");
+                rankSay(t("rankSaving"));
                 return uploadScore(entry).then(() => {
                     rankBusy = false;
-                    saveScoreBtn.disabled = false;
                     // Solo se da por SUBIDA si la marca ha llegado al servidor.
                     // Si la red falló, la puntuación queda en este equipo y el
                     // botón sigue habilitado para volver a intentarlo (antes se
@@ -6611,21 +5599,18 @@ export function initTeclear() {
                     // «ya habías guardado», así que NUNCA se podía subir).
                     const subida = rankData[rankTabOf(entry.m)].online;
                     savedScore = subida;
-                    rankSaved.textContent = subida ? t("rankSaved") : t("rankSavedLocal");
-                    rankSaved.classList.toggle("off", !subida);
+                    rankSay(subida ? t("rankSaved") : t("rankSavedLocal"), !subida);
                     newVerifyCode();   // el código ya no se puede reutilizar
                     // Se abre el ranking de SU modo (Aventura va al suyo propio)
                     if (!rankOpen) toggleRanking(rankTabOf(entry.m));
                 });
             }).catch(() => {
                 rankBusy = false;
-                saveScoreBtn.disabled = false;
                 savedScore = false;   // nada llegó al servidor: se puede reintentar
-                rankSaved.classList.add("off");
-                rankSaved.textContent = t("rankSavedLocal");
+                rankSay(t("rankSavedLocal"), true);
                 newVerifyCode();
             });
-        });
+        }
 
         // ---------- Inicio ----------
         loadShop();
@@ -6652,7 +5637,6 @@ export function initTeclear() {
         applyVeyon();
         applyStyle();
         applyFx();
-        updateCoins();
         applyLang();
         if (accName) accName.value = loadPlayerName();   // pre-rellena el nombre
         refreshRanking();   // descarga el ranking compartido (si hay internet)
