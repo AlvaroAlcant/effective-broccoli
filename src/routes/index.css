@@ -47,7 +47,7 @@
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
                 linear-gradient(rgba(10, 14, 22, .88), rgba(10, 14, 22, .88)),
-                url("../img/Francisco_Franco_1930.jpg");
+                url("../lib/img/Francisco_Franco_1930.jpg");
             background-size: auto, cover, cover;
             background-position: center, center top, center top;
             background-repeat: no-repeat, no-repeat, no-repeat;
@@ -57,7 +57,7 @@
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
                 linear-gradient(rgba(10, 14, 22, .84), rgba(10, 14, 22, .84)),
-                url("../img/Elprico.png");
+                url("../lib/img/Elprico.png");
             background-size: auto, cover, cover;
             background-position: center, center top, center top;
             background-repeat: no-repeat, no-repeat, no-repeat;
@@ -68,7 +68,7 @@
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
                 linear-gradient(rgba(10, 14, 22, .84), rgba(10, 14, 22, .84)),
-                url("../img/esteso.jpg");
+                url("../lib/img/esteso.jpg");
             background-size: auto, auto, 170px 170px;
             background-position: center, center, center;
             background-repeat: no-repeat, no-repeat, repeat;
@@ -302,7 +302,7 @@
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(255, 117, 24, .14), transparent 65%),
                 linear-gradient(rgba(5, 7, 12, .74), rgba(5, 7, 12, .80)),
-                url("../img/fredi.gif");
+                url("../lib/img/fredi.gif");
             background-size: auto, cover, cover;
             background-position: center, center, center;
             background-repeat: no-repeat, no-repeat, no-repeat;

@@ -1,7 +1,14 @@
+import imgFranco from '#lib/img/Francisco_Franco_1930.jpg';
+import imgElprico from '#lib/img/Elprico.png';
+import imgEsteso from '#lib/img/esteso.jpg';
+import imgFredi from '#lib/img/fredi.gif';
+import imgVeyonPlaceholder from '#lib/img/repuesto.svg';
+import imgVeyonFavicon from '#lib/img/repuesto-icono.svg';
+import imgLogo from '#lib/img/estesoTeclea.png';
         // TODO el juego vive dentro de este closure: las variables internas
         // (puntuación, palabras, teclas, contadores) no son accesibles desde la
         // consola del navegador, así que no se pueden manipular con comandos.
-        (() => {
+export function initTeclear() {
         // ---------- Configuración ----------
         const GAME_TIME = 60;  // segundos
         const MAX_MISSES = 5;  // fallos permitidos por palabra (modo adivinar)
@@ -273,13 +280,13 @@
               img: "" },
             { id: "franco",  price: 120, es: "General",           en: "General",
               descEs: "Habilidad: doble de monedas en cada partida.", descEn: "Ability: double coins in every match.",
-              img: "assets/img/Francisco_Franco_1930.jpg" },
+              img: imgFranco },
             { id: "elprico", price: 60,  es: "Elprico",           en: "Elprico",
               descEs: "Habilidad: empiezas con 15 segundos extra.",  descEn: "Ability: start with 15 extra seconds.",
-              img: "assets/img/Elprico.png" },
+              img: imgElprico },
             { id: "esteso",  price: 90,  es: "Ia",                en: "Ia",
               descEs: "Habilidad: las palabras de más de 7 letras dan triple de puntos y monedas.", descEn: "Ability: words over 7 letters give triple points and coins.",
-              img: "assets/img/esteso.jpg" },
+              img: imgEsteso },
             { id: "sopa",    price: 550, es: "Sopa de Letras",    en: "Letter Soup",
               descEs: "Habilidad: cada palabra empieza con 2 letras ya puestas.", descEn: "Ability: every word starts with 2 letters already in place.",
               img: "", icon: "🔤" },
@@ -310,7 +317,7 @@
                 es: "Five Nigths", en: "Five Nigths",
                 descEs: "Fondo Five Nigths con Fredi mirándote fijamente desde la oscuridad. ¡Puro terror! Solo durante el evento de Halloween.",
                 descEn: "A Five Nigths background with Fredi staring at you from the darkness. Pure horror! Halloween event only.",
-                img: "assets/img/fredi.gif", icon: "📼"
+                img: imgFredi, icon: "📼"
             }
         ];
 
@@ -1193,9 +1200,9 @@
         let veyon = false;       // Modo Veyon: oculta logo y fondos «General»/«Ia»
         // Imagen de repuesto que sustituye a las de «General» e «Ia»
         // mientras el Modo Veyon está activo (tienda y selector de fondos)
-        const VEYON_PLACEHOLDER = "assets/img/repuesto.svg";
+        const VEYON_PLACEHOLDER = imgVeyonPlaceholder;
         // Icono de la pestaña que sustituye al de estesoTeclea
-        const VEYON_FAVICON = "assets/img/repuesto-icono.svg";
+        const VEYON_FAVICON = imgVeyonFavicon;
         const VEYON_BGS = ["franco", "esteso"];
         let state = "idle";      // idle | playing | over
         let word = "";
@@ -4065,7 +4072,7 @@
             // Icono de la ventana (pestaña): con el modo activo deja de
             // verse el de estesoTeclea y se pone el de repuesto
             document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')
-                .forEach(l => { l.href = veyon ? VEYON_FAVICON : "assets/img/estesoTeclea.png"; });
+                .forEach(l => { l.href = veyon ? VEYON_FAVICON : imgLogo; });
             if (btnVeyon) {
                 btnVeyon.classList.toggle("active", veyon);
                 btnVeyon.setAttribute("aria-pressed", veyon ? "true" : "false");
@@ -6420,4 +6427,4 @@
             writable: false,
             configurable: false
         });
-        })();
+}

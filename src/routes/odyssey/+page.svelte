@@ -1,12 +1,15 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EstesIA Odyssey</title>
-    <link rel="stylesheet" href="assets/css/odyssey.css">
-</head>
-<body>
+<script>
+	import { onMount } from 'svelte';
+	import { initOdyssey } from '#lib/odyssey/game.js';
+	import './odyssey.css';
+
+	onMount(() => initOdyssey());
+</script>
+
+<svelte:head>
+	<title>EstesIA Odyssey</title>
+</svelte:head>
+
     <header>
         <h1>EstesIA Odyssey</h1>
         <div class="subtitle">--- ODISEA GALÁCTICA EN 2D ---</div>
@@ -77,6 +80,3 @@
 
     <footer>&copy; 2026 EstesIA Odyssey — un shooter arcade 2D</footer>
 
-    <script src="assets/js/odyssey.js"></script>
-</body>
-</html>

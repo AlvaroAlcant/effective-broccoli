@@ -1,31 +1,57 @@
 # Minijuegos Web
 
-Colección de minijuegos en HTML/CSS/JS estático, servida con GitHub Pages.
+Colección de minijuegos construida con **Svelte 5 + SvelteKit**, desplegada como sitio estático en GitHub Pages.
 
 ## Estructura
 
 ```
-├── index.html               Teclea a la Velocidad (página principal)
-├── EstesIA_Odyssey.html     Shooter arcade 2D
-├── cafe.html                Máquina de café
-├── assets/
-│   ├── css/                 Una hoja de estilos por página
-│   ├── js/                  Un script por página
-│   └── img/                 Imágenes, GIFs y SVGs
-└── .nojekyll                Desactiva Jekyll en GitHub Pages
+├── src/
+│   ├── routes/
+│   │   ├── +page.svelte        Teclea a la Velocidad (página principal)
+│   │   ├── index.css
+│   │   ├── cafe/
+│   │   │   ├── +page.svelte    Máquina de café (runes)
+│   │   │   └── cafe.css
+│   │   └── odyssey/
+│   │       ├── +page.svelte    EstesIA Odyssey (shooter 2D)
+│   │       └── odyssey.css
+│   ├── lib/
+│   │   ├── teclear/            Componentes de la página principal + game.js
+│   │   ├── odyssey/            game.js (initOdyssey)
+│   │   └── img/                Imágenes (se importan, Vite las sirve con hash)
+│   └── app.html
+├── .github/workflows/deploy.yml
+└── vite.config.js              Config de SvelteKit (adapter-static + base path)
 ```
 
 ## Desarrollo
 
-Sin build: basta un servidor estático para probar en local.
-
 ```sh
-python -m http.server 8000
-# o
-npx serve .
+npm install
+npm run dev       # http://localhost:5173/effective-broccoli/
+npm run build     # genera build/
+npm run preview   # sirve el build en http://localhost:4173/effective-broccoli/
 ```
 
-Convenciones:
+## Deploy
 
-- Cada página HTML en raíz enlaza `assets/css/<pagina>.css` y `assets/js/<pagina>.js`.
-- Las imágenes se referencian como `assets/img/<archivo>` desde HTML/JS y `../img/<archivo>` desde CSS.
+`.github/workflows/deploy.yml` construye y publica en GitHub Pages en cada push a `main`.
+Requiere **Settings → Pages → Source: GitHub Actions** en el repo.
+`paths.base` está fijado a `/effective-broccoli` en `vite.config.js`.
+
+## Convenciones
+
+- Imports de código con `#lib/…` (subpath imports de `package.json`).
+- Las imágenes se importan: `import logo from '#lib/img/x.png'` — Vite genera la URL correcta con base y hash.
+- Un CSS por ruta, importado desde su `+page.svelte`.
+- Cada juego expone `init*()` desde `#lib/<juego>/game.js`, que la ruta llama en `onMount`.
+- Los controladores (`game.js`) aún usan DOM imperativo internamente: se migran a runes/stores de forma incremental.
+
+## Estado de la migración
+
+- [x] Estructura SvelteKit + adapter-static + deploy
+- [x] `cafe` reescrito con runes (`$state`, `$derived`)
+- [x] `teclear`: markup dividido en componentes, controlador `initTeclear()`
+- [x] `odyssey`: controlador `initOdyssey()`
+- [ ] `teclear`: estado interno a runes/stores (puntuación, tienda, logros…)
+- [ ] `odyssey`: UI del overlay (menú, HUD) a runes

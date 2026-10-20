@@ -1,4 +1,4 @@
-    (function () {
+export function initOdyssey() {
         "use strict";
 
         const canvas = document.getElementById("game");
@@ -1346,4 +1346,4 @@
         applyShipInfo();   // descripción, teclas y nombre de la habilidad de la nave elegida
         updateHUD();
         requestAnimationFrame((t) => { lastTime = t; requestAnimationFrame(loop); });
-    })();
+}
