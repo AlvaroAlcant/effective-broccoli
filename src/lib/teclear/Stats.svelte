@@ -1,14 +1,14 @@
 <script>
-	import { G } from './game.svelte.js';
+	import { engine } from './engine.svelte.js';
 </script>
 
     <div class="stats">
-        <div class="stat"><span id="kScore">{G.t('kScore')}</span><strong id="score">{G.score}</strong></div>
-        <div class="stat coins"><span id="kCoins">{G.t('kCoins')}</span><strong id="coins">{G.coinsTxt}</strong></div>
-        <div class="stat candy" class:hidden={!G.halloween}><span id="kCandy">{G.t('kCandy')}</span><strong id="candy">{G.candyTxt}</strong></div>
-        <div class="stat" id="timeBox" class:low={G.timeLow}><span id="kTime">{G.mode === 'supervivencia' ? G.t('kTimeWord') : G.t('kTime')}</span><strong id="time">{G.timeTxt}</strong></div>
-        <div class="stat"><span id="kStreak">{G.t('kStreak')}</span><strong id="streak">{G.streakTxt}</strong></div>
-        <div class="stat"><span id="kLevel">{G.t('kLevel')}</span><strong id="level">{G.level}</strong></div>
-        <div class="stat"><span id="kBest">{G.t('kBest')}</span><strong id="best">{G.best}</strong></div>
-        <div class="stat words"><span id="kBestWords">{G.t('kBestWords')}</span><strong id="bestWords">{G.bestWords}</strong></div>
+        <div class="stat"><span id="kScore">{engine.t('kScore')}</span><strong id="score">{engine.state.score}</strong></div>
+        <div class="stat coins"><span id="kCoins">{engine.t('kCoins')}</span><strong id="coins">{engine.coinsTxt}</strong></div>
+        <div class="stat candy" class:hidden={!engine.state.halloween}><span id="kCandy">{engine.t('kCandy')}</span><strong id="candy">{engine.candyTxt}</strong></div>
+        <div class="stat" id="timeBox" class:low={engine.timeLow}><span id="kTime">{engine.state.mode === 'supervivencia' ? engine.t('kTimeWord') : engine.t('kTime')}</span><strong id="time">{engine.timeTxt}</strong></div>
+        <div class="stat"><span id="kStreak">{engine.t('kStreak')}</span><strong id="streak">{engine.streakTxt}</strong></div>
+        <div class="stat"><span id="kLevel">{engine.t('kLevel')}</span><strong id="level">{engine.level()}</strong></div>
+        <div class="stat"><span id="kBest">{engine.t('kBest')}</span><strong id="best">{engine.state.best}</strong></div>
+        <div class="stat words"><span id="kBestWords">{engine.t('kBestWords')}</span><strong id="bestWords">{engine.state.bestWords}</strong></div>
     </div>

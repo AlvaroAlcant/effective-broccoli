@@ -1,7 +1,7 @@
 <script>
-	import { G } from './game.svelte.js';
+	import { engine } from './engine.svelte.js';
 </script>
 
     <footer>
-        <p id="footer">{@html G.t('footer')}</p>
+        <p id="footer">{@html engine.t('footer')}</p>
     </footer>

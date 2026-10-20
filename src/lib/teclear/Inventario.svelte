@@ -1,19 +1,19 @@
 <script>
-	import { G } from './game.svelte.js';
+	import { engine } from './engine.svelte.js';
 </script>
 
     <!-- Inventario: todos los artículos comprados en la tienda y todos los
          ganados con logros, ORDENADO EN SECCIONES igual que la tienda.
          Aquí se SELECCIONA lo que se lleva puesto (la tienda solo compra):
          cada tarjeta lleva su botón «Usar» / «Apagar» / «✓ En uso». -->
-    <section class="inventario" id="inventario" class:hidden={!G.invOpen}>
+    <section class="inventario" id="inventario" class:hidden={!engine.state.invOpen}>
         <div class="shop-head">
-            <h2>{G.t('invTitle')}</h2>
-            <span class="shop-coins">🎒 {G.invCountTxt}</span>
+            <h2>{engine.t('invTitle')}</h2>
+            <span class="shop-coins">🎒 {engine.invCountTxt}</span>
         </div>
-        <p class="shop-hint">{G.t('invHint')}</p>
+        <p class="shop-hint">{engine.t('invHint')}</p>
 
-        {#each G.invSections as sec (sec.key)}
+        {#each engine.invSections as sec (sec.key)}
             {#if sec.items.length > 0}
                 <h3 class="shop-sub inv-sub" class:event-sub={sec.key === 'event'}>{sec.title}</h3>
                 <div class="shop-grid inv-grid">
@@ -31,15 +31,15 @@
                             <div class="inv-name">{it.nombre}</div>
                             <!-- De dónde salió: comprado en la tienda o ganado jugando -->
                             <div class="inv-src" class:src-ach={it.deLogro} class:src-shop={!it.deLogro}>
-                                {it.deLogro ? G.t('invFromAch') : G.t('invFromShop')}
+                                {it.deLogro ? engine.t('invFromAch') : engine.t('invFromShop')}
                             </div>
                             <!-- Aquí (y solo aquí) se elige qué se lleva puesto -->
                             {#if it.enUso && !it.apagar}
-                                <button class="chip-btn shop-btn" disabled>{G.t('shopEquipped')}</button>
+                                <button class="chip-btn shop-btn" disabled>{engine.t('shopEquipped')}</button>
                             {:else if it.enUso}
-                                <button class="chip-btn shop-btn" onclick={it.apagar}>{G.t('invOff')}</button>
+                                <button class="chip-btn shop-btn" onclick={it.apagar}>{engine.t('invOff')}</button>
                             {:else}
-                                <button class="chip-btn shop-btn" onclick={it.usar}>{G.t('shopEquip')}</button>
+                                <button class="chip-btn shop-btn" onclick={it.usar}>{engine.t('shopEquip')}</button>
                             {/if}
                         </div>
                     {/each}
@@ -47,6 +47,6 @@
             {/if}
         {/each}
 
-        <p class="shop-msg">{G.invMsgTxt}</p>
-        <p class="inv-empty" class:hidden={G.invSections.some(s => s.items.length > 0)}>{G.t('invEmpty')}</p>
+        <p class="shop-msg">{engine.state.invMsgTxt}</p>
+        <p class="inv-empty" class:hidden={engine.invSections.some(s => s.items.length > 0)}>{engine.t('invEmpty')}</p>
     </section>

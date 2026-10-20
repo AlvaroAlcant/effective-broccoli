@@ -1,60 +1,60 @@
 <script>
-	import { G } from './game.svelte.js';
+	import { engine } from './engine.svelte.js';
 </script>
 
     <!-- Perfil: registro e inicio de sesión (guarda dinero, experiencia, récords…) -->
-    <section class="perfil" id="perfil" class:hidden={!G.accOpen}>
+    <section class="perfil" id="perfil" class:hidden={!engine.state.accOpen}>
         <div class="shop-head">
-            <h2>{G.t('accTitle')}</h2>
-            <span class="shop-coins">🪙 {G.coinsTxt}</span>
+            <h2>{engine.t('accTitle')}</h2>
+            <span class="shop-coins">🪙 {engine.coinsTxt}</span>
         </div>
-        <p class="shop-hint">{G.accHintTxt}</p>
+        <p class="shop-hint">{engine.accHintTxt}</p>
 
         <!-- Rol del jugador: visible solo para el Administrador (Alvaro) -->
-        <p class="shop-hint" class:hidden={!G.esAdmin}>{G.t('accRole')}</p>
+        <p class="shop-hint" class:hidden={!engine.esAdmin}>{engine.t('accRole')}</p>
 
-        {#if !G.accSession}
+        {#if !engine.state.accSession}
             <form class="perfil-form" novalidate
-                  onsubmit={e => { e.preventDefault(); G.a.submitAccount(); }}>
+                  onsubmit={e => { e.preventDefault(); engine.actions.submitAccount(); }}>
                 <div class="pf-field">
-                    <label for="accName">{G.t('accNameLabel')}</label>
+                    <label for="accName">{engine.t('accNameLabel')}</label>
                     <input id="accName" type="text" maxlength="20" autocomplete="username"
                            placeholder="Anónimo" spellcheck="false">
                 </div>
                 <div class="pf-field">
-                    <label for="accPass">{G.t('accPassLabel')}</label>
+                    <label for="accPass">{engine.t('accPassLabel')}</label>
                     <input id="accPass" type="password" maxlength="64" autocomplete="current-password"
                            placeholder="••••••">
                 </div>
-                <div class="pf-field" class:hidden={G.accMode !== 'reg'}>
-                    <label for="accPass2">{G.t('accPass2Label')}</label>
+                <div class="pf-field" class:hidden={engine.state.accMode !== 'reg'}>
+                    <label for="accPass2">{engine.t('accPass2Label')}</label>
                     <input id="accPass2" type="password" maxlength="64" autocomplete="new-password"
                            placeholder="••••••">
                 </div>
                 <div class="perfil-actions">
-                    <button type="submit" class="chip-btn" disabled={G.accBusy}>{G.accSubmitTxt}</button>
-                    <button type="button" class="chip-btn" onclick={() => G.a.accSwitchMode()}>{G.accSwitchTxt}</button>
-                    <button type="button" class="chip-btn" onclick={() => G.a.closeAccount()}>{G.t('accClose')}</button>
+                    <button type="submit" class="chip-btn" disabled={engine.state.accBusy}>{engine.accSubmitTxt}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.accSwitchMode()}>{engine.accSwitchTxt}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.closeAccount()}>{engine.t('accClose')}</button>
                 </div>
             </form>
         {:else}
             <div class="perfil-data">
-                <div class="perfil-who"><span class="perfil-avatar">👤</span><strong>{G.accWhoTxt}</strong></div>
+                <div class="perfil-who"><span class="perfil-avatar">👤</span><strong>{engine.accWhoTxt}</strong></div>
                 <div class="perfil-grid">
-                    <div class="perfil-cell"><span>{G.t('kCoins')}</span><strong>{G.coinsTxt}</strong></div>
-                    <div class="perfil-cell"><span>{G.t('accXp')}</span><strong>{G.xp}</strong></div>
-                    <div class="perfil-cell"><span>{G.t('kLevel')}</span><strong>{G.level}</strong></div>
-                    <div class="perfil-cell"><span>{G.t('accGames')}</span><strong>{G.gamesPlayed}</strong></div>
-                    <div class="perfil-cell"><span>{G.t('accWords')}</span><strong>{G.wordsTotal}</strong></div>
-                    <div class="perfil-cell"><span>{G.t('kBest')}</span><strong>{G.best}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('kCoins')}</span><strong>{engine.coinsTxt}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('accXp')}</span><strong>{engine.state.xp}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('kLevel')}</span><strong>{engine.level()}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('accGames')}</span><strong>{engine.state.gamesPlayed}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('accWords')}</span><strong>{engine.state.wordsTotal}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('kBest')}</span><strong>{engine.state.best}</strong></div>
                 </div>
                 <div class="perfil-actions">
-                    <button type="button" class="chip-btn" onclick={() => G.a.accSave()}>{G.t('accSave')}</button>
-                    <button type="button" class="chip-btn" onclick={() => G.a.accOut()}>{G.t('accOut')}</button>
-                    <button type="button" class="chip-btn" onclick={() => G.a.closeAccount()}>{G.t('accClose')}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.accSave()}>{engine.t('accSave')}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.accOut()}>{engine.t('accOut')}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.closeAccount()}>{engine.t('accClose')}</button>
                 </div>
             </div>
         {/if}
 
-        <p class="shop-msg" class:warn={G.accMsgWarn}>{G.accMsgTxt}</p>
+        <p class="shop-msg" class:warn={engine.state.accMsgWarn}>{engine.state.accMsgTxt}</p>
     </section>

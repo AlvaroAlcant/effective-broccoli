@@ -1,16 +1,16 @@
 <script>
-	import { G } from './game.svelte.js';
+	import { engine } from './engine.svelte.js';
 </script>
 
     <!-- Logros: retos que al completarse desbloquean una recompensa -->
-    <section class="logros" id="logros" class:hidden={!G.logrosOpen}>
+    <section class="logros" id="logros" class:hidden={!engine.state.logrosOpen}>
         <div class="shop-head">
-            <h2>{G.t('achTitle')}</h2>
-            <span class="shop-coins">🏅 {G.achCountTxt}</span>
+            <h2>{engine.t('achTitle')}</h2>
+            <span class="shop-coins">🏅 {engine.achCountTxt}</span>
         </div>
-        <p class="shop-hint">{G.t('achHint')}</p>
+        <p class="shop-hint">{engine.t('achHint')}</p>
         <div class="ach-grid">
-            {#each G.achCards as a (a.id)}
+            {#each engine.achCards as a (a.id)}
                 <div class="ach-card" class:done={a.done}>
                     <div class="ach-head">
                         <span class="ach-icon">{a.icon}</span>
@@ -19,8 +19,8 @@
                     <p class="ach-desc">{a.desc}</p>
                     <div class="ach-bar"><i style:width={a.pct + '%'}></i></div>
                     <div class="ach-num">{a.p} / {a.goal}</div>
-                    <div class="ach-reward">🎁 {G.t('achReward')}: {a.reward}</div>
-                    <div class="ach-state">{a.done ? G.t('achDone') : G.t('achDoing')}</div>
+                    <div class="ach-reward">🎁 {engine.t('achReward')}: {a.reward}</div>
+                    <div class="ach-state">{a.done ? engine.t('achDone') : engine.t('achDoing')}</div>
                 </div>
             {/each}
         </div>

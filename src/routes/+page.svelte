@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import logo from '#lib/img/estesoTeclea.png';
-	import { initTeclear } from '#lib/teclear/game.svelte.js';
+	import { engine } from '#lib/teclear/engine.svelte.js';
 	import Decor from '#lib/teclear/Decor.svelte';
 	import Header from '#lib/teclear/Header.svelte';
 	import Selectors from '#lib/teclear/Selectors.svelte';
@@ -15,7 +15,7 @@
 	import Footer from '#lib/teclear/Footer.svelte';
 	import './index.css';
 
-	onMount(() => initTeclear());
+	onMount(() => engine.mount());
 </script>
 
 <svelte:head>

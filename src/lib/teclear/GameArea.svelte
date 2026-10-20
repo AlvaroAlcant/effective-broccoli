@@ -1,8 +1,8 @@
 <script>
-	import { G } from './game.svelte.js';
-	const bv = $derived(G.boardView);
-	const mv = $derived(G.missesView);
-	const res = $derived(G.res);
+	import { engine } from './engine.svelte.js';
+	const bv = $derived(engine.boardView);
+	const mv = $derived(engine.missesView);
+	const res = $derived(engine.state.res);
 	const supTop = it => `calc(${it.y * 100}% - ${it.y * 4}px)`;
 	const supTf = it => `translateY(${-it.y * 100}%)`;
 	const supDanger = it => (1 - it.y) * it.span <= 4;
@@ -26,7 +26,7 @@
                          style:top={supTop(it)}
                          style:transform={supTf(it)}
                          onmousedown={e => e.preventDefault()}
-                         onclick={() => G.a.supAim(it.n)}>
+                         onclick={() => engine.actions.supAim(it.n)}>
                         <div class="sup-letters">
                             {#each it.w.split('') as ch, i}
                                 <span class:shot={i < it.typed}
@@ -42,8 +42,8 @@
                 {/each}
             {:else if bv.kind === 'img'}
                 <div class="pic">
-                    {#if !G.picErr && bv.src}
-                        <img src={bv.src} alt="" onerror={() => G.a.picError()}>
+                    {#if !engine.state.picErr && bv.src}
+                        <img src={bv.src} alt="" onerror={() => engine.actions.picError()}>
                     {:else}
                         <div class="pic-fallback">{bv.em}</div>
                     {/if}
@@ -60,10 +60,10 @@
 
     <div class="misses" class:is-off={mv.kind === 'off'} id="misses">
         {#if mv.kind === 'lives'}
-            <span class="sup-lives">{G.t('kLives')}</span
-            >{#each { length: G.supMax } as _, i}{i < mv.n ? '❤️' : '🖤'}{/each}
+            <span class="sup-lives">{engine.t('kLives')}</span
+            >{#each { length: engine.supMax } as _, i}{i < mv.n ? '❤️' : '🖤'}{/each}
         {:else if mv.kind === 'guess'}
-            {#each { length: G.maxMisses } as _, i}{i < mv.n ? '🖤' : '❤️'}{/each}
+            {#each { length: engine.maxMisses } as _, i}{i < mv.n ? '🖤' : '❤️'}{/each}
             {#if mv.wrong.length > 0}
                 <span class="wrong">✕ {mv.wrong.join(' · ')}</span>
             {/if}
@@ -71,23 +71,23 @@
     </div>
 
     <!-- Modo Aventura: efectos activos de las ventajas elegidas -->
-    <div class="adv-bar" class:is-off={G.advChips.length === 0} id="advBar">
-        {#each G.advChips as c}
+    <div class="adv-bar" class:is-off={engine.advChips.length === 0} id="advBar">
+        {#each engine.advChips as c}
             <span class="adv-chip" class:on={c.on}>{c.txt}</span>
         {/each}
     </div>
 
     <!-- Modo Aventura: elección de ventaja (mientras tanto el reloj no corre) -->
-    <div class="perk-veil" class:hidden={!G.perkOpen} id="perkVeil">
+    <div class="perk-veil" class:hidden={!engine.state.perkOpen} id="perkVeil">
         <div class="perk-box" role="dialog" aria-modal="true" aria-labelledby="perkTitle">
-            <h2 id="perkTitle">{G.t('perkTitle')}</h2>
-            <p class="perk-hint" id="perkHint">{G.t('perkHint')}</p>
+            <h2 id="perkTitle">{engine.t('perkTitle')}</h2>
+            <p class="perk-hint" id="perkHint">{engine.t('perkHint')}</p>
             <div class="perk-grid" id="perkGrid">
-                {#each G.perkOpts as p}
-                    <button type="button" class="perk-opt" onclick={() => G.a.choosePerk(p)}>
+                {#each engine.state.perkOpts as p}
+                    <button type="button" class="perk-opt" onclick={() => engine.actions.choosePerk(p)}>
                         <span class="perk-icon">{p.icon}</span>
-                        <strong>{G.uiEn ? p.en : p.es}</strong>
-                        <span>{G.uiEn ? p.descEn : p.descEs}</span>
+                        <strong>{engine.uiEn ? p.en : p.es}</strong>
+                        <span>{engine.uiEn ? p.descEn : p.descEs}</span>
                     </button>
                 {/each}
             </div>
@@ -96,44 +96,44 @@
 
     <div class="controls">
         <input id="typing" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
-               placeholder={G.t('placeholder')} disabled={G.typingDis}>
+               placeholder={engine.t('placeholder')} disabled={engine.typingDis}>
 
-        <p id="status">{G.statusTxt}</p>
+        <p id="status">{engine.state.statusTxt}</p>
 
-        <button class="main-btn" id="startBtn" onclick={() => G.a.startGame()}>{G.startTxt}</button>
+        <button class="main-btn" id="startBtn" onclick={() => engine.actions.startGame()}>{engine.state.startTxt}</button>
     </div>
 
-    <div class="results" class:hidden={!G.resOpen} id="results">
-        <h2>{G.mode === 'supervivencia' ? G.t('rTitleLives') : G.t('rTitle')}</h2>
+    <div class="results" class:hidden={!engine.state.resOpen} id="results">
+        <h2>{engine.state.mode === 'supervivencia' ? engine.t('rTitleLives') : engine.t('rTitle')}</h2>
         <ul>
-            <li><span>{G.t('rkScore')}</span><strong>{res.score ?? 0}</strong></li>
-            <li><span>{G.t('rkWords')}</span><strong>{res.words ?? 0}</strong></li>
-            <li><span>{G.t('rkAcc')}</span><strong>{res.acc ?? 0}%</strong></li>
-            <li><span>{G.t('rkPpm')}</span><strong>{res.ppm ?? 0}</strong></li>
-            <li><span>{G.t('rkCoins')}</span><strong>{res.coins ?? 0}</strong></li>
-            {#if G.halloween}
-                <li><span>{G.t('rkCandy')}</span><strong>{res.candy ?? 0}</strong></li>
+            <li><span>{engine.t('rkScore')}</span><strong>{res.score ?? 0}</strong></li>
+            <li><span>{engine.t('rkWords')}</span><strong>{res.words ?? 0}</strong></li>
+            <li><span>{engine.t('rkAcc')}</span><strong>{res.acc ?? 0}%</strong></li>
+            <li><span>{engine.t('rkPpm')}</span><strong>{res.ppm ?? 0}</strong></li>
+            <li><span>{engine.t('rkCoins')}</span><strong>{res.coins ?? 0}</strong></li>
+            {#if engine.state.halloween}
+                <li><span>{engine.t('rkCandy')}</span><strong>{res.candy ?? 0}</strong></li>
             {/if}
-            <li><span>{G.t('rkXp')}</span><strong>{res.xp ?? 0}</strong></li>
-            <li><span>{G.t('rkBestWords')}</span><strong>{res.best ?? 0}</strong></li>
+            <li><span>{engine.t('rkXp')}</span><strong>{res.xp ?? 0}</strong></li>
+            <li><span>{engine.t('rkBestWords')}</span><strong>{res.best ?? 0}</strong></li>
         </ul>
         <p class:record={!!res.record}>{res.msg ?? ''}</p>
 
         {#if (res.score ?? 0) > 0}
             <div class="rank-form">
-                <p class="rank-who">{G.rankWhoTxt}</p>
+                <p class="rank-who">{engine.rankWhoTxt}</p>
                 <div class="verify-row">
-                    <label for="verifyInput">{G.t('verifyLabel')}</label>
-                    <span class="verify-code" aria-hidden="true">{G.verifyCode || '----'}</span>
+                    <label for="verifyInput">{engine.t('verifyLabel')}</label>
+                    <span class="verify-code" aria-hidden="true">{engine.state.verifyCode || '----'}</span>
                     <input id="verifyInput" type="text" maxlength="8" autocomplete="off"
                            spellcheck="false" autocapitalize="characters" placeholder="código"
-                           onkeydown={e => G.a.verifyKey(e)}
-                           oninput={e => G.a.verifyInput(e)}
-                           onpaste={e => G.a.verifyPaste(e)}>
+                           onkeydown={e => engine.actions.verifyKey(e)}
+                           oninput={e => engine.actions.verifyInput(e)}
+                           onpaste={e => engine.actions.verifyPaste(e)}>
                 </div>
-                <button class="chip-btn" id="saveScoreBtn" disabled={G.rankBusy}
-                        onclick={() => G.a.saveScore()}>{G.t('rankSave')}</button>
+                <button class="chip-btn" id="saveScoreBtn" disabled={engine.state.rankBusy}
+                        onclick={() => engine.actions.saveScore()}>{engine.t('rankSave')}</button>
             </div>
         {/if}
-        <p class="rank-saved" class:off={G.rankMsgOff}>{G.rankMsgTxt}</p>
+        <p class="rank-saved" class:off={engine.state.rankMsgOff}>{engine.state.rankMsgTxt}</p>
     </div>
