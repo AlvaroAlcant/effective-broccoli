@@ -547,7 +547,7 @@ export function initTeclear() {
         const accName = document.getElementById("accName");
         const accPass = document.getElementById("accPass");
         const accPass2 = document.getElementById("accPass2");
-        const ranking = document.getElementById("ranking");
+        const rankingEl = document.getElementById("ranking");
         const verifyInput = document.getElementById("verifyInput");
 
         // Los efectos visuales viven en su servicio: se le inyectan los
@@ -658,8 +658,8 @@ export function initTeclear() {
                 // Aventura se mira en el ranking de Aventura, no en el global)
                 if (tab) S.rankFocus = tab;
                 // El panel queda por debajo: se lleva a la vista para que se note
-                if (ranking.scrollIntoView) {
-                    ranking.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                if (rankingEl && rankingEl.scrollIntoView) {
+                    rankingEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 }
             }
         }
@@ -1926,7 +1926,7 @@ export function initTeclear() {
             S.startTxt = t("btnAgain");
 
             const total = hits + errors;
-            const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
+            const accPct = total === 0 ? 100 : Math.round((hits / total) * 100);
             // Los ppm se calculan sobre lo que duró de verdad la partida
             // (Aventura y Supervivencia no tienen duración fija: usan la real)
             const fija = S.mode === "aventura" || S.mode === "supervivencia";
@@ -1952,7 +1952,7 @@ export function initTeclear() {
                 msg = t("msgRecord");
             } else if (newWordsRecord) {
                 msg = t("msgWordsRecord");
-            } else if (acc >= 95) {
+            } else if (accPct >= 95) {
                 msg = t("msgAcc");
             } else if (S.completed >= 20) {
                 msg = t("msgRhythm");
@@ -1989,7 +1989,7 @@ export function initTeclear() {
             S.res = {
                 score: S.score,
                 words: S.completed,
-                acc: acc,
+                acc: accPct,
                 ppm: Math.round(ppm),
                 coins: S.coinsRun,
                 // Los caramelos solo se enseñan mientras dura el evento
