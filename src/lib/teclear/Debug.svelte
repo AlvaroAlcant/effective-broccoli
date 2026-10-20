@@ -114,7 +114,9 @@
 				<div class="dbg-btns">
 					<button onclick={() => dbg.dbgSet('state', 'playing')}>▶ Empezar</button>
 					<button onclick={() => dbg.dbgSet('state', 'idle')}>⏹ Terminar</button>
-					<button onclick={() => dbg.dbgGrantAll()}>🎁 Todo</button>
+					<button onclick={() => dbg.dbgFunds()} title="Saldo suficiente para comprar todo">💸 Fondos</button>
+					<button onclick={() => dbg.dbgBuyAll()} title="Compra todo por el camino real">🛒 Comprar todo</button>
+					<button onclick={() => dbg.dbgGrantAll()} title="Regala todo sin pasar por caja">🎁 Regalar</button>
 				</div>
 			</section>
 		</aside>

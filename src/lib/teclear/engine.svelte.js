@@ -1011,6 +1011,43 @@ export class GameEngine {
             eco.applyExtras();
         }
 
+    // Cartera de admin: saldo suficiente para comprar TODO lo que se
+    // vende — monedas = suma de precios normales, caramelos = suma de
+    // precios de evento. Así se prueba el camino real de la tienda
+    // (buyItem → cobra → mensajes) en vez de regalar los artículos
+    dbgFunds() {
+            if (!acc.esAdmin()) return;
+            let monedas = 0, caramelos = 0;
+            for (const kind of ["font", "bg", "extra", "fx"]) {
+                eco.all(kind).forEach(it => {
+                    if (it.price == null) return;    // los de logro no se venden
+                    if (it.event) caramelos += it.price;
+                    else monedas += it.price;
+                });
+            }
+            // Sube al total necesario; nunca baja el saldo que ya tengas
+            S.coins = Math.max(S.coins, monedas);
+            S.caramelos = Math.max(S.caramelos, caramelos);
+            eco.saveShop();
+            eco.saveCandy();
+            S.shopMsgTxt = "🐞 Fondos de prueba: " + monedas + "🪙 · " + caramelos + "🍬";
+        }
+
+    // Compra TODO por el camino real — cada artículo con precio pasa por
+    // buyItem (cobra, mensaje, persistencia). Los artículos de logro no
+    // se pueden comprar: esos se conceden como en dbgGrantAll
+    dbgBuyAll() {
+            if (!acc.esAdmin()) return;
+            this.dbgFunds();
+            for (const kind of ["font", "bg", "extra", "fx"]) {
+                eco.all(kind).forEach(it => {
+                    if (it.price == null) return;
+                    eco.buyItem(kind, it);
+                });
+            }
+            this.dbgGrantAll();   // cubre los artículos de logro
+        }
+
     // ---------- Acciones para la vista (engine.actions.x) ----------
     actions = {
             setLang: this.setLang.bind(this),
@@ -1048,6 +1085,8 @@ export class GameEngine {
             dbgSet: this.dbgSet.bind(this),
             dbgAdd: this.dbgAdd.bind(this),
             dbgGrantAll: () => { if (acc.esAdmin()) this.dbgGrantAll(); },
+            dbgFunds: () => { if (acc.esAdmin()) this.dbgFunds(); },
+            dbgBuyAll: () => { if (acc.esAdmin()) this.dbgBuyAll(); },
             dbgEvent: id => { if (!acc.esAdmin()) return; id ? events.test(id) : events.clearTest(); },
         };
 
