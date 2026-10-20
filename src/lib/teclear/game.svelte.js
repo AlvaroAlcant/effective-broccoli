@@ -1,5 +1,7 @@
 import imgLogo from '#lib/img/estesoTeclea.png';
 import { getSetting, setSetting } from './settings.js';
+import { S } from './state.svelte.js';
+import { storage } from './storage.js';
 import {
     GAME_TIME, MAX_MISSES, SPEEDRUN_MS, BONUS_TIME_ELPRICO, SOUP_GIVEN,
     ADV_TIME, ADV_EVERY, ADV_EVERY_MAX, ADV_SPEED_STEP, ADV_SPEED_MAX, ADV_SCORE_SLACK,
@@ -74,60 +76,52 @@ export function initTeclear() {
 
 
         // ---------- Estado ----------
-        let lang = $state("es");         // es | en | mur (murciano)
+                 // es | en | mur (murciano)
         // ---------- Caramelos y variante Encantada (evento de Halloween) ----------
-        let caramelos = $state(0);           // caramelos guardados (moneda del evento)
-        let candyRun = $state(0);            // cambio de caramelos durante la partida
-        let supVariant = $state("clasico");  // variante de Supervivencia: clasico | encantado
+                   // caramelos guardados (moneda del evento)
+                    // cambio de caramelos durante la partida
+          // variante de Supervivencia: clasico | encantado
         let encTyped = 0;            // letras acertadas en la partida Encantada
-        let mode = $state("type");       // type | guess | imagen | aventura | supervivencia
-        let bg = $state("dark");         // dark | franco | elprico | esteso
-        let veyon = $state(getSetting("veyon"));  // Modo Veyon: oculta logo y fondos «General»/«Ia» (activo por defecto)
-        let state = $state("idle");      // idle | playing | over
-        let word = $state("");
-        let currentImg = $state(null);   // imagen en pantalla (modo Imágenes)
-        let mask = $state([]);          // modo adivinar: "start" | "hidden" | "found"
-        let wrongLetters = $state([]);  // modo adivinar
-        let misses = $state(0);         // modo adivinar
-        let score = $state(0);
-        let streak = $state(0);
+               // type | guess | imagen | aventura | supervivencia
+                 // dark | franco | elprico | esteso
+          // Modo Veyon: oculta logo y fondos «General»/«Ia» (activo por defecto)
+              // idle | playing | over
+        
+           // imagen en pantalla (modo Imágenes)
+                  // modo adivinar: "start" | "hidden" | "found"
+          // modo adivinar
+                 // modo adivinar
+        
+        
         let hits = 0;           // teclas / letras acertadas
         let errors = 0;         // fallos
-        let completed = $state(0);
-        let prevLen = $state(0);        // longitud aceptada en el modo tecleo
-        let timeLeft = $state(GAME_TIME);
+        
+                // longitud aceptada en el modo tecleo
+        
         let lastTick = 0;
         let timerId = null;
-        let best = $state(0);
-        let bestWords = $state(0);         // récord personal de palabras escritas
-        let coins = $state(0);             // monedas acumuladas
-        let coinsRun = $state(0);          // monedas ganadas en la partida actual
-        let owned = $state(["clasico"]);   // estilos comprados
-        let equipped = $state("clasico");  // estilo activo
-        let ownedBgs = $state(["dark"]);   // fondos desbloqueados (Franco se compra)
-        let ownedExtras = $state([]);      // extras comprados (picante, caos…)
-        let extraOn = $state({             // extras activos en este momento
-            picante: false,
-            caos: false,
-            php: false,
-            espejo: false,
-            andaluz: false,
-            azar: false,
-            cubico: false
-        });
+        
+                 // récord personal de palabras escritas
+                     // monedas acumuladas
+                  // monedas ganadas en la partida actual
+           // estilos comprados
+          // estilo activo
+           // fondos desbloqueados (Franco se compra)
+              // extras comprados (picante, caos…)
+        
         // Extras elegidos SOLO para la partida en curso (Modo Al azar):
         // null = se usa lo que haya en extraOn
         let extraRun = null;
-        let ownedFx = $state([]);          // efectos de tecleo comprados
-        let fxEquipped = $state("");       // efecto de tecleo en uso ("" = ninguno)
-        let shopOpen = $state(false);
-        let rankOpen = $state(false);      // panel de ranking abierto
-        let logrosOpen = $state(false);    // panel de logros abierto
-        let invOpen = $state(false);       // panel de inventario abierto
-        let achData = $state({});          // id → { p: progreso, done: completado }
+                  // efectos de tecleo comprados
+               // efecto de tecleo en uso ("" = ninguno)
+        
+              // panel de ranking abierto
+            // panel de logros abierto
+               // panel de inventario abierto
+                  // id → { p: progreso, done: completado }
         let srAt = 0;              // instante en que arrancó la ventana del logro Speedrunner
         let srWords = 0;           // palabras escritas dentro de esa ventana de 8 segundos
-        let rankBusy = $state(false);  // evita guardar la puntuación dos veces
+          // evita guardar la puntuación dos veces
         let playerId = "";         // identificador del jugador en este dispositivo
         let savedScore = false;    // la puntuación de esta partida ya se ha guardado
         // Telemetría de la partida: sirve para detectar escritura automática
@@ -160,7 +154,7 @@ export function initTeclear() {
             }
         };
         // Tabla destacada del panel: al guardar una marca se resalta la suya
-        let rankFocus = $state("normal");
+        
         // Estado de cada tabla: filas válidas, conexión, aviso de alteración
         const rankData = $state({
             normal: { entries: [], online: false, loaded: false, tampered: false },
@@ -168,12 +162,12 @@ export function initTeclear() {
         });
         let gameStartAt = 0;       // instante en que empezó la partida
         let gameDuration = 0;      // duración real de la partida (segundos)
-        let verifyCode = $state("");   // código aleatorio de verificación humana
+           // código aleatorio de verificación humana
         let verifyTyped = "";      // lo tecleado con teclas REALES (no se puede rellenar a mano)
 
         // ---------- Estado del modo Aventura ----------
-        let perkOpen = $state(false);  // hay una ventaja en pantalla (el reloj no corre)
-        let perkOpts = $state([]);     // las tres ventajas sorteadas para elegir
+          // hay una ventaja en pantalla (el reloj no corre)
+             // las tres ventajas sorteadas para elegir
         let pausedTotal = 0;       // ms que el reloj ha estado en pausa (elegir ventaja)
         let pausedAt = 0;          // instante en que empezó la pausa actual
         let advShield = 0;         // fallos que el escudo todavía absorbe
@@ -194,144 +188,144 @@ export function initTeclear() {
         let advNextPerk = ADV_EVERY;  // palabras escritas en las que toca parar
 
         // ---------- Estado del modo Supervivencia ----------
-        let supLives = $state(SUP_LIVES);  // vidas que quedan (5 al empezar)
+          // vidas que quedan (5 al empezar)
         // Palabras que hay ahora en pantalla. Cada una lleva lo suyo: la
         // palabra, las letras ya disparadas, su hueco y sus segundos restantes
         let supItems = [];
         // Reloj que repinta el campo de Supervivencia: los ítems mutan cada
         // tick (bajan, reciben letras), así que la vista se suscribe a este
         // contador y relee el array en cada pulso — sin proxies de por medio
-        let supTick = $state(0);
+        
         let supSerial = 0;       // id incremental de cada palabra en pantalla
         let supTarget = null;      // palabra a la que apunta el teclado
         let supStartAt = 0;        // instante en que empezó la partida (dificultad)
 
         // ---------- Perfil de usuario ----------
-        let accOpen = $state(false);       // panel de perfil abierto
-        let accMode = $state("reg");       // reg | login  (formulario que se está mostrando)
-        let accBusy = $state(false); // evita registrar/entrar dos veces a la vez
-        let accSession = $state(null);     // { id, n } de la cuenta con sesión abierta
-        let accMsgTxt = $state("");        // aviso del formulario / datos
-        let accMsgWarn = $state(false);    // el aviso es de error (rojo)
+               // panel de perfil abierto
+               // reg | login  (formulario que se está mostrando)
+         // evita registrar/entrar dos veces a la vez
+             // { id, n } de la cuenta con sesión abierta
+                // aviso del formulario / datos
+            // el aviso es de error (rojo)
 
         // ---------- Estado pintado por Svelte (la UI ya no se escribe a mano) ----------
-        let statusTxt = $state("");    // línea de estado bajo el tablero
-        let startTxt = $state("");     // texto del botón principal (Jugar/…)
-        let shopMsgTxt = $state("");   // avisos de compra en la tienda
-        let invMsgTxt = $state("");    // avisos de «usar» en el inventario
-        let rankMsgTxt = $state("");   // aviso junto al botón de guardar marca
-        let rankMsgOff = $state(false);// el aviso es de rechazo (rojo)
-        let resOpen = $state(false);   // panel de resultados visible
-        let res = $state({});          // { score,words,acc,ppm,coins,candy,xp,best,msg,record }
-        let eventCountTxt = $state("");// cuenta atrás del evento de Halloween
-        let halloween = $state(false); // el evento está activo ahora mismo
-        let logoPhraseTxt = $state("");// frase del logo tras cada toque
-        let logoShow = $state(false);  // la frase está visible (se apaga sola)
-        let typedStr = $state("");     // lo tecleado hasta ahora (letras del tablero)
-        let picErr = $state(false);    // la foto del modo Imágenes no ha cargado
-        let xp = $state(0);                // experiencia acumulada en todas las partidas
-        let gamesPlayed = $state(0);       // partidas terminadas
-        let wordsTotal = $state(0);        // palabras escritas en total
+            // línea de estado bajo el tablero
+             // texto del botón principal (Jugar/…)
+           // avisos de compra en la tienda
+            // avisos de «usar» en el inventario
+           // aviso junto al botón de guardar marca
+        // el aviso es de rechazo (rojo)
+           // panel de resultados visible
+                  // { score,words,acc,ppm,coins,candy,xp,best,msg,record }
+        // cuenta atrás del evento de Halloween
+         // el evento está activo ahora mismo
+        // frase del logo tras cada toque
+          // la frase está visible (se apaga sola)
+             // lo tecleado hasta ahora (letras del tablero)
+            // la foto del modo Imágenes no ha cargado
+                        // experiencia acumulada en todas las partidas
+               // partidas terminadas
+                // palabras escritas en total
 
         // Publicación del estado para los componentes: impl[k] devuelve
         // el valor actual del dato k leyendo las variables $state (los
         // derivados se reevalúan al cambiar cualquiera que lean dentro).
         Object.assign(impl, {
-            lang:        () => lang,
-            mode:        () => mode,
-            state:       () => state,
-            supVariant:  () => supVariant,
-            bg:          () => bg,
-            veyon:       () => veyon,
-            score:       () => score,
-            streak:      () => streak,
-            completed:   () => completed,
-            best:        () => best,
-            bestWords:   () => bestWords,
-            coins:       () => coins,
-            coinsRun:    () => coinsRun,
-            caramelos:   () => caramelos,
-            candyRun:    () => candyRun,
-            owned:       () => owned,
-            equipped:    () => equipped,
-            ownedBgs:    () => ownedBgs,
-            ownedExtras: () => ownedExtras,
-            extraOn:     () => extraOn,
-            ownedFx:     () => ownedFx,
-            fxEquipped:  () => fxEquipped,
-            achData:     () => achData,
-            xp:          () => xp,
-            gamesPlayed: () => gamesPlayed,
-            wordsTotal:  () => wordsTotal,
-            shopOpen:    () => shopOpen,
-            rankOpen:    () => rankOpen,
-            logrosOpen:  () => logrosOpen,
-            invOpen:     () => invOpen,
-            accOpen:     () => accOpen,
-            accMode:     () => accMode,
-            accSession:  () => accSession,
-            rankFocus:   () => rankFocus,
+            lang:        () => S.lang,
+            mode:        () => S.mode,
+            state:       () => S.state,
+            supVariant:  () => S.supVariant,
+            bg:          () => S.bg,
+            veyon:       () => S.veyon,
+            score:       () => S.score,
+            streak:      () => S.streak,
+            completed:   () => S.completed,
+            best:        () => S.best,
+            bestWords:   () => S.bestWords,
+            coins:       () => S.coins,
+            coinsRun:    () => S.coinsRun,
+            caramelos:   () => S.caramelos,
+            candyRun:    () => S.candyRun,
+            owned:       () => S.owned,
+            equipped:    () => S.equipped,
+            ownedBgs:    () => S.ownedBgs,
+            ownedExtras: () => S.ownedExtras,
+            extraOn:     () => S.extraOn,
+            ownedFx:     () => S.ownedFx,
+            fxEquipped:  () => S.fxEquipped,
+            achData:     () => S.achData,
+            xp:          () => S.xp,
+            gamesPlayed: () => S.gamesPlayed,
+            wordsTotal:  () => S.wordsTotal,
+            shopOpen:    () => S.shopOpen,
+            rankOpen:    () => S.rankOpen,
+            logrosOpen:  () => S.logrosOpen,
+            invOpen:     () => S.invOpen,
+            accOpen:     () => S.accOpen,
+            accMode:     () => S.accMode,
+            accSession:  () => S.accSession,
+            rankFocus:   () => S.rankFocus,
             t:           () => t,
             uiEn:        () => uiLang() === "en",
-            subtitle:    () => mode === "imagen" ? t("subtitleI") :
-                             mode === "guess" ? t("subtitleG") :
-                             mode === "aventura" ? t("subtitleA") :
-                             mode === "supervivencia" ? t("subtitleS") :
-                             lang === "mur" ? t("subtitleM") : t("subtitleT"),
-            streakTxt:   () => streak + " (x" + multiplier() + ")",
+            subtitle:    () => S.mode === "imagen" ? t("subtitleI") :
+                             S.mode === "guess" ? t("subtitleG") :
+                             S.mode === "aventura" ? t("subtitleA") :
+                             S.mode === "supervivencia" ? t("subtitleS") :
+                             S.lang === "mur" ? t("subtitleM") : t("subtitleT"),
+            streakTxt:   () => S.streak + " (x" + multiplier() + ")",
             level:       () => level(),
-            timeTxt:     () => Math.max(0, Math.ceil(timeLeft)),
-            timeLow:     () => state === "playing" &&
-                             (mode === "supervivencia" ? timeLeft <= 4 : timeLeft <= 10),
-            coinsTxt:    () => fmtCoins(coins),
-            accHintTxt:  () => accSession ? t("accDataHint") : t("accHint"),
-            btnRegTxt:   () => accSession ? t("btnProfile") : t("btnRegister"),
-            candyTxt:    () => fmtCandy(caramelos),
-            achCountTxt: () => Object.values(achData).filter(d => d.done).length +
+            timeTxt:     () => Math.max(0, Math.ceil(S.timeLeft)),
+            timeLow:     () => S.state === "playing" &&
+                             (S.mode === "supervivencia" ? S.timeLeft <= 4 : S.timeLeft <= 10),
+            coinsTxt:    () => fmtCoins(S.coins),
+            accHintTxt:  () => S.accSession ? t("accDataHint") : t("accHint"),
+            btnRegTxt:   () => S.accSession ? t("btnProfile") : t("btnRegister"),
+            candyTxt:    () => fmtCandy(S.caramelos),
+            achCountTxt: () => Object.values(S.achData).filter(d => d.done).length +
                              "/" + ACHIEVEMENTS.length,
             invCountTxt: () => invItems().length,
 
             // ---------- Estado que la UI pinta directamente ----------
-            statusTxt:   () => statusTxt,
-            startTxt:    () => startTxt,
-            shopMsgTxt:  () => shopMsgTxt,
-            invMsgTxt:   () => invMsgTxt,
-            rankMsgTxt:  () => rankMsgTxt,
-            rankMsgOff:  () => rankMsgOff,
-            accMsgTxt:   () => accMsgTxt,
-            accMsgWarn:  () => accMsgWarn,
-            res:         () => res,
-            resOpen:     () => resOpen,
-            verifyCode:  () => verifyCode,
-            rankBusy:    () => rankBusy,
+            statusTxt:   () => S.statusTxt,
+            startTxt:    () => S.startTxt,
+            shopMsgTxt:  () => S.shopMsgTxt,
+            invMsgTxt:   () => S.invMsgTxt,
+            rankMsgTxt:  () => S.rankMsgTxt,
+            rankMsgOff:  () => S.rankMsgOff,
+            accMsgTxt:   () => S.accMsgTxt,
+            accMsgWarn:  () => S.accMsgWarn,
+            res:         () => S.res,
+            resOpen:     () => S.resOpen,
+            verifyCode:  () => S.verifyCode,
+            rankBusy:    () => S.rankBusy,
             savedScore:  () => savedScore,
-            eventCountTxt: () => eventCountTxt,
-            halloween:   () => halloween,
-            logoPhraseTxt: () => logoPhraseTxt,
-            logoShow:    () => logoShow,
-            playing:     () => state === "playing",
-            typingDis:   () => state !== "playing" || perkOpen,
+            eventCountTxt: () => S.eventCountTxt,
+            halloween:   () => S.halloween,
+            logoPhraseTxt: () => S.logoPhraseTxt,
+            logoShow:    () => S.logoShow,
+            playing:     () => S.state === "playing",
+            typingDis:   () => S.state !== "playing" || S.perkOpen,
             esAdmin:     () => esAdmin(),
-            accBusy:     () => accBusy,
-            accWhoTxt:   () => accSession ? t("accWho") + accSession.n : "-",
-            accSubmitTxt:() => accMode === "reg" ? t("accSubmitReg") : t("accSubmitLogin"),
-            accSwitchTxt:() => accMode === "reg" ? t("accSwitchToLogin") : t("accSwitchToReg"),
-            rankWhoTxt:  () => accSession ? t("accRankWith") + accSession.n : t("accRankNo"),
-            perkOpen:    () => perkOpen,
-            perkOpts:    () => perkOpts,
+            accBusy:     () => S.accBusy,
+            accWhoTxt:   () => S.accSession ? t("accWho") + S.accSession.n : "-",
+            accSubmitTxt:() => S.accMode === "reg" ? t("accSubmitReg") : t("accSubmitLogin"),
+            accSwitchTxt:() => S.accMode === "reg" ? t("accSwitchToLogin") : t("accSwitchToReg"),
+            rankWhoTxt:  () => S.accSession ? t("accRankWith") + S.accSession.n : t("accRankNo"),
+            perkOpen:    () => S.perkOpen,
+            perkOpts:    () => S.perkOpts,
             supTargetN:  () => supTarget ? supTarget.n : -1,
-            supLives:    () => supLives,
+            supLives:    () => S.supLives,
             supMax:      () => SUP_LIVES,
-            picErr:      () => picErr,
+            picErr:      () => S.picErr,
 
             // ---------- View-models (listas que la UI recorre) ----------
             // El tablero: qué tipo de contenido toca y sus datos
             boardView:   () => {
-                if (state !== "playing") {
-                    return { kind: "hint", txt: state === "over" ? t("boardEnd") : t("boardIdle") };
+                if (S.state !== "playing") {
+                    return { kind: "hint", txt: S.state === "over" ? t("boardEnd") : t("boardIdle") };
                 }
-                if (mode === "supervivencia") {
-                    supTick;   // se repinta con cada pulso del campo
+                if (S.mode === "supervivencia") {
+                    S.supTick;   // se repinta con cada pulso del campo
                     // Los ítems mutan en sitio (bajan, reciben letras), así que
                     // la vista recibe una COPIA de cada uno: al cambiar la
                     // referencia, el {#each} con clave vuelve a pintar la caja
@@ -344,36 +338,36 @@ export function initTeclear() {
                              targetN: supTarget ? supTarget.n : -1,
                              enc: encOn(), shotMs: SHOT_MS, shotGap: SHOT_GAP };
                 }
-                if (mode === "imagen") {
-                    return { kind: "img", em: currentImg ? currentImg.em : "🖼️",
-                             src: currentImg ? emojiSrc(currentImg.em) : "" };
+                if (S.mode === "imagen") {
+                    return { kind: "img", em: S.currentImg ? S.currentImg.em : "🖼️",
+                             src: S.currentImg ? emojiSrc(S.currentImg.em) : "" };
                 }
-                if (mode === "guess") {
-                    const firstHidden = mask.indexOf("hidden");
-                    return { kind: "letters", letters: word.split("").map((ch, i) => ({
-                        ch: mask[i] === "hidden" ? "_" : ch,
-                        cls: mask[i] === "hidden" ? "blank" + (i === firstHidden ? " cursor" : "")
-                             : (mask[i] === "found" ? "ok" : "")
+                if (S.mode === "guess") {
+                    const firstHidden = S.mask.indexOf("hidden");
+                    return { kind: "letters", letters: S.word.split("").map((ch, i) => ({
+                        ch: S.mask[i] === "hidden" ? "_" : ch,
+                        cls: S.mask[i] === "hidden" ? "blank" + (i === firstHidden ? " cursor" : "")
+                             : (S.mask[i] === "found" ? "ok" : "")
                     })) };
                 }
-                return { kind: "letters", letters: word.split("").map((ch, i) => ({
+                return { kind: "letters", letters: S.word.split("").map((ch, i) => ({
                     ch: ch,
-                    cls: i < typedStr.length ? (typedStr[i] === ch ? "ok" : "bad")
-                         : (i === typedStr.length ? "cursor" : "")
+                    cls: i < S.typedStr.length ? (S.typedStr[i] === ch ? "ok" : "bad")
+                         : (i === S.typedStr.length ? "cursor" : "")
                 })) };
             },
             // Vidas de Supervivencia / fallos de Adivinar, en el mismo hueco
             missesView:  () => {
-                if (mode === "supervivencia") return { kind: "lives", n: supLives };
-                if (mode === "guess") return { kind: "guess", n: misses, wrong: wrongLetters };
+                if (S.mode === "supervivencia") return { kind: "lives", n: S.supLives };
+                if (S.mode === "guess") return { kind: "guess", n: S.misses, wrong: S.wrongLetters };
                 return { kind: "off" };
             },
             maxMisses:   () => MAX_MISSES,
             // Efectos activos del modo Aventura (se recalculan con cada tick
             // porque leen timeLeft aunque no lo muestren)
             advChips:    () => {
-                timeLeft;
-                if (mode !== "aventura" || state !== "playing") return [];
+                S.timeLeft;
+                if (S.mode !== "aventura" || S.state !== "playing") return [];
                 const chips = [{ txt: "⏱️ +" + timePerWord() + "s/" + t("advWord"), on: false }];
                 const vel = tickSpeed();
                 if (vel > 1.001) chips.push({ txt: "⏩ x" + vel.toFixed(1)
@@ -381,7 +375,7 @@ export function initTeclear() {
                 if (advShield > 0) chips.push({ txt: "🛡️ x" + advShield, on: true });
                 if (advShort > 0) chips.push({ txt: "🛤️ x" + advShort, on: true });
                 if (advRevive > 0) chips.push({ txt: "🆘 x" + advRevive, on: true });
-                const quedanRelief = Math.max(0, advRelief - (completed - advReliefFrom));
+                const quedanRelief = Math.max(0, advRelief - (S.completed - advReliefFrom));
                 if (quedanRelief > 0) chips.push({ txt: "🌊 x" + quedanRelief, on: true });
                 const ahora = performance.now();
                 if (ahora < advFreeze) chips.push({ txt: "❄️ " + Math.ceil((advFreeze - ahora) / 1000), on: true });
@@ -396,76 +390,76 @@ export function initTeclear() {
             shopFonts:   () => FONT_STYLES.map(st => ({
                 id: st.id, cls: st.cls, font: st.font,
                 name: uiLang() === "es" ? st.es : st.en,
-                equipped: equipped === st.id,
-                own: owned.includes(st.id), ach: !!st.ach,
-                price: st.price, cant: !esAdmin() && coins < st.price
+                equipped: S.equipped === st.id,
+                own: S.owned.includes(st.id), ach: !!st.ach,
+                price: st.price, cant: !esAdmin() && S.coins < st.price
             })),
             shopBgs:     () => BACKGROUNDS
-                .filter(b => !b.event || (!halloween && ownedBgs.includes(b.id)))
+                .filter(b => !b.event || (!S.halloween && S.ownedBgs.includes(b.id)))
                 .map(b => ({
                     id: b.id, icon: b.icon || "🌙",
                     img: veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
                     name: uiLang() === "es" ? b.es : b.en,
                     desc: uiLang() === "es" ? b.descEs : b.descEn,
-                    equipped: bg === b.id,
-                    own: ownedBgs.includes(b.id), ach: !!b.ach,
-                    price: b.price, cant: !esAdmin() && coins < b.price
+                    equipped: S.bg === b.id,
+                    own: S.ownedBgs.includes(b.id), ach: !!b.ach,
+                    price: b.price, cant: !esAdmin() && S.coins < b.price
                 })),
             shopExtras:  () => EXTRAS
-                .filter(x => !x.event || (!halloween && ownsExtra(x.id)))
+                .filter(x => !x.event || (!S.halloween && ownsExtra(x.id)))
                 .map(x => ({
                     id: x.id, icon: x.icon,
                     name: uiLang() === "es" ? x.es : x.en,
                     desc: uiLang() === "es" ? x.descEs : x.descEn,
-                    on: ownsExtra(x.id) && !!extraOn[x.id],
+                    on: ownsExtra(x.id) && !!S.extraOn[x.id],
                     own: ownsExtra(x.id),
-                    price: x.price, cant: !esAdmin() && coins < x.price
+                    price: x.price, cant: !esAdmin() && S.coins < x.price
                 })),
             shopFxs:     () => TYPE_EFFECTS
-                .filter(f => !f.event || (!halloween && ownsFx(f.id)))
+                .filter(f => !f.event || (!S.halloween && ownsFx(f.id)))
                 .map(f => ({
                     id: f.id, icon: f.icon, art: f.art, color: f.color,
                     name: uiLang() === "es" ? f.es : f.en,
                     desc: uiLang() === "es" ? f.descEs : f.descEn,
-                    on: ownsFx(f.id) && fxEquipped === f.id,
+                    on: ownsFx(f.id) && S.fxEquipped === f.id,
                     own: ownsFx(f.id), ach: !!f.ach,
-                    price: f.price, cant: !esAdmin() && coins < f.price
+                    price: f.price, cant: !esAdmin() && S.coins < f.price
                 })),
             // Los tres artículos de la tienda de evento (Halloween)
             shopEvents:  () => {
-                if (!halloween) return [];
+                if (!S.halloween) return [];
                 const en = uiLang() === "en";
                 const out = [];
                 const b = BACKGROUNDS.find(x => x.id === "fivenights");
                 if (b) out.push({
                     kind: "bg", id: b.id, icon: b.icon || "📼",
                     name: en ? b.en : b.es, desc: en ? b.descEn : b.descEs,
-                    img: b.img, equipped: bg === b.id,
-                    own: ownedBgs.includes(b.id), price: b.price,
-                    cant: !esAdmin() && caramelos < b.price
+                    img: b.img, equipped: S.bg === b.id,
+                    own: S.ownedBgs.includes(b.id), price: b.price,
+                    cant: !esAdmin() && S.caramelos < b.price
                 });
                 const f = fxById("sangre");
                 if (f) out.push({
                     kind: "fx", id: f.id, icon: f.icon, color: f.color,
                     name: en ? f.en : f.es, desc: en ? f.descEn : f.descEs,
-                    on: ownsFx(f.id) && fxEquipped === f.id,
+                    on: ownsFx(f.id) && S.fxEquipped === f.id,
                     own: ownsFx(f.id), price: f.price,
-                    cant: !esAdmin() && caramelos < f.price
+                    cant: !esAdmin() && S.caramelos < f.price
                 });
                 const x = EXTRAS.find(e => e.id === "truco");
                 if (x) out.push({
                     kind: "extra", id: x.id, icon: x.icon,
                     name: en ? x.en : x.es, desc: en ? x.descEn : x.descEs,
-                    on: ownsExtra(x.id) && !!extraOn[x.id],
+                    on: ownsExtra(x.id) && !!S.extraOn[x.id],
                     own: ownsExtra(x.id), price: x.price,
-                    cant: !esAdmin() && caramelos < x.price
+                    cant: !esAdmin() && S.caramelos < x.price
                 });
                 return out;
             },
             // Inventario seccionado (mismas secciones que la tienda + evento)
             invSections: () => {
                 const items = invItems();
-                const esEvento = it => halloween && it.event;
+                const esEvento = it => S.halloween && it.event;
                 return [
                     { key: "event", title: t("invEventTitle"),
                       items: items.filter(esEvento) },
@@ -481,7 +475,7 @@ export function initTeclear() {
             },
             // Tarjetas del panel de logros
             achCards:    () => ACHIEVEMENTS.map(a => {
-                const d = achData[a.id] || { p: 0, done: false };
+                const d = S.achData[a.id] || { p: 0, done: false };
                 return {
                     id: a.id, icon: a.icon,
                     name: uiLang() === "es" ? a.es : a.en,
@@ -501,25 +495,25 @@ export function initTeclear() {
                     .map(x => ({ v: x.id, txt: x.icon + " " + (uiLang() === "es" ? x.es : x.en) }))),
             modeSel:     () => activeExtraId(),
             modeSelDis:  () => EXTRAS.every(x => !ownsExtra(x.id)) ||
-                             mode !== "type" || state === "playing",
+                             S.mode !== "type" || S.state === "playing",
             modeSelTitle:() => EXTRAS.every(x => !ownsExtra(x.id)) ? t("modeSelectEmpty")
-                             : (mode !== "type" ? t("modeSelectOff") : t("modeSelectHint")),
+                             : (S.mode !== "type" ? t("modeSelectOff") : t("modeSelectHint")),
             supOptions:  () => {
                 const out = [{ v: "clasico", txt: t("supVarClasico") }];
-                if (halloween) out.push({ v: "encantado", txt: t("supVarEncantado") });
+                if (S.halloween) out.push({ v: "encantado", txt: t("supVarEncantado") });
                 return out;
             },
-            supSelDis:   () => mode !== "supervivencia" || state === "playing",
-            supSelTitle: () => mode !== "supervivencia" ? t("supSelectOff") : t("supVarHint"),
+            supSelDis:   () => S.mode !== "supervivencia" || S.state === "playing",
+            supSelTitle: () => S.mode !== "supervivencia" ? t("supSelectOff") : t("supVarHint"),
             // Chips de fondos comprados (fila de Apariencia)
             bgChips:     () => BACKGROUNDS
-                .filter(b => b.id !== "dark" && b.id !== "franco" && ownedBgs.includes(b.id))
+                .filter(b => b.id !== "dark" && b.id !== "franco" && S.ownedBgs.includes(b.id))
                 .map(b => ({
                     id: b.id,
                     hidden: veyonHiddenBg(b.id),
                     label: (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
                            (uiLang() === "es" ? b.es : b.en),
-                    active: bg === b.id
+                    active: S.bg === b.id
                 })),
             francoHidden:() => veyonHiddenBg("franco"),
             veyonImg:    () => VEYON_PLACEHOLDER,
@@ -535,7 +529,7 @@ export function initTeclear() {
             setBg: setBg,
             chooseExtra: chooseExtra,
             setSupVariant: setSupVariant,
-            toggleVeyon: () => setVeyon(!veyon),
+            toggleVeyon: () => setVeyon(!S.veyon),
             toggleShop: toggleShop,
             toggleInv: toggleInv,
             toggleLogros: toggleLogros,
@@ -560,20 +554,20 @@ export function initTeclear() {
             verifyKey: verifyKey,
             verifyInput: verifyInputText,
             verifyPaste: verifyPaste,
-            picError: () => { picErr = true; },
+            picError: () => { S.picErr = true; },
             showLogoPhrase: showLogoPhrase
         };
 
         // El murciano es un dialecto: los textos, récords y fechas se guardan
         // igual que en español, pero las palabras salen del diccionario murciano.
-        const uiLang = () => (lang === "mur" ? "es" : lang);
+        const uiLang = () => (S.lang === "mur" ? "es" : S.lang);
         const t = k => I18N[uiLang()][k];
 
         // Modo que se etiqueta en el ranking: el murciano tecleado sigue
         // registrándose como "murciano", igual que hasta ahora.
         function entryMode() {
-            if (mode === "type" && lang === "mur") return "murciano";
-            return mode;
+            if (S.mode === "type" && S.lang === "mur") return "murciano";
+            return S.mode;
         }
 
         // ---------- Elementos ----------
@@ -594,9 +588,9 @@ export function initTeclear() {
         // ---------- Récord por idioma ----------
         function loadBest() {
             try {
-                let v = localStorage.getItem("mejorTecleo." + uiLang());
+                let v = storage.get("mejorTecleo." + uiLang());
                 if (v === null && uiLang() === "es") {
-                    v = localStorage.getItem("mejorTecleo"); // récord antiguo
+                    v = storage.get("mejorTecleo"); // récord antiguo
                 }
                 return parseInt(v || "0", 10) || 0;
             } catch (e) {
@@ -606,14 +600,14 @@ export function initTeclear() {
 
         function saveBest() {
             try {
-                localStorage.setItem("mejorTecleo." + uiLang(), String(best));
+                storage.set("mejorTecleo." + uiLang(), String(S.best));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
         // ---------- Récord personal de palabras escritas ----------
         function loadBestWords() {
             try {
-                const v = localStorage.getItem("mejorPalabras." + uiLang());
+                const v = storage.get("mejorPalabras." + uiLang());
                 return parseInt(v || "0", 10) || 0;
             } catch (e) {
                 return 0;
@@ -622,7 +616,7 @@ export function initTeclear() {
 
         function saveBestWords() {
             try {
-                localStorage.setItem("mejorPalabras." + uiLang(), String(bestWords));
+                storage.set("mejorPalabras." + uiLang(), String(S.bestWords));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -648,10 +642,10 @@ export function initTeclear() {
         function loadPlayerId() {
             if (playerId) return playerId;
             try {
-                playerId = localStorage.getItem("teclear.jugador") || "";
+                playerId = storage.get("teclear.jugador") || "";
                 if (!playerId) {
                     playerId = makeId();
-                    localStorage.setItem("teclear.jugador", playerId);
+                    storage.set("teclear.jugador", playerId);
                 }
             } catch (e) {
                 playerId = makeId();
@@ -661,7 +655,7 @@ export function initTeclear() {
 
         function loadPlayerName() {
             try {
-                return String(localStorage.getItem("teclear.nombre") || "").slice(0, NAME_MAX);
+                return String(storage.get("teclear.nombre") || "").slice(0, NAME_MAX);
             } catch (e) {
                 return "";
             }
@@ -669,14 +663,13 @@ export function initTeclear() {
 
         function savePlayerName(name) {
             try {
-                localStorage.setItem("teclear.nombre", name);
+                storage.set("teclear.nombre", name);
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
         function loadLocalRanking(tab) {
             try {
-                const data = JSON.parse(
-                    localStorage.getItem(RANK_TAB_CONF[tab].ls) || "null");
+                const data = storage.getJSON(RANK_TAB_CONF[tab].ls, null);
                 return (data && Array.isArray(data.entries)) ? data.entries : [];
             } catch (e) {
                 return [];
@@ -685,8 +678,7 @@ export function initTeclear() {
 
         function saveLocalRanking(entries, tab) {
             try {
-                localStorage.setItem(RANK_TAB_CONF[tab].ls,
-                    JSON.stringify({ v: 1, entries: entries }));
+                storage.setJSON(RANK_TAB_CONF[tab].ls, { v: 1, entries: entries });
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -892,7 +884,7 @@ export function initTeclear() {
         // repetir el nombre de otro jugador.
         function loadLocalNames() {
             try {
-                const data = JSON.parse(localStorage.getItem("teclear.nombres") || "null");
+                const data = storage.getJSON("teclear.nombres", null);
                 return (data && Array.isArray(data.used)) ? data.used : [];
             } catch (e) {
                 return [];
@@ -901,7 +893,7 @@ export function initTeclear() {
 
         function saveLocalNames(list) {
             try {
-                localStorage.setItem("teclear.nombres", JSON.stringify({ v: 1, used: list }));
+                storage.setJSON("teclear.nombres", { v: 1, used: list });
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -1167,7 +1159,7 @@ export function initTeclear() {
 
         function loadProfilesLocal() {
             try {
-                const doc = JSON.parse(localStorage.getItem("teclear.perfiles") || "null");
+                const doc = storage.getJSON("teclear.perfiles", null);
                 if (!doc || !Array.isArray(doc.users)) return [];
                 return doc.users.map(validProfile).filter(Boolean);
             } catch (e) {
@@ -1178,8 +1170,7 @@ export function initTeclear() {
         function saveProfilesLocal(users) {
             try {
                 const clean = users.map(validProfile).filter(Boolean);
-                localStorage.setItem("teclear.perfiles",
-                    JSON.stringify({ v: 1, users: clean, c: profilesSeal(clean) }));
+                storage.setJSON("teclear.perfiles", { v: 1, users: clean, c: profilesSeal(clean) });
                 return clean;
             } catch (e) {
                 return [];
@@ -1253,8 +1244,8 @@ export function initTeclear() {
         // ---------- Datos que se guardan en la cuenta ----------
         function readRec(key) {
             try {
-                let v = localStorage.getItem(key);
-                if (v === null && key === "mejorTecleo.es") v = localStorage.getItem("mejorTecleo");
+                let v = storage.get(key);
+                if (v === null && key === "mejorTecleo.es") v = storage.get("mejorTecleo");
                 return parseInt(v || "0", 10) || 0;
             } catch (e) {
                 return 0;
@@ -1263,11 +1254,11 @@ export function initTeclear() {
 
         function snapshotData() {
             return cleanProfileData({
-                coins: coins, xp: xp, games: gamesPlayed, words: wordsTotal,
-                owned: owned, equipped: equipped,
-                bgs: ownedBgs, bg: bg,
-                extras: ownedExtras, extraOn: extraOn,
-                fxs: ownedFx, fx: fxEquipped,
+                coins: S.coins, xp: S.xp, games: S.gamesPlayed, words: S.wordsTotal,
+                owned: S.owned, equipped: S.equipped,
+                bgs: S.ownedBgs, bg: S.bg,
+                extras: S.ownedExtras, extraOn: S.extraOn,
+                fxs: S.ownedFx, fx: S.fxEquipped,
                 best: { es: readRec("mejorTecleo.es"), en: readRec("mejorTecleo.en") },
                 bestWords: { es: readRec("mejorPalabras.es"), en: readRec("mejorPalabras.en") }
             });
@@ -1276,24 +1267,24 @@ export function initTeclear() {
         // Carga en el juego lo que trae la cuenta (monedas, estilos, récords…)
         function applyData(raw) {
             const d = cleanProfileData(raw);
-            coins = d.coins;
-            xp = d.xp;
-            gamesPlayed = d.games;
-            wordsTotal = d.words;
-            owned = d.owned;
-            equipped = d.equipped;
-            ownedBgs = d.bgs;
-            bg = d.bg;
-            ownedExtras = d.extras;
-            extraOn = d.extraOn;
-            ownedFx = d.fxs;
-            fxEquipped = d.fx;
+            S.coins = d.coins;
+            S.xp = d.xp;
+            S.gamesPlayed = d.games;
+            S.wordsTotal = d.words;
+            S.owned = d.owned;
+            S.equipped = d.equipped;
+            S.ownedBgs = d.bgs;
+            S.bg = d.bg;
+            S.ownedExtras = d.extras;
+            S.extraOn = d.extraOn;
+            S.ownedFx = d.fxs;
+            S.fxEquipped = d.fx;
             try {
-                localStorage.setItem("mejorTecleo.es", String(d.best.es));
-                localStorage.setItem("mejorTecleo.en", String(d.best.en));
-                localStorage.setItem("mejorPalabras.es", String(d.bestWords.es));
-                localStorage.setItem("mejorPalabras.en", String(d.bestWords.en));
-                localStorage.setItem("teclear.fondo", bg);
+                storage.set("mejorTecleo.es", String(d.best.es));
+                storage.set("mejorTecleo.en", String(d.best.en));
+                storage.set("mejorPalabras.es", String(d.bestWords.es));
+                storage.set("mejorPalabras.en", String(d.bestWords.en));
+                storage.set("teclear.fondo", S.bg);
             } catch (e) { /* sin almacenamiento disponible */ }
             saveShop();
             saveProfileStats();
@@ -1304,30 +1295,30 @@ export function initTeclear() {
             // cuenta trae estilos o fondos sin los ganados jugando, se
             // vuelven a poner en su sitio
             ACHIEVEMENTS.forEach(a => {
-                if (achData[a.id] && achData[a.id].done) grantAchReward(a, true);
+                if (S.achData[a.id] && S.achData[a.id].done) grantAchReward(a, true);
             });
         }
 
         function loadProfileStats() {
             try {
-                xp = parseInt(localStorage.getItem("teclear.xp") || "0", 10) || 0;
-                gamesPlayed = parseInt(localStorage.getItem("teclear.partidas") || "0", 10) || 0;
-                wordsTotal = parseInt(localStorage.getItem("teclear.palabras") || "0", 10) || 0;
+                S.xp = parseInt(storage.get("teclear.xp") || "0", 10) || 0;
+                S.gamesPlayed = parseInt(storage.get("teclear.partidas") || "0", 10) || 0;
+                S.wordsTotal = parseInt(storage.get("teclear.palabras") || "0", 10) || 0;
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
         function saveProfileStats() {
             try {
-                localStorage.setItem("teclear.xp", String(xp));
-                localStorage.setItem("teclear.partidas", String(gamesPlayed));
-                localStorage.setItem("teclear.palabras", String(wordsTotal));
+                storage.set("teclear.xp", String(S.xp));
+                storage.set("teclear.partidas", String(S.gamesPlayed));
+                storage.set("teclear.palabras", String(S.wordsTotal));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
         // ---------- Sesión ----------
         function loadSession() {
             try {
-                const s = JSON.parse(localStorage.getItem("teclear.sesion") || "null");
+                const s = storage.getJSON("teclear.sesion", null);
                 if (s && typeof s.id === "string" && typeof s.n === "string" && nameOk(s.n)) {
                     return { id: s.id, n: cleanName(s.n) };
                 }
@@ -1337,25 +1328,25 @@ export function initTeclear() {
 
         function saveSession(s) {
             try {
-                if (s) localStorage.setItem("teclear.sesion", JSON.stringify(s));
-                else localStorage.removeItem("teclear.sesion");
+                if (s) storage.setJSON("teclear.sesion", s);
+                else storage.remove("teclear.sesion");
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
         // Id con el que este jugador aparece en el ranking: el de su cuenta si
         // tiene sesión, y en caso contrario el fijo de este dispositivo.
         function currentPlayerId() {
-            return accSession ? accSession.id : loadPlayerId();
+            return S.accSession ? S.accSession.id : loadPlayerId();
         }
 
         // Guarda los datos actuales en la cuenta: siempre en local y, si hay
         // conexión, se suben a la nube. Se llama al terminar cada partida.
         function saveProfile() {
-            if (!accSession) return Promise.resolve({ saved: false, local: false });
+            if (!S.accSession) return Promise.resolve({ saved: false, local: false });
             const data = snapshotData();
             const local = loadProfilesLocal();
             let i = -1;
-            for (let j = 0; j < local.length; j++) if (local[j].id === accSession.id) i = j;
+            for (let j = 0; j < local.length; j++) if (local[j].id === S.accSession.id) i = j;
             if (i < 0) return Promise.resolve({ saved: false, local: false });
 
             const me = Object.assign({}, local[i], { data: data, last: new Date().toISOString() });
@@ -1379,7 +1370,7 @@ export function initTeclear() {
         const ADMIN_NAMES = ["alvaro"];
 
         function esAdmin() {
-            if (accSession && ADMIN_NAMES.indexOf(nameKey(accSession.n)) >= 0) return true;
+            if (S.accSession && ADMIN_NAMES.indexOf(nameKey(S.accSession.n)) >= 0) return true;
             return ADMIN_NAMES.indexOf(nameKey(loadPlayerName())) >= 0;
         }
 
@@ -1393,45 +1384,45 @@ export function initTeclear() {
         // ---------- Panel de cuenta ----------
         // (El panel se dibuja solo leyendo G: aquí solo queda su lógica)
         function setAccMsg(key, warn) {
-            accMsgTxt = key ? t(key) : "";
-            accMsgWarn = !!warn;
+            S.accMsgTxt = key ? t(key) : "";
+            S.accMsgWarn = !!warn;
         }
 
         function openAccount(mode) {
-            if (state === "playing") return;
-            if (mode && mode !== accMode) {
-                accMode = mode;
+            if (S.state === "playing") return;
+            if (mode && mode !== S.accMode) {
+                S.accMode = mode;
                 if (accPass2) accPass2.value = "";
                 setAccMsg("", false);
             }
-            accOpen = true;
+            S.accOpen = true;
             if (perfil.scrollIntoView) perfil.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
 
         function closeAccount() {
-            accOpen = false;
+            S.accOpen = false;
         }
 
         function toggleAccount(mode) {
-            if (state === "playing") return;
-            if (accOpen && (!mode || mode === accMode)) closeAccount();
+            if (S.state === "playing") return;
+            if (S.accOpen && (!mode || mode === S.accMode)) closeAccount();
             else openAccount(mode);
         }
 
         function closeAccountOnPlay() {
-            if (accOpen) closeAccount();
+            if (S.accOpen) closeAccount();
         }
 
         // Cambia entre registro y entrada dentro del panel de perfil
         function accSwitchMode() {
-            accMode = accMode === "reg" ? "login" : "reg";
+            S.accMode = S.accMode === "reg" ? "login" : "reg";
             if (accPass2) accPass2.value = "";
             setAccMsg("", false);
         }
 
         // «Guardar ahora»: sube el progreso a la nube estando ya dentro
         function accSaveProfile() {
-            if (!accSession) { setAccMsg("accNoSession", true); return; }
+            if (!S.accSession) { setAccMsg("accNoSession", true); return; }
             setAccMsg("accSaving", false);
             saveProfile().then(res2 => {
                 setAccMsg(res2.saved ? "accSaved" : (res2.local ? "accSavedLocal" : "accNoSession"),
@@ -1441,7 +1432,7 @@ export function initTeclear() {
 
         // ---------- Registrar / entrar / salir ----------
         function finishAccount(res) {
-            accBusy = false;
+            S.accBusy = false;
             return res;
         }
 
@@ -1452,12 +1443,12 @@ export function initTeclear() {
         }
 
         function doRegister(name, pass, pass2) {
-            if (accBusy) return Promise.resolve({ ok: false, key: "accExists" });
+            if (S.accBusy) return Promise.resolve({ ok: false, key: "accExists" });
             if (!name || !nameOk(name)) return Promise.resolve(accountFail("accNameBad"));
             if ((pass || "").length < PASS_MIN) return Promise.resolve(accountFail("accPassShort"));
             if (pass !== pass2) return Promise.resolve(accountFail("accPassDiff"));
 
-            accBusy = true;
+            S.accBusy = true;
             setAccMsg("accSaving", false);
 
             const id = profileId(name);
@@ -1488,8 +1479,8 @@ export function initTeclear() {
                 });
             }).then(() => {
                 saveProfilesLocal(upsertProfile(loadProfilesLocal(), record));
-                accSession = { id: id, n: name };
-                saveSession(accSession);
+                S.accSession = { id: id, n: name };
+                saveSession(S.accSession);
                 savePlayerName(name);
                 if (accPass) accPass.value = "";
                 if (accPass2) accPass2.value = "";
@@ -1499,8 +1490,8 @@ export function initTeclear() {
                 return { ok: true, key: "accCreated" };
             }).catch(err => {
                 if (err && err.ok) {   // cuenta creada solo en este dispositivo
-                    accSession = { id: id, n: name };
-                    saveSession(accSession);
+                    S.accSession = { id: id, n: name };
+                    saveSession(S.accSession);
                     savePlayerName(name);
                     if (accPass) accPass.value = "";
                     if (accPass2) accPass2.value = "";
@@ -1514,11 +1505,11 @@ export function initTeclear() {
         }
 
         function doLogin(name, pass) {
-            if (accBusy) return Promise.resolve({ ok: false, key: "accNoUser" });
+            if (S.accBusy) return Promise.resolve({ ok: false, key: "accNoUser" });
             if (!name || !nameOk(name)) return Promise.resolve(accountFail("accNameBad"));
             if (!pass) return Promise.resolve(accountFail("accPassShort"));
 
-            accBusy = true;
+            S.accBusy = true;
             setAccMsg("accSaving", false);
 
             return profilesStage().then(stage => {
@@ -1527,8 +1518,8 @@ export function initTeclear() {
                 if (derivePass(pass, u.salt) !== u.hash) throw { key: "accBadPass" };
                 // Se queda la copia local de esta cuenta para poder entrar sin internet
                 saveProfilesLocal(upsertProfile(stage.users, u));
-                accSession = { id: u.id, n: u.n };
-                saveSession(accSession);
+                S.accSession = { id: u.id, n: u.n };
+                saveSession(S.accSession);
                 savePlayerName(u.n);
                 applyData(u.data);
                 if (accPass) accPass.value = "";
@@ -1544,10 +1535,10 @@ export function initTeclear() {
         }
 
         function doLogout() {
-            if (accBusy) return Promise.resolve({ ok: false });
+            if (S.accBusy) return Promise.resolve({ ok: false });
             // Antes de salir se guardan los datos conseguidos hasta ahora
             return saveProfile().then(() => {
-                accSession = null;
+                S.accSession = null;
                 saveSession(null);
                 setAccMsg("accLoggedOut", false);
                 refreshRanking();
@@ -1558,7 +1549,7 @@ export function initTeclear() {
         function submitAccount() {
             const name = cleanName(accName ? accName.value : "");
             const pass = accPass ? accPass.value : "";
-            if (accMode === "reg") {
+            if (S.accMode === "reg") {
                 doRegister(name, pass, accPass2 ? accPass2.value : "");
             } else {
                 doLogin(name, pass);
@@ -1587,14 +1578,14 @@ export function initTeclear() {
             } catch (e) {
                 for (let i = 0; i < 4; i++) s += VERIFY_CHARS[Math.floor(Math.random() * VERIFY_CHARS.length)];
             }
-            verifyCode = s;
+            S.verifyCode = s;
             verifyTyped = "";
             if (verifyInput) verifyInput.value = "";
         }
 
         function verifyHuman() {
-            if (!verifyCode) return false;
-            return verifyTyped.trim().toLowerCase() === verifyCode.toLowerCase();
+            if (!S.verifyCode) return false;
+            return verifyTyped.trim().toLowerCase() === S.verifyCode.toLowerCase();
         }
 
         // Los eventos del campo de verificación llegan por la vista (G.a.verify*):
@@ -1622,8 +1613,8 @@ export function initTeclear() {
         // Pegar el código tampoco vale: hay que teclearlo
         function verifyPaste(e) {
             e.preventDefault();
-            rankMsgOff = true;
-            rankMsgTxt = t("rankHuman");
+            S.rankMsgOff = true;
+            S.rankMsgTxt = t("rankHuman");
         }
 
         // ---------- Control de escritura automática ----------
@@ -1657,8 +1648,8 @@ export function initTeclear() {
         function checkAutoPlay(estado) {
             const val = (v, def) => (typeof v === "number" && isFinite(v)) ? v : def;
             const es = estado || {};
-            const sc = val(es.score, score);
-            const cp = val(es.completed, completed);
+            const sc = val(es.score, S.score);
+            const cp = val(es.completed, S.completed);
             const ht = val(es.hits, hits);
             const ie = val(es.inputEvents, inputEvents);
             const ti = val(es.trustedInput, trustedInput);
@@ -1672,8 +1663,8 @@ export function initTeclear() {
             // Habilidades del fondo admitidas en una partida normal: la de
             // Elprico alarga 15 s el cronómetro y la de Ia triplica los puntos.
             // En Aventura ningún fondo actúa, así que ahí ese extra vale cero.
-            const fondo = typeof es.fondo === "string" ? es.fondo : bg;
-            const modo = typeof es.modo === "string" ? es.modo : mode;
+            const fondo = typeof es.fondo === "string" ? es.fondo : S.bg;
+            const modo = typeof es.modo === "string" ? es.modo : S.mode;
             const aventura = modo === "aventura";
             const supervivencia = modo === "supervivencia";
             const extra = (!aventura && fondo === "elprico") ? BONUS_TIME_ELPRICO : 0;
@@ -1838,13 +1829,13 @@ export function initTeclear() {
         // (Las dos tablas de ranking las pinta Svelte desde G.rank; aquí
         //  solo queda abrir/cerrar el panel y refrescar los datos)
         function toggleRanking(tab) {
-            if (state === "playing") return;
-            rankOpen = !rankOpen;
-            if (rankOpen) {
+            if (S.state === "playing") return;
+            S.rankOpen = !S.rankOpen;
+            if (S.rankOpen) {
                 refreshRanking();
                 // Si se guarda una marca, su tabla se resalta (una partida de
                 // Aventura se mira en el ranking de Aventura, no en el global)
-                if (tab) rankFocus = tab;
+                if (tab) S.rankFocus = tab;
                 // El panel queda por debajo: se lleva a la vista para que se note
                 if (ranking.scrollIntoView) {
                     ranking.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1855,67 +1846,67 @@ export function initTeclear() {
         // ---------- Monedas y tienda: persistencia ----------
         function loadShop() {
             try {
-                coins = parseInt(localStorage.getItem("teclear.monedas") || "0", 10) || 0;
-                const o = JSON.parse(localStorage.getItem("teclear.estilos") || "null");
-                if (Array.isArray(o) && o.length) owned = o;
-                const eq = localStorage.getItem("teclear.estilo");
-                if (eq && owned.includes(eq)) equipped = eq;
-                const ob = JSON.parse(localStorage.getItem("teclear.fondos") || "null");
+                S.coins = parseInt(storage.get("teclear.monedas") || "0", 10) || 0;
+                const o = storage.getJSON("teclear.estilos", null);
+                if (Array.isArray(o) && o.length) S.owned = o;
+                const eq = storage.get("teclear.estilo");
+                if (eq && S.owned.includes(eq)) S.equipped = eq;
+                const ob = storage.getJSON("teclear.fondos", null);
                 if (Array.isArray(ob) && ob.length) {
-                    ownedBgs = ob;
-                } else if (localStorage.getItem("teclear.fondos") === null &&
-                           localStorage.getItem("teclear.fondo") === "franco") {
+                    S.ownedBgs = ob;
+                } else if (storage.get("teclear.fondos") === null &&
+                           storage.get("teclear.fondo") === "franco") {
                     // Migración: quien ya usaba el fondo de Franco antes de la tienda lo conserva
-                    ownedBgs = ["dark", "franco"];
+                    S.ownedBgs = ["dark", "franco"];
                 }
-                const ex = JSON.parse(localStorage.getItem("teclear.extras") || "null");
-                if (Array.isArray(ex)) ownedExtras = ex;
-                const rawOn = localStorage.getItem("teclear.extrasOn");
+                const ex = storage.getJSON("teclear.extras", null);
+                if (Array.isArray(ex)) S.ownedExtras = ex;
+                const rawOn = storage.get("teclear.extrasOn");
                 if (rawOn) {
                     const eo = JSON.parse(rawOn);
-                    if (eo && typeof eo === "object") extraOn = eo;
-                } else if (localStorage.getItem("teclear.picante") === "1") {
-                    extraOn.picante = true;   // clave antigua del modo picante
+                    if (eo && typeof eo === "object") S.extraOn = eo;
+                } else if (storage.get("teclear.picante") === "1") {
+                    S.extraOn.picante = true;   // clave antigua del modo picante
                 }
-                const fo = JSON.parse(localStorage.getItem("teclear.efectosTecleo") || "null");
-                if (Array.isArray(fo)) ownedFx = fo;
-                const feq = localStorage.getItem("teclear.efectoTecleo");
-                if (feq) fxEquipped = feq;
+                const fo = storage.getJSON("teclear.efectosTecleo", null);
+                if (Array.isArray(fo)) S.ownedFx = fo;
+                const feq = storage.get("teclear.efectoTecleo");
+                if (feq) S.fxEquipped = feq;
             } catch (e) {
-                coins = 0;
-                owned = ["clasico"];
-                equipped = "clasico";
-                ownedBgs = ["dark"];
-                ownedExtras = [];
-                extraOn = { picante: false, caos: false, php: false, espejo: false, andaluz: false, azar: false, cubico: false };
+                S.coins = 0;
+                S.owned = ["clasico"];
+                S.equipped = "clasico";
+                S.ownedBgs = ["dark"];
+                S.ownedExtras = [];
+                S.extraOn = { picante: false, caos: false, php: false, espejo: false, andaluz: false, azar: false, cubico: false };
                 extraRun = null;
-                ownedFx = [];
-                fxEquipped = "";
+                S.ownedFx = [];
+                S.fxEquipped = "";
             }
-            if (!owned.includes("clasico")) owned.push("clasico");
-            if (!ownedBgs.includes("dark")) ownedBgs.push("dark");
+            if (!S.owned.includes("clasico")) S.owned.push("clasico");
+            if (!S.ownedBgs.includes("dark")) S.ownedBgs.push("dark");
             // Solo se admiten extras conocidos y comprados: nada de marcas raras
-            ownedExtras = ownedExtras.filter(id => EXTRAS.some(x => x.id === id));
+            S.ownedExtras = S.ownedExtras.filter(id => EXTRAS.some(x => x.id === id));
             EXTRAS.forEach(x => {
-                if (!ownedExtras.includes(x.id)) extraOn[x.id] = false;
-                extraOn[x.id] = !!extraOn[x.id];
+                if (!S.ownedExtras.includes(x.id)) S.extraOn[x.id] = false;
+                S.extraOn[x.id] = !!S.extraOn[x.id];
             });
             // Mismo criterio para los efectos de tecleo: solo los comprados
-            ownedFx = ownedFx.filter(id => TYPE_EFFECTS.some(f => f.id === id));
-            if (!ownedFx.includes(fxEquipped)) fxEquipped = "";
+            S.ownedFx = S.ownedFx.filter(id => TYPE_EFFECTS.some(f => f.id === id));
+            if (!S.ownedFx.includes(S.fxEquipped)) S.fxEquipped = "";
         }
 
         function saveShop() {
             try {
-                localStorage.setItem("teclear.monedas", String(coins));
-                localStorage.setItem("teclear.estilos", JSON.stringify(owned));
-                localStorage.setItem("teclear.estilo", equipped);
-                localStorage.setItem("teclear.fondos", JSON.stringify(ownedBgs));
-                localStorage.setItem("teclear.extras", JSON.stringify(ownedExtras));
-                localStorage.setItem("teclear.extrasOn", JSON.stringify(extraOn));
-                localStorage.setItem("teclear.picante", extraOn.picante ? "1" : "0");
-                localStorage.setItem("teclear.efectosTecleo", JSON.stringify(ownedFx));
-                localStorage.setItem("teclear.efectoTecleo", fxEquipped);
+                storage.set("teclear.monedas", String(S.coins));
+                storage.setJSON("teclear.estilos", S.owned);
+                storage.set("teclear.estilo", S.equipped);
+                storage.setJSON("teclear.fondos", S.ownedBgs);
+                storage.setJSON("teclear.extras", S.ownedExtras);
+                storage.setJSON("teclear.extrasOn", S.extraOn);
+                storage.set("teclear.picante", S.extraOn.picante ? "1" : "0");
+                storage.setJSON("teclear.efectosTecleo", S.ownedFx);
+                storage.set("teclear.efectoTecleo", S.fxEquipped);
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -1924,14 +1915,14 @@ export function initTeclear() {
         // almacenamiento falla, a cero. Nunca bajan de 0.
         function loadCandy() {
             try {
-                caramelos = parseInt(localStorage.getItem("teclear.caramelos") || "0", 10) || 0;
-            } catch (e) { caramelos = 0; }
-            if (caramelos < 0) caramelos = 0;
+                S.caramelos = parseInt(storage.get("teclear.caramelos") || "0", 10) || 0;
+            } catch (e) { S.caramelos = 0; }
+            if (S.caramelos < 0) S.caramelos = 0;
         }
 
         function saveCandy() {
             try {
-                localStorage.setItem("teclear.caramelos", String(caramelos));
+                storage.set("teclear.caramelos", String(S.caramelos));
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -1944,10 +1935,10 @@ export function initTeclear() {
         // con 0 caramelos en el modo Encantado NO mueve el número.
         function giveCandy(n) {
             if (!n) return;
-            const antes = Math.max(0, caramelos);
-            caramelos = Math.max(0, caramelos + n);
+            const antes = Math.max(0, S.caramelos);
+            S.caramelos = Math.max(0, S.caramelos + n);
             // La partida actual apunta el saldo neto para los resultados
-            if (state === "playing") candyRun += caramelos - antes;
+            if (S.state === "playing") S.candyRun += S.caramelos - antes;
             saveCandy();
         }
 
@@ -1956,17 +1947,17 @@ export function initTeclear() {
         // monedas); el resto, en monedas. El Administrador no gasta.
         function cobra(item) {
             const ev = !!item.event;
-            const saldo = ev ? caramelos : coins;
+            const saldo = ev ? S.caramelos : S.coins;
             if (!esAdmin() && saldo < item.price) {
-                shopMsgTxt = ev ? t("shopNoCandy") : t("shopNoMoney");
+                S.shopMsgTxt = ev ? t("shopNoCandy") : t("shopNoMoney");
                 return false;
             }
             if (esAdmin()) return true;
             if (ev) {
-                caramelos = Math.max(0, caramelos - item.price);   // se pagan en caramelos
+                S.caramelos = Math.max(0, S.caramelos - item.price);   // se pagan en caramelos
                 saveCandy();
             } else {
-                coins -= item.price;                              // se pagan en monedas
+                S.coins -= item.price;                              // se pagan en monedas
             }
             return true;
         }
@@ -1974,8 +1965,8 @@ export function initTeclear() {
         // Otorga monedas por cada palabra completada sin errores.
         // La cantidad sube con la racha (x1 … x5), igual que los puntos
         function giveCoins(n) {
-            coins += n;
-            coinsRun += n;
+            S.coins += n;
+            S.coinsRun += n;
             // Logro «Shinyy»: cuenta el dinero ganado en TOTAL, sumando lo
             // que entra (gastar en la tienda no resta del progreso)
             achAdd("shinyy", n);
@@ -1991,60 +1982,60 @@ export function initTeclear() {
 
         // Aplica el estilo equipado al tablero y a la entrada
         function applyStyle() {
-            const st = styleById(equipped);
+            const st = styleById(S.equipped);
             FONT_STYLES.forEach(s => document.body.classList.remove(s.cls));
             document.body.classList.add(st.cls);
         }
 
         function setEquipped(id) {
-            if (!owned.includes(id)) return;
-            equipped = id;
+            if (!S.owned.includes(id)) return;
+            S.equipped = id;
             saveShop();
             applyStyle();
             invSay(t("shopEquippedMsg"));
         }
 
         function buyStyle(st) {
-            if (owned.includes(st.id)) return;   // ya está en el Inventario
+            if (S.owned.includes(st.id)) return;   // ya está en el Inventario
             // Los estilos ganados con un logro no se compran con monedas
             if (st.ach) {
-                shopMsgTxt = t("achNeed");
+                S.shopMsgTxt = t("achNeed");
                 return;
             }
-            if (!esAdmin() && coins < st.price) {
-                shopMsgTxt = t("shopNoMoney");
+            if (!esAdmin() && S.coins < st.price) {
+                S.shopMsgTxt = t("shopNoMoney");
                 return;
             }
-            if (!esAdmin()) coins -= st.price;   // el Administrador no gasta
-            owned.push(st.id);
+            if (!esAdmin()) S.coins -= st.price;   // el Administrador no gasta
+            S.owned.push(st.id);
             // La compra solo DESBLOQUEA: quién se pone se elige en el Inventario
             saveShop();
-            shopMsgTxt = t("shopBought");
+            S.shopMsgTxt = t("shopBought");
         }
 
         // ---------- Extras de juego (picante, caos, php…) ----------
         // Cada extra comprado pasa a ser una variante del modo Tecleo y se
         // elige en el menú desplegable de al lado del botón "⌨️ Tecleo".
         function ownsExtra(id) {
-            return ownedExtras.includes(id);
+            return S.ownedExtras.includes(id);
         }
 
         function extraActive(id) {
             // Los extras de la tienda son variantes del modo Tecleo: fuera de
             // él no actúan (ni en Adivinar, ni en Imágenes, ni en Aventura,
             // ni en Supervivencia), aunque sigan elegidos en el menú
-            if (mode !== "type") return false;
+            if (S.mode !== "type") return false;
             if (!ownsExtra(id)) return false;
             // Durante una partida el Modo Al azar manda sobre extraOn
             if (extraRun) return !!extraRun[id];
-            return !!extraOn[id];
+            return !!S.extraOn[id];
         }
 
         // Extra elegido en el desplegable ("", si se juega al Tecleo clásico).
         // Manda el gusto guardado (extraOn), no si ahora actúa: el menú sigue
         // enseñando la variante elegida aunque el modo actual no sea Tecleo.
         function activeExtraId() {
-            const x = EXTRAS.find(e => ownsExtra(e.id) && extraOn[e.id]);
+            const x = EXTRAS.find(e => ownsExtra(e.id) && S.extraOn[e.id]);
             return x ? x.id : "";
         }
 
@@ -2054,14 +2045,14 @@ export function initTeclear() {
         // solo dan caramelos. Se elige en el desplegable de al lado del
         // botón "🛡️ Supervivencia", igual que las variantes de Tecleo.
         function encOn() {
-            return mode === "supervivencia" && supVariant === "encantado";
+            return S.mode === "supervivencia" && S.supVariant === "encantado";
         }
 
         function setSupVariant(v) {
-            if (state === "playing") return;
-            supVariant = (v === "encantado" && halloweenOn()) ? "encantado" : "clasico";
+            if (S.state === "playing") return;
+            S.supVariant = (v === "encantado" && halloweenOn()) ? "encantado" : "clasico";
             try {
-                localStorage.setItem("teclear.supVariante", supVariant);
+                storage.set("teclear.supVariante", S.supVariant);
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -2073,12 +2064,12 @@ export function initTeclear() {
         }
 
         function setExtra(id, on) {
-            if (!ownsExtra(id) || state === "playing") return;
+            if (!ownsExtra(id) || S.state === "playing") return;
             // Solo una variante activa: usar una apaga las demás
             if (on) {
-                EXTRAS.forEach(x => extraOn[x.id] = (x.id === id));
+                EXTRAS.forEach(x => S.extraOn[x.id] = (x.id === id));
             } else {
-                extraOn[id] = false;
+                S.extraOn[id] = false;
             }
             saveShop();
             applyExtras();
@@ -2089,22 +2080,22 @@ export function initTeclear() {
         // Solo puede haber una variante de Tecleo activa a la vez: al elegir
         // una en el menú se apagan las demás
         function chooseExtra(id) {
-            if (state === "playing") return;
-            EXTRAS.forEach(x => extraOn[x.id] = (x.id === id));
+            if (S.state === "playing") return;
+            EXTRAS.forEach(x => S.extraOn[x.id] = (x.id === id));
             saveShop();
             applyExtras();
             const x = EXTRAS.find(e => e.id === id);
-            shopMsgTxt = x ? t(x.msgOn) : t("modeClassicMsg");
+            S.shopMsgTxt = x ? t(x.msgOn) : t("modeClassicMsg");
         }
 
         function buyExtra(x) {
             if (ownsExtra(x.id)) return;   // ya está en el Inventario
             if (!cobra(x)) return;
-            ownedExtras.push(x.id);
+            S.ownedExtras.push(x.id);
             // La compra solo DESBLOQUEA: activarla se hace en el Inventario
             saveShop();
             applyExtras();     // el nuevo extra entra en el menú de variantes
-            shopMsgTxt = t(x.msgBuy);
+            S.shopMsgTxt = t(x.msgBuy);
         }
 
         // ---------- Efectos de tecleo (chispas con cada letra) ----------
@@ -2113,12 +2104,12 @@ export function initTeclear() {
         }
 
         function ownsFx(id) {
-            return !!id && ownedFx.includes(id);
+            return !!id && S.ownedFx.includes(id);
         }
 
         // El efecto comprado y puesto en uso (null si no hay ninguno)
         function activeFx() {
-            const f = fxById(fxEquipped);
+            const f = fxById(S.fxEquipped);
             return f && ownsFx(f.id) ? f : null;
         }
 
@@ -2126,29 +2117,29 @@ export function initTeclear() {
         // resplandor del campo de entrada y las tarjetas de la tienda
         function applyFx() {
             TYPE_EFFECTS.forEach(f => {
-                document.body.classList.toggle("fx-" + f.id, !!activeFx() && fxEquipped === f.id);
+                document.body.classList.toggle("fx-" + f.id, !!activeFx() && S.fxEquipped === f.id);
             });
         }
 
         // Pone un efecto en uso (id vacío lo apaga); solo uno a la vez.
         // Como la tienda ya no selecciona, esta acción vive en el Inventario
         function setFx(id) {
-            if (state === "playing") return;
+            if (S.state === "playing") return;
             if (id && !ownsFx(id)) return;
-            fxEquipped = id || "";
+            S.fxEquipped = id || "";
             saveShop();
             applyFx();
-            invSay(t(fxEquipped ? "shopEquippedFxMsg" : "shopDeactivatedFxMsg"));
+            invSay(t(S.fxEquipped ? "shopEquippedFxMsg" : "shopDeactivatedFxMsg"));
         }
 
         function buyFx(f) {
             // Los efectos ganados con un logro no se compran con monedas
             if (f.ach || ownsFx(f.id)) return;   // ya está en el Inventario
             if (!cobra(f)) return;
-            ownedFx.push(f.id);
+            S.ownedFx.push(f.id);
             // La compra solo DESBLOQUEA: ponerlo en uso se hace en el Inventario
             saveShop();
-            shopMsgTxt = t("shopBoughtFx");
+            S.shopMsgTxt = t("shopBoughtFx");
         }
 
         // ---------- Evento de Halloween: temática y tienda de evento ----------
@@ -2162,13 +2153,13 @@ export function initTeclear() {
         // Viste de Halloween la página según la fecha (barra de evento,
         // caramelos y tienda de evento las muestra Svelte leyendo G.halloween)
         function applyHalloween() {
-            halloween = halloweenOn();
-            document.body.classList.toggle("halloween", halloween);
+            S.halloween = halloweenOn();
+            document.body.classList.toggle("halloween", S.halloween);
             // Al acabar el evento desaparece la variante Encantada del menú
-            if (supVariant === "encantado" && !halloween && state !== "playing") {
-                supVariant = "clasico";
+            if (S.supVariant === "encantado" && !S.halloween && S.state !== "playing") {
+                S.supVariant = "clasico";
             }
-            if (halloween) {
+            if (S.halloween) {
                 tickHalloween();
                 // Si el evento termina con la página abierta, la barra y la
                 // tienda de evento se cierran solas en el próximo segundo
@@ -2191,13 +2182,13 @@ export function initTeclear() {
             const h = Math.floor((ms % 86400000) / 3600000);
             const m = Math.floor((ms % 3600000) / 60000);
             const s = Math.floor((ms % 60000) / 1000);
-            eventCountTxt = "⏳ " + d + "d " + h + "h " + m + "m " + s + "s";
+            S.eventCountTxt = "⏳ " + d + "d " + h + "h " + m + "m " + s + "s";
         }
 
         function toggleShop() {
-            if (state === "playing") return;
-            shopOpen = !shopOpen;
-            if (shopOpen) shopMsgTxt = "";
+            if (S.state === "playing") return;
+            S.shopOpen = !S.shopOpen;
+            if (S.shopOpen) S.shopMsgTxt = "";
         }
 
         // ---------- Logros: progreso, recompensas y panel ----------
@@ -2206,30 +2197,30 @@ export function initTeclear() {
         // no está a la venta en la tienda, solo se gana jugando.
         function achLoad() {
             try {
-                const raw = JSON.parse(localStorage.getItem("teclear.logros") || "null");
-                if (raw && typeof raw === "object") achData = raw;
+                const raw = storage.getJSON("teclear.logros", null);
+                if (raw && typeof raw === "object") S.achData = raw;
             } catch (e) { /* sin almacenamiento disponible */ }
 
             // Solo se admiten logros conocidos, con números dentro de su rango
             const limpio = {};
             ACHIEVEMENTS.forEach(a => {
-                const d = achData[a.id] || {};
+                const d = S.achData[a.id] || {};
                 const hecho = !!d.done;
                 let p = (typeof d.p === "number" && isFinite(d.p)) ? Math.floor(d.p) : 0;
                 p = Math.max(0, Math.min(a.goal, p));
                 limpio[a.id] = { p: hecho ? a.goal : p, done: hecho };
             });
-            achData = limpio;
+            S.achData = limpio;
             achSave();
             // Un logro completado que hubiera perdido su recompensa la recupera
             ACHIEVEMENTS.forEach(a => {
-                if (achData[a.id].done) grantAchReward(a, true);
+                if (S.achData[a.id].done) grantAchReward(a, true);
             });
         }
 
         function achSave() {
             try {
-                localStorage.setItem("teclear.logros", JSON.stringify(achData));
+                storage.setJSON("teclear.logros", S.achData);
             } catch (e) { /* sin almacenamiento disponible */ }
         }
 
@@ -2256,23 +2247,23 @@ export function initTeclear() {
             if (!r) return;
 
             if (r.type === "fx") {
-                const nuevo = !ownedFx.includes(r.id);
-                if (nuevo) ownedFx.push(r.id);
-                if (nuevo || !ownsFx(fxEquipped)) {
-                    fxEquipped = r.id;
+                const nuevo = !S.ownedFx.includes(r.id);
+                if (nuevo) S.ownedFx.push(r.id);
+                if (nuevo || !ownsFx(S.fxEquipped)) {
+                    S.fxEquipped = r.id;
                     saveShop();
                     applyFx();
                 }
             } else if (r.type === "font") {
-                if (!owned.includes(r.id)) {
-                    owned.push(r.id);
-                    equipped = r.id;    // recién ganado: sale aplicado
+                if (!S.owned.includes(r.id)) {
+                    S.owned.push(r.id);
+                    S.equipped = r.id;    // recién ganado: sale aplicado
                     saveShop();
                     applyStyle();
                 }
             } else if (r.type === "bg") {
-                if (!ownedBgs.includes(r.id)) {
-                    ownedBgs.push(r.id);
+                if (!S.ownedBgs.includes(r.id)) {
+                    S.ownedBgs.push(r.id);
                     saveShop();
                 }
             }
@@ -2302,7 +2293,7 @@ export function initTeclear() {
         // Sube el progreso de un logro y lo completa si llega a su meta
         function achAdd(id, n) {
             const ach = ACHIEVEMENTS.find(a => a.id === id);
-            const d = achData[id];
+            const d = S.achData[id];
             if (!ach || !d || d.done) return;
             achSetP(ach, d, d.p + n);
         }
@@ -2312,7 +2303,7 @@ export function initTeclear() {
         // se guarda el mejor intento.
         function achBest(id, p) {
             const ach = ACHIEVEMENTS.find(a => a.id === id);
-            const d = achData[id];
+            const d = S.achData[id];
             if (!ach || !d || d.done) return;
             if (p <= d.p) return;
             achSetP(ach, d, p);
@@ -2328,9 +2319,9 @@ export function initTeclear() {
         }
 
         function toggleLogros() {
-            if (state === "playing") return;
-            logrosOpen = !logrosOpen;
-            if (logrosOpen && logros.scrollIntoView) {
+            if (S.state === "playing") return;
+            S.logrosOpen = !S.logrosOpen;
+            if (S.logrosOpen && logros.scrollIntoView) {
                 // El panel queda por debajo: se lleva a la vista para que se note
                 logros.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
@@ -2338,8 +2329,8 @@ export function initTeclear() {
 
         // El panel de logros se cierra al empezar una partida
         function closeLogrosOnPlay() {
-            if (!logrosOpen) return;
-            logrosOpen = false;
+            if (!S.logrosOpen) return;
+            S.logrosOpen = false;
         }
 
         // ---------- Inventario: todo lo comprado y todo lo ganado ----------
@@ -2356,7 +2347,7 @@ export function initTeclear() {
         // Aviso del panel: los mensajes de «elegir artículo» van aquí (la
         // tienda se queda los de compra)
         function invSay(txt) {
-            invMsgTxt = txt;
+            S.invMsgTxt = txt;
         }
 
         // Devuelve la lista completa de artículos con su estado:
@@ -2366,12 +2357,12 @@ export function initTeclear() {
             const out = [];
 
             FONT_STYLES.forEach(s => {
-                if (!owned.includes(s.id)) return;
+                if (!S.owned.includes(s.id)) return;
                 out.push({
                     tipo: "font", id: s.id,
                     nombre: en ? s.en : s.es,
                     icono: "🔤", img: "", previewFont: s.font, cls: s.cls,
-                    enUso: equipped === s.id,
+                    enUso: S.equipped === s.id,
                     deLogro: !!s.ach, event: false,
                     // Un estilo nunca se apaga: siempre hay alguno puesto
                     usar: () => setEquipped(s.id), apagar: null
@@ -2379,7 +2370,7 @@ export function initTeclear() {
             });
 
             BACKGROUNDS.forEach(b => {
-                if (!ownedBgs.includes(b.id)) return;
+                if (!S.ownedBgs.includes(b.id)) return;
                 out.push({
                     tipo: "bg", id: b.id,
                     nombre: en ? b.en : b.es,
@@ -2387,7 +2378,7 @@ export function initTeclear() {
                     // Con el Modo Veyon, «General» e «Ia» enseñan la imagen de
                     // repuesto, igual que en la tienda y en el selector
                     img: veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
-                    enUso: bg === b.id,
+                    enUso: S.bg === b.id,
                     deLogro: !!b.ach, event: !!b.event,
                     // Igual que los estilos: siempre hay un fondo puesto
                     usar: () => setBgEquipped(b.id), apagar: null
@@ -2395,12 +2386,12 @@ export function initTeclear() {
             });
 
             EXTRAS.forEach(x => {
-                if (!ownedExtras.includes(x.id)) return;
+                if (!S.ownedExtras.includes(x.id)) return;
                 out.push({
                     tipo: "extra", id: x.id,
                     nombre: en ? x.en : x.es,
                     icono: x.icon, img: "",
-                    enUso: !!extraOn[x.id],
+                    enUso: !!S.extraOn[x.id],
                     deLogro: !!x.ach, event: !!x.event,
                     // Un extra sí se apaga: vuelve el Tecleo clásico
                     usar: () => setExtra(x.id, true),
@@ -2409,12 +2400,12 @@ export function initTeclear() {
             });
 
             TYPE_EFFECTS.forEach(f => {
-                if (!ownedFx.includes(f.id)) return;
+                if (!S.ownedFx.includes(f.id)) return;
                 out.push({
                     tipo: "fx", id: f.id,
                     nombre: en ? f.en : f.es,
                     icono: f.icon, img: "", art: f.art,
-                    enUso: fxEquipped === f.id,
+                    enUso: S.fxEquipped === f.id,
                     deLogro: !!f.ach, event: !!f.event,
                     // Un efecto también se apaga: sin chispas al teclear
                     usar: () => setFx(f.id),
@@ -2426,10 +2417,10 @@ export function initTeclear() {
         }
 
         function toggleInv() {
-            if (state === "playing") return;
-            invOpen = !invOpen;
-            if (invOpen) {
-                invMsgTxt = "";   // aviso de la acción anterior
+            if (S.state === "playing") return;
+            S.invOpen = !S.invOpen;
+            if (S.invOpen) {
+                S.invMsgTxt = "";   // aviso de la acción anterior
                 // El panel queda por debajo: se lleva a la vista para que se note
                 if (inventario.scrollIntoView) {
                     inventario.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -2439,8 +2430,8 @@ export function initTeclear() {
 
         // El panel de inventario se cierra al empezar una partida
         function closeInvOnPlay() {
-            if (!invOpen) return;
-            invOpen = false;
+            if (!S.invOpen) return;
+            S.invOpen = false;
         }
 
         // ---------- Idioma y modo ----------
@@ -2453,39 +2444,39 @@ export function initTeclear() {
 
             // En Aventura no se juega con fondos: el cuerpo lleva el fondo
             // propio del modo (sin habilidad)
-            const sinFondos = mode === "aventura";
+            const sinFondos = S.mode === "aventura";
             BACKGROUNDS.forEach(b => {
-                document.body.classList.toggle("bg-" + b.id, !sinFondos && bg === b.id);
+                document.body.classList.toggle("bg-" + b.id, !sinFondos && S.bg === b.id);
             });
             document.body.classList.toggle("bg-aventura", sinFondos);
-            syncLetterSoup(!sinFondos && bg === "sopa");   // letras rebotando solo con ese fondo
-            syncHacker(!sinFondos && bg === "hacker");     // binario verde solo con ese fondo
+            syncLetterSoup(!sinFondos && S.bg === "sopa");   // letras rebotando solo con ese fondo
+            syncHacker(!sinFondos && S.bg === "hacker");     // binario verde solo con ese fondo
 
-            best = loadBest();
-            bestWords = loadBestWords();
+            S.best = loadBest();
+            S.bestWords = loadBestWords();
             applyExtras();   // acento de color de los extras activos
 
             // Textos según el estado actual de la partida
-            if (state === "idle") {
-                statusTxt = t("statusIdle");
-                startTxt = t("btnStart");
-            } else if (state === "over") {
-                statusTxt = t("statusEnd");
-                startTxt = t("btnAgain");
+            if (S.state === "idle") {
+                S.statusTxt = t("statusIdle");
+                S.startTxt = t("btnStart");
+            } else if (S.state === "over") {
+                S.statusTxt = t("statusEnd");
+                S.startTxt = t("btnAgain");
             }
 
             applyHalloween();   // temática del evento (solo en Halloween)
         }
 
         function setLang(next) {
-            if (lang === next || state === "playing") return;
-            lang = next;
+            if (S.lang === next || S.state === "playing") return;
+            S.lang = next;
             applyLang();
         }
 
         function setMode(next) {
-            if (mode === next || state === "playing") return;
-            mode = next;
+            if (S.mode === next || S.state === "playing") return;
+            S.mode = next;
             applyLang();
         }
 
@@ -2494,10 +2485,10 @@ export function initTeclear() {
         // ---------- Fondo de pantalla ----------
         function setBg(next) {
             // La habilidad del fondo no se puede cambiar a mitad de partida
-            if (state === "playing" || bg === next || !ownedBgs.includes(next)) return;
-            bg = next;
+            if (S.state === "playing" || S.bg === next || !S.ownedBgs.includes(next)) return;
+            S.bg = next;
             try {
-                localStorage.setItem("teclear.fondo", bg);
+                storage.set("teclear.fondo", S.bg);
             } catch (e) { /* sin almacenamiento disponible */ }
             applyLang();
         }
@@ -2509,20 +2500,20 @@ export function initTeclear() {
         // vista, así que la habilidad de cada fondo sigue actuando.
         // ¿Este fondo se tapa con el Modo Veyon?
         function veyonHiddenBg(id) {
-            return veyon && VEYON_BGS.includes(id);
+            return S.veyon && VEYON_BGS.includes(id);
         }
 
         function applyVeyon() {
-            document.body.classList.toggle("veyon-on", veyon);
+            document.body.classList.toggle("veyon-on", S.veyon);
             // Icono de la ventana (pestaña): con el modo activo deja de
             // verse el de estesoTeclea y se pone el de repuesto
             document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')
-                .forEach(l => { l.href = veyon ? VEYON_FAVICON : imgLogo; });
+                .forEach(l => { l.href = S.veyon ? VEYON_FAVICON : imgLogo; });
         }
 
         function setVeyon(next) {
-            veyon = !!next;
-            setSetting("veyon", veyon);
+            S.veyon = !!next;
+            setSetting("veyon", S.veyon);
             applyVeyon();
         }
 
@@ -2828,27 +2819,27 @@ export function initTeclear() {
         });
 
         function setBgEquipped(id) {
-            if (state === "playing" || !ownedBgs.includes(id)) return;
-            bg = id;
+            if (S.state === "playing" || !S.ownedBgs.includes(id)) return;
+            S.bg = id;
             try {
-                localStorage.setItem("teclear.fondo", bg);
+                storage.set("teclear.fondo", S.bg);
             } catch (e) { /* sin almacenamiento disponible */ }
             applyLang();
             invSay(t("shopEquippedBgMsg"));
         }
 
         function buyBg(b) {
-            if (ownedBgs.includes(b.id)) return;   // ya está en el Inventario
+            if (S.ownedBgs.includes(b.id)) return;   // ya está en el Inventario
             // Los fondos ganados con un logro no se compran con monedas
             if (b.ach) {
-                shopMsgTxt = t("achNeed");
+                S.shopMsgTxt = t("achNeed");
                 return;
             }
             if (!cobra(b)) return;
-            ownedBgs.push(b.id);
+            S.ownedBgs.push(b.id);
             // La compra solo DESBLOQUEA: usarse se hace en el Inventario
             saveShop();
-            shopMsgTxt = t("shopBoughtBg");
+            S.shopMsgTxt = t("shopBoughtBg");
         }
 
         // ---------- Utilidades ----------
@@ -2856,18 +2847,18 @@ export function initTeclear() {
             // En el modo Aventura la dificultad sube más deprisa: con cada
             // palabra escrita toca antes una más larga y menos pistas.
             // La ventaja "remanso" descuenta palabras para que no suba tanto.
-            if (mode === "aventura") {
-                return 1 + Math.floor(Math.max(0, completed - advRelief) / 3);
+            if (S.mode === "aventura") {
+                return 1 + Math.floor(Math.max(0, S.completed - advRelief) / 3);
             }
             // En Supervivencia manda el RELOJ, no lo que se escribe: los
             // primeros segundos todo va muy despacio (nivel 1) y a partir de
             // ahí sube un nivel cada SUP_RAMP segundos, con lo que las
             // palabras caen más deprisa, tardan menos en recorrer el tablero
             // y caben más a la vez en pantalla.
-            if (mode === "supervivencia") {
+            if (S.mode === "supervivencia") {
                 return 1 + Math.floor(Math.max(0, supElapsed() - SUP_GRACE) / SUP_RAMP);
             }
-            return 1 + Math.floor(completed / 5);
+            return 1 + Math.floor(S.completed / 5);
         }
 
         // ---------- Modo Aventura ----------
@@ -2884,7 +2875,7 @@ export function initTeclear() {
         // deprisa justo cuando las palabras son más largas y valen menos.
         // En el resto de modos el reloj siempre va a velocidad normal.
         function tickSpeed() {
-            if (mode !== "aventura") return 1;
+            if (S.mode !== "aventura") return 1;
             const extra = (level() - 1) * ADV_SPEED_STEP;
             return Math.min(ADV_SPEED_MAX, 1 + extra);
         }
@@ -2949,7 +2940,7 @@ export function initTeclear() {
 
         // Suma segundos al cronómetro (palabras y ventajas del modo Aventura)
         function gainTime(sec) {
-            timeLeft += sec;
+            S.timeLeft += sec;
             advTimeGained += sec;
             showSeconds(sec);
         }
@@ -3013,16 +3004,16 @@ export function initTeclear() {
                 es: "Palabra regalada", en: "Free word",
                 descEs: "La palabra de delante se completa sola si no la tocas.", descEn: "The word in front of you completes itself if you leave it alone.",
                 apply: function () {
-                    const w = word;
+                    const w = S.word;
                     let intentos = 0;
                     // Espera a que se cierre la parada (una doble "doble
                     // elección" puede dejar la ventana abierta un rato)
                     const intento = function () {
-                        if (state !== "playing") return;
-                        if (perkOpen && intentos++ < 40) { setTimeout(intento, 300); return; }
-                        if (perkOpen) return;
-                        if (word !== w || typing.value.length > 0) return;
-                        statusTxt = t("statusFreeWord");
+                        if (S.state !== "playing") return;
+                        if (S.perkOpen && intentos++ < 40) { setTimeout(intento, 300); return; }
+                        if (S.perkOpen) return;
+                        if (S.word !== w || typing.value.length > 0) return;
+                        S.statusTxt = t("statusFreeWord");
                         completeWord();
                     };
                     setTimeout(intento, 600);
@@ -3047,7 +3038,7 @@ export function initTeclear() {
                 id: "racha", icon: "🔥",
                 es: "Racha +5", en: "Streak +5",
                 descEs: "Tu racha sube de golpe cinco palabras.", descEn: "Your streak jumps five words ahead.",
-                apply: function () { streak += 5; }
+                apply: function () { S.streak += 5; }
             },
             {
                 id: "corto", icon: "🛤️",
@@ -3065,7 +3056,7 @@ export function initTeclear() {
                 id: "remanso", icon: "🌊",
                 es: "Remanso", en: "Lull",
                 descEs: "Las próximas 12 palabras no cuentan para subir de nivel: bajan las palabras y sube el tiempo por palabra.", descEn: "The next 12 words don't count toward the level: easier words and more time each.",
-                apply: function () { advRelief += 12; advReliefFrom = completed; }
+                apply: function () { advRelief += 12; advReliefFrom = S.completed; }
             },
             {
                 id: "dorada", icon: "💎",
@@ -3078,7 +3069,7 @@ export function initTeclear() {
                 es: "Bolsa de monedas", en: "Coin pouch",
                 descEs: "Monedas al instante: diez veces tu racha actual (mínimo 20).", descEn: "Coins right away: ten times your current streak (at least 20).",
                 apply: function () {
-                    const n = Math.max(20, streak * 10);
+                    const n = Math.max(20, S.streak * 10);
                     giveCoins(n);
                     showCoin(n);
                 }
@@ -3106,28 +3097,28 @@ export function initTeclear() {
         // Abre la parada de la aventura: mientras el jugador elige, el reloj
         // no corre y la entrada de texto queda bloqueada.
         function openPerkChoice() {
-            if (state !== "playing") return;
+            if (S.state !== "playing") return;
             // Segunda ventaja de una parada doble ("doble elección"): la
             // ventana sigue abierta y solo hacen falta otras tres al azar
-            if (perkOpen) { perkOpts = sortPerks(); return; }
+            if (S.perkOpen) { S.perkOpts = sortPerks(); return; }
             advPicks = advExtraPick > 0 ? 2 : 1;
             advExtraPick = 0;
-            perkOpts = sortPerks();
-            perkOpen = true;
+            S.perkOpts = sortPerks();
+            S.perkOpen = true;
             pausedAt = Date.now();
             typing.blur();
-            statusTxt = t("perkTitle");
+            S.statusTxt = t("perkTitle");
         }
 
         // Aplica la ventaja elegida y devuelve el control al jugador
         function choosePerk(p) {
-            if (!perkOpen) return;
+            if (!S.perkOpen) return;
             const segunda = advPicks > 1;   // la parada deja otra ventaja más
             if (segunda) {
                 advPicks--;
             } else {
                 advPicks = 1;
-                perkOpen = false;
+                S.perkOpen = false;
                 pausedTotal += Date.now() - pausedAt;   // la pausa no cuenta como partida
                 pausedAt = 0;
             }
@@ -3135,10 +3126,10 @@ export function initTeclear() {
             const nombre = p.icon + " " + (uiLang() === "en" ? p.en : p.es);
             if (segunda) {
                 openPerkChoice();          // se sortean tres ventajas más
-                statusTxt = t("perkSecond") + nombre;
+                S.statusTxt = t("perkSecond") + nombre;
             } else {
                 typing.focus();
-                statusTxt = t("perkChosen") + nombre;
+                S.statusTxt = t("perkChosen") + nombre;
             }
             updateHud();   // refresca el tiempo y los efectos activos
         }
@@ -3162,7 +3153,7 @@ export function initTeclear() {
             if (extraActive("cubico")) propias.push(MINECRAFT_WORDS);
             // Modo Truco o trato (evento de Halloween): palabras terroríficas
             if (extraActive("truco")) {
-                propias.push(lang === "en" ? HALLOWEEN_WORDS.en : HALLOWEEN_WORDS.es);
+                propias.push(S.lang === "en" ? HALLOWEEN_WORDS.en : HALLOWEEN_WORDS.es);
             }
 
             let pool;
@@ -3173,7 +3164,7 @@ export function initTeclear() {
                 propias.forEach(l => { pool = pool.concat(l); });
                 return pool;
             }
-            const base = lang === "mur" ? MURCIANO_WORDS : WORDS[lang];
+            const base = S.lang === "mur" ? MURCIANO_WORDS : WORDS[S.lang];
             // Si hay alguna lista propia, la partida se juega con ella (y con
             // el idioma, para dar variedad), salvo que solo esté la lista propia
             if (propias.length) {
@@ -3187,7 +3178,7 @@ export function initTeclear() {
                 return pool;
             }
             if (!extraActive("picante")) return base;
-            const spicy = lang === "mur" ? PICANTE.es : PICANTE[lang];
+            const spicy = S.lang === "mur" ? PICANTE.es : PICANTE[S.lang];
             return Math.random() < 0.5 ? spicy : base;
         }
 
@@ -3237,19 +3228,19 @@ export function initTeclear() {
             let im;
             do {
                 im = pool[Math.floor(Math.random() * pool.length)];
-            } while (im === currentImg && pool.length > 1);
-            currentImg = im;
-            picErr = false;   // imagen nueva: de momento se confía en que cargue
+            } while (im === S.currentImg && pool.length > 1);
+            S.currentImg = im;
+            S.picErr = false;   // imagen nueva: de momento se confía en que cargue
             return imageWord(im);
         }
 
         function nextWord() {
-            if (mode === "imagen") return nextImageWord();
+            if (S.mode === "imagen") return nextImageWord();
             const list = wordPool();
             const lvl = level();
             let pool;
             // Ventaja "camino corto" del modo Aventura: palabras cortas
-            if (mode === "aventura" && advShort > 0) {
+            if (S.mode === "aventura" && advShort > 0) {
                 advShort--;
                 pool = list.filter(w => w.length <= 5);
             } else if (lvl <= 1) pool = list.filter(w => w.length <= 5);
@@ -3262,7 +3253,7 @@ export function initTeclear() {
             let w;
             do {
                 w = pool[Math.floor(Math.random() * pool.length)];
-            } while (w === word && pool.length > 1);
+            } while (w === S.word && pool.length > 1);
             // Modo Espejo: la palabra se pide del revés
             return extraActive("espejo") ? mirrorWord(w) : w;
         }
@@ -3270,8 +3261,8 @@ export function initTeclear() {
         function multiplier() {
             // Ventaja "racha dorada": mientras dura, el multiplicador se
             // queda clavado en su máximo aunque la racha se caiga
-            if (mode === "aventura" && performance.now() < advGold) return 5;
-            return Math.min(1 + Math.floor(streak / 4), 5);
+            if (S.mode === "aventura" && performance.now() < advGold) return 5;
+            return Math.min(1 + Math.floor(S.streak / 4), 5);
         }
 
         // ---------- Habilidades de los fondos ----------
@@ -3279,8 +3270,8 @@ export function initTeclear() {
         // mientras está equipado y mientras dura la partida.
         function bgPower(id) {
             // En el modo Aventura no actúa ningún fondo: el modo lleva el suyo
-            if (mode === "aventura") return false;
-            return bg === id && ownedBgs.includes(id);
+            if (S.mode === "aventura") return false;
+            return S.bg === id && S.ownedBgs.includes(id);
         }
 
         // Duración de la partida: el fondo Elprico regala 15 segundos extra
@@ -3292,12 +3283,12 @@ export function initTeclear() {
         // (nunca tantas como para completar la palabra de golpe)
         function soupGiven() {
             if (!bgPower("sopa")) return 0;
-            return Math.min(SOUP_GIVEN, Math.max(0, word.length - 1));
+            return Math.min(SOUP_GIVEN, Math.max(0, S.word.length - 1));
         }
 
         // Texto de la habilidad del fondo equipado (vacío si no tiene ninguna)
         function bgPowerDesc() {
-            const b = BACKGROUNDS.find(x => x.id === bg);
+            const b = BACKGROUNDS.find(x => x.id === S.bg);
             // Los fondos de decoración (Circuito, Hacker) no aportan nada:
             // son puro adorno ganado con un logro
             if (!b || b.decor || b.id === "dark") return "";
@@ -3309,22 +3300,22 @@ export function initTeclear() {
             const give = soupGiven();
             if (!give) return;
             const hidden = [];
-            for (let i = 0; i < mask.length; i++) {
-                if (mask[i] === "hidden") hidden.push(i);
+            for (let i = 0; i < S.mask.length; i++) {
+                if (S.mask[i] === "hidden") hidden.push(i);
             }
             // Se deja siempre alguna letra por descubrir: si no, la palabra
             // no podría completarse nunca en el modo adivinar
             const max = Math.min(give, hidden.length - 1);
-            for (let k = 0; k < max; k++) mask[hidden[k]] = "found";
+            for (let k = 0; k < max; k++) S.mask[hidden[k]] = "found";
         }
 
         // Modo tecleo: escribe por ti las primeras letras de la palabra
         function soupPrefill() {
             const give = soupGiven();
             if (!give) return;
-            typing.value = word.slice(0, give);
-            typedStr = typing.value;
-            prevLen = give;   // ya tecleadas: no suman golpes ni fallos
+            typing.value = S.word.slice(0, give);
+            S.typedStr = typing.value;
+            S.prevLen = give;   // ya tecleadas: no suman golpes ni fallos
         }
 
         // Oculta letras de la palabra según el nivel:
@@ -3351,11 +3342,11 @@ export function initTeclear() {
         function updateHud() {
             // (todo el HUD lo pinta Svelte leyendo G; el pulso repinta el
             // campo de Supervivencia, cuyas cajas se mueven a cada tick)
-            supTick++;
+            S.supTick++;
             // Logro «Hacker»: se anota la mejor puntuación de UNA partida.
             // Este es el sitio donde se refleja el marcador de todos los
             // modos, así que aquí se comprueba la meta de 10.000 puntos.
-            achBest("hacker", score);
+            achBest("hacker", S.score);
         }
 
         // ---------- Modo Supervivencia: palabras que bajan desde arriba ----------
@@ -3441,11 +3432,11 @@ export function initTeclear() {
         function supAim(it) {
             if (!it) return;
             supTarget = it;
-            word = it.w;                     // las recompensas trabajan sobre `word`
-            prevLen = it.typed;
-            typedStr = it.w.slice(0, it.typed);
-            typing.value = typedStr;
-            timeLeft = supLeft(it);
+            S.word = it.w;                     // las recompensas trabajan sobre `word`
+            S.prevLen = it.typed;
+            S.typedStr = it.w.slice(0, it.typed);
+            typing.value = S.typedStr;
+            S.timeLeft = supLeft(it);
             updateHud();
         }
 
@@ -3482,12 +3473,12 @@ export function initTeclear() {
         // experiencia (el modo se paga solo en la moneda del evento).
         function encReward() {
             encTyped++;
-            completed++;
-            streak++;
-            score += 10;
+            S.completed++;
+            S.streak++;
+            S.score += 10;
             giveCandy(ENC_CANDY_HIT);     // +1 caramelos por letra
             showCandy(ENC_CANDY_HIT);
-            statusTxt = t("encHit");
+            S.statusTxt = t("encHit");
         }
 
         // Una palabra ha llegado hasta el fondo del tablero: se pierde una
@@ -3495,17 +3486,17 @@ export function initTeclear() {
         function supEscape(it) {
             const escapada = it.w;
             supRemove(it);
-            supLives--;
+            S.supLives--;
             shake();
-            if (supLives <= 0) {
-                supLives = 0;
-                timeLeft = 0;
-                statusTxt = t("supFailEnd");
+            if (S.supLives <= 0) {
+                S.supLives = 0;
+                S.timeLeft = 0;
+                S.statusTxt = t("supFailEnd");
                 updateHud();
                 endGame();
                 return;
             }
-            statusTxt = t("supFail") + supLives + " ❤️ · " + t("supFell") + escapada;
+            S.statusTxt = t("supFail") + S.supLives + " ❤️ · " + t("supFell") + escapada;
             // En el hueco de la que se ha caído entra otra por arriba y se
             // apunta a ella
             supFillBoard();
@@ -3572,29 +3563,29 @@ export function initTeclear() {
                 val = val.slice(0, bad);
                 typing.value = val;
                 errors++;
-                streak = 0;
-                score = Math.max(0, score - 5);
+                S.streak = 0;
+                S.score = Math.max(0, S.score - 5);
                 shake();
                 // Modo Encantado: fallar cuesta CARAMELOS, pero el contador
                 // nunca baja de cero (con 0 caramelos no se mueve)
                 if (encOn()) {
-                    const perdidos = Math.min(ENC_CANDY_FAIL, Math.max(0, caramelos));
+                    const perdidos = Math.min(ENC_CANDY_FAIL, Math.max(0, S.caramelos));
                     if (perdidos > 0) {
                         giveCandy(-perdidos);
-                        statusTxt = t("encFail") + perdidos + t("encFailEnd");
+                        S.statusTxt = t("encFail") + perdidos + t("encFailEnd");
                     } else {
-                        statusTxt = t("encFailZero");
+                        S.statusTxt = t("encFailZero");
                     }
                 } else {
-                    statusTxt = t("statusError");
+                    S.statusTxt = t("statusError");
                 }
             } else {
-                if (val.length > prevLen) hits += val.length - prevLen;
-                statusTxt = t("statusOk");
+                if (val.length > S.prevLen) hits += val.length - S.prevLen;
+                S.statusTxt = t("statusOk");
             }
 
-            const antes = prevLen;
-            prevLen = val.length;
+            const antes = S.prevLen;
+            S.prevLen = val.length;
             tgt.typed = val.length;
             tgt.shotFrom = antes;   // desde dónde llegó esta ráfaga (retardo del blast)
             updateHud();
@@ -3671,15 +3662,15 @@ export function initTeclear() {
         // tablero (en Imágenes no hay letras, así que manda el campo de entrada)
         function fxAnchor() {
             let el = null;
-            if (mode === "imagen") {
+            if (S.mode === "imagen") {
                 el = null;
-            } else if (mode === "guess") {
+            } else if (S.mode === "guess") {
                 el = board.querySelector(".cursor");
                 if (!el) {
                     const ok = board.querySelectorAll(".ok");
                     el = ok.length ? ok[ok.length - 1] : null;
                 }
-            } else if (mode === "supervivencia") {
+            } else if (S.mode === "supervivencia") {
                 // La letra es la de la palabra APUNTADA (la que acaba de
                 // recibir el disparo, o la que está a punto de recibirlo)
                 const caja = supTarget &&
@@ -3687,7 +3678,7 @@ export function initTeclear() {
                 el = caja ? (caja.querySelector(".shot.blast") ||
                              caja.querySelector(".cursor")) : null;
             } else if (board.children.length) {
-                const i = Math.min(prevLen, board.children.length - 1);
+                const i = Math.min(S.prevLen, board.children.length - 1);
                 el = board.children[i < 0 ? 0 : i];
             }
             const r = (el || typing).getBoundingClientRect();
@@ -3697,7 +3688,7 @@ export function initTeclear() {
         // Estalla el efecto equipado en el punto de la letra recién tecleada
         function fxBurst() {
             const fx = activeFx();
-            if (!fx || state !== "playing") return;
+            if (!fx || S.state !== "playing") return;
             const a = fxAnchor();
             const n = fx.count;
             const life = fx.life || 800;
@@ -3751,17 +3742,17 @@ export function initTeclear() {
         // ---------- Ciclo de juego ----------
         function newWord() {
             typing.value = "";
-            typedStr = "";
-            prevLen = 0;
-            word = nextWord();
-            if (mode === "guess") {
-                mask = makeMask(word);
-                misses = 0;
-                wrongLetters = [];
+            S.typedStr = "";
+            S.prevLen = 0;
+            S.word = nextWord();
+            if (S.mode === "guess") {
+                S.mask = makeMask(S.word);
+                S.misses = 0;
+                S.wrongLetters = [];
                 soupReveal();    // letras que deja Sopa de Letras
-            } else if (mode === "type" || mode === "aventura") {
+            } else if (S.mode === "type" || S.mode === "aventura") {
                 soupPrefill();   // letras que deja Sopa de Letras
-            } else if (mode === "supervivencia") {
+            } else if (S.mode === "supervivencia") {
                 // La partida empieza con una sola palabra en pantalla: el
                 // resto van apareciendo según escribes (ya se apunta a esta)
                 supItems = [];
@@ -3778,14 +3769,14 @@ export function initTeclear() {
         // el modo Supervivencia desde supComplete() (que en lugar de pasar a
         // la siguiente palabra, la retira del tablero).
         function pagaPalabra() {
-            completed++;
-            streak++;
+            S.completed++;
+            S.streak++;
             // Logros: se anota la palabra recién escrita, ANTES de que
             // newWord() la cambie por la siguiente. El reto "Un poco de
             // pólvora" cuenta los «creeper» tecleados en el modo Tecleo
             // con el Modo Cúbico activo (también si sale del revés).
-            if (mode === "type" && extraActive("cubico")) {
-                const w = word.toLowerCase();
+            if (S.mode === "type" && extraActive("cubico")) {
+                const w = S.word.toLowerCase();
                 if (w === "creeper" || w === mirrorWord("creeper")) achAdd("polvo", 1);
             }
             // Logro «Speedrunner»: las palabras se cuentan dentro de una
@@ -3801,12 +3792,12 @@ export function initTeclear() {
             const mult = multiplier();
             // Habilidades del fondo: Ia triplica puntos y monedas en las
             // palabras largas (más de 7 letras) y General dobla las monedas
-            const largo = word.length > 7;
+            const largo = S.word.length > 7;
             const triple = bgPower("esteso") && largo;
             // Ventaja "puntos x2" del modo Aventura: solo durante su ventana
-            const x2 = (mode === "aventura" && performance.now() < advDouble) ? 2 : 1;
-            const points = word.length * 10 * mult * (triple ? SCORE_BOOST : 1) * x2;
-            score += points;
+            const x2 = (S.mode === "aventura" && performance.now() < advDouble) ? 2 : 1;
+            const points = S.word.length * 10 * mult * (triple ? SCORE_BOOST : 1) * x2;
+            S.score += points;
             showPoints(points);
             // Monedas al estilo experiencia: la racha multiplica lo que ganas.
             // Cada palabra sin errores paga 1 moneda por cada nivel de racha
@@ -3815,16 +3806,16 @@ export function initTeclear() {
                 (triple ? SCORE_BOOST : 1) *
                 (bgPower("franco") ? 2 : 1) *
                 // Ventaja "monedas dobles": solo durante su ventana
-                ((mode === "aventura" && performance.now() < advCoins) ? 2 : 1) *
+                ((S.mode === "aventura" && performance.now() < advCoins) ? 2 : 1) *
                 // Modo Truco o trato (evento de Halloween): DOBLE de monedas
                 (extraActive("truco") ? 2 : 1);
             giveCoins(coinGain);
             showCoin(coinGain);
             // Modo Supervivencia: cada palabra disparada paga su experiencia
             // en caliente (el total se confirma al acabar la partida)
-            if (mode === "supervivencia") showXp(SUP_XP_WORD + Math.floor(points / 10));
+            if (S.mode === "supervivencia") showXp(SUP_XP_WORD + Math.floor(points / 10));
             // Modo Aventura: cada palabra regala segundos al cronómetro
-            if (mode === "aventura") gainTime(timePerWord());
+            if (S.mode === "aventura") gainTime(timePerWord());
         }
 
         function completeWord() {
@@ -3833,9 +3824,9 @@ export function initTeclear() {
             // ... y llegado el momento hay una parada para elegir una ventaja.
             // Cada parada alarga el hueco siguiente: al principio cada 5
             // palabras y después cada vez más.
-            if (mode === "aventura" && completed >= advNextPerk) {
+            if (S.mode === "aventura" && S.completed >= advNextPerk) {
                 advStops++;
-                advNextPerk = completed + perkEvery();
+                advNextPerk = S.completed + perkEvery();
                 openPerkChoice();
             }
         }
@@ -3844,37 +3835,37 @@ export function initTeclear() {
         //  en el bloque del modo Supervivencia)
 
         function startGame() {
-            if (state === "playing") return;
+            if (S.state === "playing") return;
 
-            state = "playing";
-            score = 0;
-            streak = 0;
+            S.state = "playing";
+            S.score = 0;
+            S.streak = 0;
             hits = 0;
             errors = 0;
-            completed = 0;
-            prevLen = 0;
-            misses = 0;
-            wrongLetters = [];
+            S.completed = 0;
+            S.prevLen = 0;
+            S.misses = 0;
+            S.wrongLetters = [];
             ttXpLoss = 0;   // experiencia robada por fallos (Truco o trato)
             encTyped = 0;   // letras acertadas del modo Encantado (si se juega)
-            candyRun = 0;   // caramelos ganados en esta partida
+            S.candyRun = 0;   // caramelos ganados en esta partida
             // El modo Aventura se juega contra un cronómetro propio: 50 s
             // En Supervivencia el reloj es el de la palabra apuntada
-            timeLeft = mode === "aventura" ? ADV_TIME :
-                (mode === "supervivencia" ? supWordTime() : gameTime());
-            coinsRun = 0;
+            S.timeLeft = S.mode === "aventura" ? ADV_TIME :
+                (S.mode === "supervivencia" ? supWordTime() : gameTime());
+            S.coinsRun = 0;
             // Modo Supervivencia: se empieza con todas las vidas y con una
             // sola palabra en pantalla (las demás van apareciendo) y el
             // tablero se ensancha para el campo de juego
-            supLives = SUP_LIVES;
+            S.supLives = SUP_LIVES;
             supItems = [];
             supTarget = null;
             // El reloj de la dificultad arranca aquí: los primeros segundos
             // las palabras bajan muy despacio y a partir de ahí se aceleran
             supStartAt = Date.now();
-            document.body.classList.toggle("modo-supervivencia", mode === "supervivencia");
+            document.body.classList.toggle("modo-supervivencia", S.mode === "supervivencia");
             // Estado del modo Aventura: ventajas y pausas a cero
-            perkOpen = false;
+            S.perkOpen = false;
             pausedTotal = 0;
             pausedAt = 0;
             advShield = 0;
@@ -3893,7 +3884,7 @@ export function initTeclear() {
             advExtraPick = 0;
             advStops = 0;             // aún no se ha parado a elegir ventaja
             advNextPerk = ADV_EVERY;  // primera parada: a las 5 palabras
-            perkOpts = [];
+            S.perkOpts = [];
             // Telemetría anti-automatización: se reinicia en cada partida
             keyStamps = [];
             inputEvents = 0;
@@ -3906,15 +3897,15 @@ export function initTeclear() {
             srAt = 0;
             srWords = 0;
 
-            if (shopOpen) { // la tienda se cierra al empezar
-                shopOpen = false;
+            if (S.shopOpen) { // la tienda se cierra al empezar
+                S.shopOpen = false;
             }
             closeLogrosOnPlay();   // el panel de logros también
             closeInvOnPlay();      // el panel de inventario también
             closeAccountOnPlay();   // el panel de perfil también
 
-            resOpen = false;
-            startTxt = t("btnRestart");
+            S.resOpen = false;
+            S.startTxt = t("btnRestart");
 
             // Modo Al azar: se sortean los extras de ESTA partida y se
             // muestran en el tablero antes de que salga la primera palabra
@@ -3934,26 +3925,26 @@ export function initTeclear() {
             }
 
             typing.value = "";
-            typedStr = "";
+            S.typedStr = "";
             typing.focus();
-            statusTxt =
-                mode === "imagen" ? t("statusPlayI") :
-                mode === "guess" ? t("statusPlayG") :
-                mode === "aventura" ? t("statusPlayA") :
-                mode === "supervivencia" ? t("statusPlayS") :
-                (lang === "mur" && mode === "type") ? t("statusPlayM") : t("statusPlay");
-            if (azarTxt) statusTxt = azarTxt;
+            S.statusTxt =
+                S.mode === "imagen" ? t("statusPlayI") :
+                S.mode === "guess" ? t("statusPlayG") :
+                S.mode === "aventura" ? t("statusPlayA") :
+                S.mode === "supervivencia" ? t("statusPlayS") :
+                (S.lang === "mur" && S.mode === "type") ? t("statusPlayM") : t("statusPlay");
+            if (azarTxt) S.statusTxt = azarTxt;
             // Modo Truco o trato (evento de Halloween): se avisan sus reglas
             // (doble de monedas, pero doble castigo por tecla fallada)
-            if (extraActive("truco")) statusTxt = t("statusTruco");
+            if (extraActive("truco")) S.statusTxt = t("statusTruco");
             // Aviso de la habilidad que aporta el fondo equipado
             // (en Aventura no actúa ningún fondo: el modo lleva el suyo)
             const poder = bgPowerDesc();
-            if (poder && mode !== "aventura") {
-                statusTxt += " · " + poder;
+            if (poder && S.mode !== "aventura") {
+                S.statusTxt += " · " + poder;
             }
             // Modo Encantado (evento): sus reglas mandan sobre los avisos previos
-            if (encOn()) statusTxt = t("encStart");
+            if (encOn()) S.statusTxt = t("encStart");
             lastTick = performance.now();
 
             newWord();
@@ -3966,7 +3957,7 @@ export function initTeclear() {
         function tick() {
             const now = performance.now();
             // Modo Aventura: mientras se elige ventaja el reloj no corre…
-            if (perkOpen) {
+            if (S.perkOpen) {
                 lastTick = now;
                 return;
             }
@@ -3979,7 +3970,7 @@ export function initTeclear() {
             // En Supervivencia todas las palabras bajan a la vez: la que
             // llegue hasta el fondo del tablero se cae (una vida menos) hasta
             // acabar la partida
-            if (mode === "supervivencia") {
+            if (S.mode === "supervivencia") {
                 const dt = (now - lastTick) / 1000 * supSpeed();
                 lastTick = now;
                 // Se recorre una copia: al caerse puede entrar otra palabra
@@ -3990,31 +3981,31 @@ export function initTeclear() {
                     it.y += dt / Math.max(0.5, it.span);
                     if (it.y >= 1) {
                         supEscape(it);
-                        if (state !== "playing") return;      // sin vidas: fin
+                        if (S.state !== "playing") return;      // sin vidas: fin
                     }
                 }
                 // El reloj del HUD marca lo que le falta a la palabra apuntada
-                timeLeft = supTarget ? supLeft(supTarget) : 0;
+                S.timeLeft = supTarget ? supLeft(supTarget) : 0;
                 updateHud();
                 return;
             }
             // En Aventura el reloj va acelerando con el nivel: el tiempo que
             // queda se consume cada vez más deprisa (velocidad normal en el
             // resto de modos, donde tickSpeed() devuelve 1)
-            timeLeft -= (now - lastTick) / 1000 * tickSpeed();
+            S.timeLeft -= (now - lastTick) / 1000 * tickSpeed();
             lastTick = now;
             // Ventaja "salvavidas": el cronómetro no muere de golpe, salta a 15 s
-            if (timeLeft <= 0 && advRevive > 0) {
+            if (S.timeLeft <= 0 && advRevive > 0) {
                 advRevive--;
-                const salvado = Math.max(1, 15 - timeLeft);
-                timeLeft += salvado;
+                const salvado = Math.max(1, 15 - S.timeLeft);
+                S.timeLeft += salvado;
                 advTimeGained += salvado;
                 showSeconds(Math.round(salvado));
-                statusTxt = t("statusRevive");
+                S.statusTxt = t("statusRevive");
             }
 
-            if (timeLeft <= 0) {
-                timeLeft = 0;
+            if (S.timeLeft <= 0) {
+                S.timeLeft = 0;
                 updateHud();
                 endGame();
                 return;
@@ -4030,7 +4021,7 @@ export function initTeclear() {
             gameDuration = gameStartAt > 0
                 ? Math.max(0, (Date.now() - gameStartAt - pausedTotal) / 1000)
                 : gameTime();
-            state = "over";
+            S.state = "over";
             // El tablero de Supervivencia se retira: palabras, apuntado y
             // la pantalla grande vuelven a su sitio hasta la próxima partida
             supItems = [];
@@ -4038,34 +4029,34 @@ export function initTeclear() {
             supStartAt = 0;
             document.body.classList.remove("modo-supervivencia");
             // Por si se termina con la ventana de ventajas abierta
-            if (perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
-            perkOpen = false;
-            perkOpts = [];
+            if (S.perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
+            S.perkOpen = false;
+            S.perkOpts = [];
             pausedAt = 0;
             // Modo Al azar: al acabar se olvida lo sorteado en esta partida
             if (extraRun) {
                 extraRun = null;
                 applyExtras();
             }
-            startTxt = t("btnAgain");
+            S.startTxt = t("btnAgain");
 
             const total = hits + errors;
             const acc = total === 0 ? 100 : Math.round((hits / total) * 100);
             // Los ppm se calculan sobre lo que duró de verdad la partida
             // (Aventura y Supervivencia no tienen duración fija: usan la real)
-            const fija = mode === "aventura" || mode === "supervivencia";
+            const fija = S.mode === "aventura" || S.mode === "supervivencia";
             const dur = (fija && gameDuration > 0) ? gameDuration : gameTime();
-            const ppm = completed / (dur / 60);
+            const ppm = S.completed / (dur / 60);
 
-            const newScoreRecord = score > best;
-            const newWordsRecord = completed > bestWords;
+            const newScoreRecord = S.score > S.best;
+            const newWordsRecord = S.completed > S.bestWords;
 
             if (newScoreRecord) {
-                best = score;
+                S.best = S.score;
                 saveBest();
             }
             if (newWordsRecord) {
-                bestWords = completed;
+                S.bestWords = S.completed;
                 saveBestWords();
             }
 
@@ -4078,7 +4069,7 @@ export function initTeclear() {
                 msg = t("msgWordsRecord");
             } else if (acc >= 95) {
                 msg = t("msgAcc");
-            } else if (completed >= 20) {
+            } else if (S.completed >= 20) {
                 msg = t("msgRhythm");
             } else {
                 msg = t("msgRetry");
@@ -4091,10 +4082,10 @@ export function initTeclear() {
             // El modo Encantado no da NI experiencia NI monedas: su partida
             // se cobra solo en caramelos (dar 0 XP lo garantiza aquí mismo)
             const xpGain = encOn() ? 0 : Math.max(0,
-                completed * 10 + Math.floor(score / 10) - ttXpLoss);
-            xp += xpGain;
-            gamesPlayed += 1;
-            wordsTotal += completed;
+                S.completed * 10 + Math.floor(S.score / 10) - ttXpLoss);
+            S.xp += xpGain;
+            S.gamesPlayed += 1;
+            S.wordsTotal += S.completed;
             saveProfileStats();
 
             // Guardado automático del perfil en cada partida terminada
@@ -4102,30 +4093,30 @@ export function initTeclear() {
 
             // Formulario para apuntar la puntuación en el ranking global
             savedScore = false;
-            rankBusy = false;
-            rankMsgTxt = "";
-            rankMsgOff = false;
-            if (score > 0) newVerifyCode();   // código nuevo para cada puntuación
+            S.rankBusy = false;
+            S.rankMsgTxt = "";
+            S.rankMsgOff = false;
+            if (S.score > 0) newVerifyCode();   // código nuevo para cada puntuación
             // Sin cuenta no hay nombre que escribir: se pide crear un perfil
-            if (accOpen) closeAccount();   // los resultados se ven sin el panel encima
+            if (S.accOpen) closeAccount();   // los resultados se ven sin el panel encima
 
             // Todo el panel de resultados lo lee Svelte desde este resumen
-            res = {
-                score: score,
-                words: completed,
+            S.res = {
+                score: S.score,
+                words: S.completed,
                 acc: acc,
                 ppm: Math.round(ppm),
-                coins: coinsRun,
+                coins: S.coinsRun,
                 // Los caramelos solo se enseñan mientras dura el evento
-                candy: candyRun,
+                candy: S.candyRun,
                 xp: xpGain,
-                best: bestWords,
+                best: S.bestWords,
                 msg: msg,
                 record: newScoreRecord || newWordsRecord
             };
-            statusTxt = t("statusEnd");
+            S.statusTxt = t("statusEnd");
             typing.blur();
-            resOpen = true;
+            S.resOpen = true;
         }
 
         // ---------- Modo tecleo: escribir la palabra completa ----------
@@ -4133,15 +4124,15 @@ export function initTeclear() {
             let val = typing.value.toLowerCase();
             if (typing.value !== val) typing.value = val;
 
-            if (val.length > word.length) {
-                val = val.slice(0, word.length);
+            if (val.length > S.word.length) {
+                val = val.slice(0, S.word.length);
                 typing.value = val;
             }
 
             // Detecta la primera tecla mal escrita: la rechaza y penaliza
             let bad = -1;
             for (let i = 0; i < val.length; i++) {
-                if (val[i] !== word[i]) {
+                if (val[i] !== S.word[i]) {
                     bad = i;
                     break;
                 }
@@ -4153,33 +4144,33 @@ export function initTeclear() {
                 // Ventaja "escudo" del modo Aventura: el fallo no se paga
                 if (advShield > 0) {
                     advShield--;
-                    statusTxt = t("statusShield");
+                    S.statusTxt = t("statusShield");
                 } else {
                     errors++;
                     // Ventaja "indulgencia": un rato sin que el fallo rompa la racha
-                    const indul = mode === "aventura" && performance.now() < advGrace;
-                    if (!indul) streak = 0;
-                    score = Math.max(0, score - 5);
+                    const indul = S.mode === "aventura" && performance.now() < advGrace;
+                    if (!indul) S.streak = 0;
+                    S.score = Math.max(0, S.score - 5);
                     shake();
-                    statusTxt = indul ? t("statusGrace") : t("statusError");
+                    S.statusTxt = indul ? t("statusGrace") : t("statusError");
                     // Modo Truco o trato (evento de Halloween): cada tecla
                     // fallada cuesta el DOBLE, en tiempo y en experiencia
                     if (extraActive("truco")) {
-                        timeLeft = Math.max(0, timeLeft - TT_TIME_PENALTY);
+                        S.timeLeft = Math.max(0, S.timeLeft - TT_TIME_PENALTY);
                         ttXpLoss += TT_XP_PENALTY;
-                        statusTxt = t("statusTrucoFail");
+                        S.statusTxt = t("statusTrucoFail");
                     }
                 }
             } else {
-                if (val.length > prevLen) hits += val.length - prevLen;
-                statusTxt = t("statusOk");
+                if (val.length > S.prevLen) hits += val.length - S.prevLen;
+                S.statusTxt = t("statusOk");
             }
 
-            prevLen = val.length;
-            typedStr = val;
+            S.prevLen = val.length;
+            S.typedStr = val;
             updateHud();
 
-            if (val === word) {
+            if (val === S.word) {
                 completeWord();
             }
         }
@@ -4188,20 +4179,20 @@ export function initTeclear() {
         function guessChar(raw) {
             const ch = raw.toLowerCase();
             if (!/^[a-záéíóúüñ]$/.test(ch)) return;       // ignorar espacios y símbolos
-            if (wrongLetters.includes(ch)) return;         // letra ya fallada
-            if (!word.includes(ch)) {                      // fallo
+            if (S.wrongLetters.includes(ch)) return;         // letra ya fallada
+            if (!S.word.includes(ch)) {                      // fallo
                 errors++;
-                streak = 0;
-                misses++;
-                score = Math.max(0, score - 5);
-                wrongLetters.push(ch);
+                S.streak = 0;
+                S.misses++;
+                S.score = Math.max(0, S.score - 5);
+                S.wrongLetters.push(ch);
                 shake();
 
-                if (misses >= MAX_MISSES) {
-                    statusTxt = t("wordFailed") + word;
+                if (S.misses >= MAX_MISSES) {
+                    S.statusTxt = t("wordFailed") + S.word;
                     newWord();
                 } else {
-                    statusTxt = t("statusError");
+                    S.statusTxt = t("statusError");
                 }
                 updateHud();
                 return;
@@ -4209,24 +4200,24 @@ export function initTeclear() {
 
             // Acierto: revela todas las instancias que seguían ocultas
             let revealed = 0;
-            for (let i = 0; i < word.length; i++) {
-                if (word[i] === ch && mask[i] === "hidden") {
-                    mask[i] = "found";
+            for (let i = 0; i < S.word.length; i++) {
+                if (S.word[i] === ch && S.mask[i] === "hidden") {
+                    S.mask[i] = "found";
                     revealed++;
                 }
             }
             if (revealed === 0) return; // la letra ya se veía: no cuenta
 
             hits += revealed;
-            streak++;
+            S.streak++;
             const points = 10 * multiplier() * revealed;
-            score += points;
+            S.score += points;
             showPoints(points);
-            statusTxt = t("statusOk");
+            S.statusTxt = t("statusOk");
 
             updateHud();
 
-            if (!mask.includes("hidden")) {
+            if (!S.mask.includes("hidden")) {
                 completeWord();
             }
         }
@@ -4235,21 +4226,21 @@ export function initTeclear() {
         // Se anota cada evento de escritura para comprobar al final de la partida
         // que ha sido una persona quien ha escrito (ver checkAutoPlay)
         typing.addEventListener("input", function (e) {
-            if (state !== "playing" || perkOpen) {
+            if (S.state !== "playing" || S.perkOpen) {
                 typing.value = "";
                 return;
             }
             inputEvents++;
             if (e && e.isTrusted) trustedInput++;
 
-            if (mode === "guess") {
+            if (S.mode === "guess") {
                 const raw = typing.value;
                 typing.value = "";
                 for (const ch of raw) {
-                    if (state !== "playing") break;
+                    if (S.state !== "playing") break;
                     guessChar(ch);
                 }
-            } else if (mode === "supervivencia") {
+            } else if (S.mode === "supervivencia") {
                 supInput();
             } else {
                 typeInput();
@@ -4258,16 +4249,16 @@ export function initTeclear() {
 
         // Teclas reales de la partida: marca de tiempo entre pulsaciones
         typing.addEventListener("keydown", function (e) {
-            if (state !== "playing") return;
+            if (S.state !== "playing") return;
             if (e.isTrusted) trustedKeys++;
             if (!e.repeat) keyStamps.push(performance.now()); // el auto-repetido no cuenta
             // Efecto de tecleo comprado en la tienda: estalla con cada letra
-            if (!e.repeat && !perkOpen && e.key && e.key.length === 1 && !/\s/.test(e.key)) {
+            if (!e.repeat && !S.perkOpen && e.key && e.key.length === 1 && !/\s/.test(e.key)) {
                 fxBurst();
             }
             // Supervivencia: Tab cambia el objetivo a la siguiente palabra
             // (sin salir del campo de escritura)
-            if (mode === "supervivencia" && e.key === "Tab") {
+            if (S.mode === "supervivencia" && e.key === "Tab") {
                 e.preventDefault();
                 supCycle();
             }
@@ -4275,13 +4266,13 @@ export function initTeclear() {
 
         // Pegar o arrastrar texto no vale: hay que teclearlo
         typing.addEventListener("paste", function (e) {
-            if (state !== "playing") return;
+            if (S.state !== "playing") return;
             e.preventDefault();
             pasteTried++;
-            statusTxt = t("statusNoPaste");
+            S.statusTxt = t("statusNoPaste");
         });
         typing.addEventListener("drop", function (e) {
-            if (state !== "playing") return;
+            if (S.state !== "playing") return;
             e.preventDefault();
             pasteTried++;
         });
@@ -4295,7 +4286,7 @@ export function initTeclear() {
                 (destino.tagName === "INPUT" || destino.tagName === "TEXTAREA" ||
                  destino.tagName === "SELECT" || destino.isContentEditable === true);
 
-            if (state === "playing") {
+            if (S.state === "playing") {
                 // En plena partida la barra nunca se introduce: las palabras no llevan espacios
                 if (e.code === "Space") e.preventDefault();
                 return;
@@ -4323,12 +4314,12 @@ export function initTeclear() {
                 i = Math.floor(Math.random() * LOGO_PHRASES.length);
             }
             logoLast = i;
-            logoPhraseTxt = LOGO_PHRASES[i];
-            logoShow = true;   // la clase «show» la pone Svelte al cambiar la frase
+            S.logoPhraseTxt = LOGO_PHRASES[i];
+            S.logoShow = true;   // la clase «show» la pone Svelte al cambiar la frase
 
             clearTimeout(logoHide);
             logoHide = setTimeout(function () {
-                logoShow = false;
+                S.logoShow = false;
             }, 2000);
 
             if (logoBtn) {
@@ -4341,26 +4332,26 @@ export function initTeclear() {
         // ---------- Guardar la puntuación en el ranking ----------
         // (los avisos los lee Svelte desde rankMsgTxt / rankMsgOff)
         function rankSay(txt, off) {
-            rankMsgTxt = txt;
-            rankMsgOff = !!off;
+            S.rankMsgTxt = txt;
+            S.rankMsgOff = !!off;
         }
 
         function saveScore() {
-            if (state === "playing" || rankBusy) return;
+            if (S.state === "playing" || S.rankBusy) return;
             if (savedScore) {
                 rankSay(t("rankAlready"));
                 return;
             }
-            if (score <= 0) return;
+            if (S.score <= 0) return;
 
             // 1) Sin perfil no hay nombre: se avisa y se abre el registro
-            if (!accSession) {
+            if (!S.accSession) {
                 rankSay(t("accRankNo"), true);
                 openAccount("reg");
                 if (accName) { accName.focus(); accName.select(); }
                 return;
             }
-            const name = accSession.n;
+            const name = S.accSession.n;
 
             // 2) Nada de escritura automática ni puntuaciones imposibles
             const why = checkAutoPlay();
@@ -4380,19 +4371,19 @@ export function initTeclear() {
             const entry = {
                 id: currentPlayerId(),   // la cuenta (o el dispositivo) ocupa un puesto
                 n: name,
-                s: score,             // la mejor marca es la que manda
-                w: completed,
+                s: S.score,             // la mejor marca es la que manda
+                w: S.completed,
                 m: entryMode(),
                 d: new Date().toISOString()
             };
 
-            rankBusy = true;
+            S.rankBusy = true;
             rankSay(t("rankChecking"));
 
             reserveName(name, entry.id).then(r => {
                 if (r.taken) {
                     // El nombre ya es de otro jugador: se avisa sin borrar nada
-                    rankBusy = false;
+                    S.rankBusy = false;
                     rankSay(t("rankNameTaken"), true);
                     newVerifyCode();
                     return;
@@ -4400,7 +4391,7 @@ export function initTeclear() {
                 savePlayerName(name);
                 rankSay(t("rankSaving"));
                 return uploadScore(entry).then(() => {
-                    rankBusy = false;
+                    S.rankBusy = false;
                     // Solo se da por SUBIDA si la marca ha llegado al servidor.
                     // Si la red falló, la puntuación queda en este equipo y el
                     // botón sigue habilitado para volver a intentarlo (antes se
@@ -4411,10 +4402,10 @@ export function initTeclear() {
                     rankSay(subida ? t("rankSaved") : t("rankSavedLocal"), !subida);
                     newVerifyCode();   // el código ya no se puede reutilizar
                     // Se abre el ranking de SU modo (Aventura va al suyo propio)
-                    if (!rankOpen) toggleRanking(rankTabOf(entry.m));
+                    if (!S.rankOpen) toggleRanking(rankTabOf(entry.m));
                 });
             }).catch(() => {
-                rankBusy = false;
+                S.rankBusy = false;
                 savedScore = false;   // nada llegó al servidor: se puede reintentar
                 rankSay(t("rankSavedLocal"), true);
                 newVerifyCode();
@@ -4427,20 +4418,20 @@ export function initTeclear() {
         // Variante de Supervivencia de la partida anterior (solo la Encantada
         // se olvida sola si el evento de Halloween ya se ha acabado)
         try {
-            const sv = localStorage.getItem("teclear.supVariante");
-            if (sv === "encantado" || sv === "clasico") supVariant = sv;
+            const sv = storage.get("teclear.supVariante");
+            if (sv === "encantado" || sv === "clasico") S.supVariant = sv;
         } catch (e) { /* sin almacenamiento disponible */ }
-        if (supVariant === "encantado" && !halloweenOn()) supVariant = "clasico";
+        if (S.supVariant === "encantado" && !halloweenOn()) S.supVariant = "clasico";
         achLoad();          // progreso de los logros + recompensas ganadas
         loadProfileStats();
-        accSession = loadSession();   // si hubo sesión la vez anterior, se restaura
+        S.accSession = loadSession();   // si hubo sesión la vez anterior, se restaura
         try {
-            const savedBg = localStorage.getItem("teclear.fondo");
-            if (savedBg && BACKGROUNDS.some(b => b.id === savedBg) && ownedBgs.includes(savedBg)) {
-                bg = savedBg;
+            const savedBg = storage.get("teclear.fondo");
+            if (savedBg && BACKGROUNDS.some(b => b.id === savedBg) && S.ownedBgs.includes(savedBg)) {
+                S.bg = savedBg;
             }
         } catch (e) {
-            bg = "dark";
+            S.bg = "dark";
         }
         // Modo Veyon guardado en los ajustes (oculta logo y fondos General/Ia)
         applyVeyon();
@@ -4455,24 +4446,24 @@ export function initTeclear() {
         // solo hay getters (no existe ningún setter de puntuación, palabras o id).
         Object.defineProperty(window, "Teclea", {
             value: Object.freeze({
-                get state() { return state; },
-                get score() { return score; },
-                get completed() { return completed; },
+                get state() { return S.state; },
+                get score() { return S.score; },
+                get completed() { return S.completed; },
                 get hits() { return hits; },
                 get errors() { return errors; },
-                get word() { return word; },
+                get word() { return S.word; },
                 get mode() { return entryMode(); },
-                get lang() { return lang; },
+                get lang() { return S.lang; },
                 get savedScore() { return savedScore; },
                 get rankResets() { return rankResets; },
-                get session() { return accSession; },
+                get session() { return S.accSession; },
                 get admin() { return esAdmin(); },   // ¿rol de Administrador?
-                get caramelos() { return caramelos; },   // moneda del evento de Halloween
-                get supVariante() { return supVariant; },   // variante de Supervivencia
-                get xp() { return xp; },
-                get lives() { return supLives; },   // vidas en el modo Supervivencia
-                get gamesPlayed() { return gamesPlayed; },
-                get wordsTotal() { return wordsTotal; },
+                get caramelos() { return S.caramelos; },   // moneda del evento de Halloween
+                get supVariante() { return S.supVariant; },   // variante de Supervivencia
+                get xp() { return S.xp; },
+                get lives() { return S.supLives; },   // vidas en el modo Supervivencia
+                get gamesPlayed() { return S.gamesPlayed; },
+                get wordsTotal() { return S.wordsTotal; },
                 // Diccionarios (solo lectura): útiles para comprobar las palabras
                 dicts: Object.freeze({
                     es: Object.freeze(WORDS.es.slice()),
