@@ -40,3 +40,27 @@ export function eventOn(def, now) {
     return d >= eventStartDate(def, d.getFullYear()) &&
            d < eventEndDate(def, d.getFullYear());
 }
+
+// Texto de la cuenta atrás hasta el final del evento ("⏳ 3d 4h 12m 8s").
+// Lo comparten el estado inicial (para que la barra nazca ya con texto)
+// y el tick del EventService.
+export function eventCountTxt(def, now) {
+    const d = now || new Date();
+    const ms = eventEndDate(def, d.getFullYear()) - d;
+    const dd = Math.floor(ms / 86400000);
+    const h = Math.floor((ms % 86400000) / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return "⏳ " + dd + "d " + h + "h " + m + "m " + s + "s";
+}
+
+// Evento activo al arrancar: el override de admin (si lo hay) o el
+// primero del registro que toque por fecha. Espejo del script inline de
+// app.html y del EventService — mismo criterio en los tres sitios.
+export function initialEventId(testId) {
+    if (testId && EVENTS[testId]) return testId;
+    for (const id in EVENTS) {
+        if (eventOn(EVENTS[id])) return id;
+    }
+    return null;
+}

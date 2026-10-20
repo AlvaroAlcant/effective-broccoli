@@ -4,7 +4,7 @@
 // este servicio solo lo interpreta.
 import { S } from '../state.svelte.js';
 import { storage } from '../storage.js';
-import { EVENTS, eventOn, eventEndDate } from '../data/events.js';
+import { EVENTS, eventOn, eventCountTxt } from '../data/events.js';
 
 export class EventService {
     deps = { isAdmin: () => false };
@@ -61,14 +61,7 @@ export class EventService {
             this.apply();   // se apaga la temática…
             return;
         }
-        const ahora = new Date();
-        const fin = eventEndDate(def, ahora.getFullYear());
-        const ms = fin - ahora;
-        const d = Math.floor(ms / 86400000);
-        const h = Math.floor((ms % 86400000) / 3600000);
-        const m = Math.floor((ms % 3600000) / 60000);
-        const s = Math.floor((ms % 60000) / 1000);
-        S.eventCountTxt = "⏳ " + d + "d " + h + "h " + m + "m " + s + "s";
+        S.eventCountTxt = eventCountTxt(def);
     }
 
     // ---------- Pruebas de administrador ----------

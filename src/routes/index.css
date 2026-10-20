@@ -497,9 +497,19 @@
             text-align: center;
         }
         .event-bar strong {
+            display: inline-block;
             margin-left: 8px;
             color: #c084fc;
             font-weight: 700;
+            /* Espacio reservado: la cuenta atrás cambia cada segundo y
+               no debe empujar el layout ni aparecer de golpe */
+            min-width: 14ch;
+            text-align: left;
+            font-variant-numeric: tabular-nums;
+        }
+        .event-bar strong:empty::after {
+            content: "⏳ ··d ··h ··m ··s";
+            opacity: .45;
         }
 
         /* ---------- Cabecera ---------- */

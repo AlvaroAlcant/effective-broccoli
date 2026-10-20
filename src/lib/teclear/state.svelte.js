@@ -2,11 +2,24 @@
 // engine, modos, servicios y componentes. Vive en el módulo (no en
 // window), así que no se puede tocar desde la consola del navegador.
 import { getSetting } from './settings.js';
+import { storage } from './storage.js';
 import { GAME_TIME, SUP_LIVES } from './data/constants.js';
+import { EVENTS, eventCountTxt, initialEventId } from './data/events.js';
+
+// Evento al primer render, ANTES de que monte el EventService: así la
+// barra de Halloween ya nace visible con su cuenta atrás y no hace pop.
+// Mismo criterio que el script inline de app.html.
+const evIni = (() => {
+    try {
+        const nombre = String(storage.get("teclear.nombre") || "").toLowerCase();
+        const admin = ["alvaro", "joshmiquel"].includes(nombre);
+        return initialEventId(admin ? storage.get("teclear.testEvent") : null);
+    } catch (e) { return null; }
+})();
 
 export class GameState {
     lang = $state("es");
-    caramelos = $state(0);
+    caramelos = $state(storage.getInt("teclear.caramelos", 0));
     candyRun = $state(0);
     supVariant = $state("clasico");
     mode = $state("type");
@@ -71,8 +84,8 @@ export class GameState {
     rankMsgOff = $state(false);
     resOpen = $state(false);
     res = $state({});
-    eventCountTxt = $state("");
-    halloween = $state(false);
+    eventCountTxt = $state(evIni ? eventCountTxt(EVENTS[evIni]) : "");
+    halloween = $state(evIni === "halloween");
     logoPhraseTxt = $state("");
     logoShow = $state(false);
     typedStr = $state("");
