@@ -11,6 +11,7 @@
 	import GameArea from '#lib/teclear/GameArea.svelte';
 	import Ranking from '#lib/teclear/Ranking.svelte';
 	import Logros from '#lib/teclear/Logros.svelte';
+	import Inventario from '#lib/teclear/Inventario.svelte';
 	import Footer from '#lib/teclear/Footer.svelte';
 	import './index.css';
 
@@ -38,4 +39,5 @@
 <GameArea />
 <Ranking />
 <Logros />
+<Inventario />
 <Footer />

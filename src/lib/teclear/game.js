@@ -789,24 +789,25 @@ export function initTeclear() {
         // ---------- Textos de la interfaz por idioma ----------
         const I18N = {
             es: {
-                docTitle: "Minijuego: Teclea a la Velocidad",
-                title: "⌨️ Teclea a la Velocidad",
+                docTitle: "Teclear",
+                title: "⌨️ Teclear",
                 subtitleT: "Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!",
                 subtitleG: "Adivina la palabra con letras ocultas: escribe solo una letra cada vez. ¡Los fallos quitan vidas!",
                 subtitleM: "Teclea las palabras en dialecto murciano tal y como salen en pantalla. ¡Aquí no se traduce, hijo de la Huerta!",
                 subtitleI: "Mira la imagen y escribe la palabra que representa. ¡Nadie te va a decir qué es!",
                 subtitleA: "Aventura: empiezas con 50 segundos, cada palabra te regala tiempo y cada cierto número de palabras paras a elegir una ventaja. ¡El reloj acelera y las ventajas salen cada vez más lejos!",
                 subtitleS: "Supervivencia: la pantalla se agranda y las palabras NACEN ARRIBA DEL TODO y van bajando poco a poco. ¡Dispara todas sus letras antes de que lleguen al fondo o pierdes una vida! Van " + SUP_LIVES + " vidas: sin ellas se acabó la partida. Empiezas con una sola palabra y todo va muy despacio: con el tiempo las palabras caen cada vez más deprisa y van apareciendo más a la vez. Cada palabra te da experiencia y monedas.",
-                modeLabel: "Modo de juego",
+                modeLabel: "🎮 Modo de juego",
                 btnType: "⌨️ Tecleo",
                 btnGuess: "🧩 Adivinar",
                 btnImagen: "🖼️ Imágenes",
                 btnAventura: "🗺️ Aventura",
                 btnSup: "🛡️ Supervivencia",
                 btnMurciano: "🗣️ Murciano",
-                bgLabel: "Fondo de pantalla",
+                bgLabel: "🖼️ Fondo de pantalla",
                 bgOffAventura: "no se usa en Aventura (el modo lleva el suyo)",
-                actLabel: "Acciones",
+                progLabel: "🏆 Progreso",
+                userLabel: "👤 Cuenta y ajustes",
                 bgDark: "🌙 Oscuro",
                 bgFranco: "🖼️ General",
                 veyon: "🖥️ Modo Veyon",
@@ -871,6 +872,18 @@ export function initTeclear() {
                 achToastEnd: " · Recompensa: ",
                 shopAchPrice: "🔒 Logro",
                 achNeed: "🔒 Requiere logro",
+                btnInv: "🎒 Inventario",
+                invTitle: "🎒 Inventario",
+                invHint: "Todos los artículos que posees: los comprados en la tienda y los ganados completando logros. ¡Se quedan guardados para siempre!",
+                invEmpty: "Todavía no tienes ningún artículo. ¡Ve a la tienda o completa logros!",
+                invFromShop: "Comprado en la tienda",
+                invFromAch: "Ganado con un logro",
+                invInUse: "✓ En uso",
+                invNotInUse: "Sin usar",
+                invCatFont: "🔤 Letra",
+                invCatBg: "🖼️ Fondo",
+                invCatExtra: "🔥 Extra",
+                invCatFx: "✨ Efecto",
                 shopBuy: "Comprar", shopEquip: "Usar", shopEquipped: "✓ En uso", shopOwned: "Comprado",
                 shopNoMoney: "¡No tienes suficientes monedas! 🪙",
                 shopNoCandy: "¡No tienes suficientes caramelos! 🍬 (se ganan jugando)",
@@ -985,27 +998,28 @@ export function initTeclear() {
                 accRankNo: "🔒 Para guardar en el ranking necesitas un perfil: pulsa «👤 Registrar».",
                 accNoSession: "🔒 No has iniciado sesión: no hay nada que guardar todavía.",
                 accXpGain: "Experiencia ganada",
-                footer: "&copy; 2026 Minijuegos Web · Archivo: teclear.html"
+                footer: "&copy; 2026 Minijuegos Web · Game: Teclear"
             },
             en: {
-                docTitle: "Typing Game: Speed Typing",
-                title: "⌨️ Speed Typing Challenge",
+                docTitle: "Teclear",
+                title: "⌨️ Teclear",
                 subtitleT: "Type every word before time runs out. Wrong keys break your streak!",
                 subtitleG: "Guess the word with hidden letters: type only one letter at a time. Misses cost lives!",
                 subtitleM: "Type the Murcia-dialect words exactly as they appear on screen. No translating, mate!",
                 subtitleI: "Look at the picture and type the word it stands for. Nobody is going to tell you!",
                 subtitleA: "Adventure: you start with 50 seconds, every word gives you time and every few words you stop to pick an advantage. The clock speeds up and advantages come further apart!",
                 subtitleS: "Survival: the screen grows and words are born at the very top and keep sinking down. Shoot all its letters before it reaches the bottom or you lose a life! You have " + SUP_LIVES + " lives: no lives, no game. You start with a single word and everything is very slow: over time words sink faster and more of them appear at once. Every word gives you experience and coins.",
-                modeLabel: "Game mode",
+                modeLabel: "🎮 Game mode",
                 btnType: "⌨️ Typing",
                 btnGuess: "🧩 Guess word",
                 btnImagen: "🖼️ Pictures",
                 btnAventura: "🗺️ Adventure",
                 btnSup: "🛡️ Survival",
                 btnMurciano: "🗣️ Murcia dialect",
-                bgLabel: "Background",
+                bgLabel: "🖼️ Background",
                 bgOffAventura: "not used in Adventure (that mode has its own)",
-                actLabel: "Actions",
+                progLabel: "🏆 Progress",
+                userLabel: "👤 Account & settings",
                 bgDark: "🌙 Dark",
                 bgFranco: "🖼️ General",
                 veyon: "🖥️ Veyon mode",
@@ -1071,6 +1085,18 @@ export function initTeclear() {
                 achToastEnd: " · Reward: ",
                 shopAchPrice: "🔒 Achievement",
                 achNeed: "🔒 Needs achievement",
+                btnInv: "🎒 Inventory",
+                invTitle: "🎒 Inventory",
+                invHint: "Every item you own: bought in the shop or earned with achievements. They stay forever!",
+                invEmpty: "You don't have any items yet. Go to the shop or complete achievements!",
+                invFromShop: "Bought in the shop",
+                invFromAch: "Earned with an achievement",
+                invInUse: "✓ Equipped",
+                invNotInUse: "Not in use",
+                invCatFont: "🔤 Font",
+                invCatBg: "🖼️ Background",
+                invCatExtra: "🔥 Extra",
+                invCatFx: "✨ Effect",
                 shopBuy: "Buy", shopEquip: "Use", shopEquipped: "✓ Equipped", shopOwned: "Owned",
                 shopNoMoney: "Not enough coins! 🪙",
                 shopNoCandy: "Not enough candies! 🍬 (earn them by playing)",
@@ -1185,7 +1211,7 @@ export function initTeclear() {
                 accRankNo: "🔒 You need a profile to save to the leaderboard: press “👤 Register”.",
                 accNoSession: "🔒 You are not logged in: there is nothing to save yet.",
                 accXpGain: "Experience earned",
-                footer: "&copy; 2026 Web Mini-Games · File: teclear.html"
+                footer: "&copy; 2026 Web Mini-Games · Game: Teclear"
             }
         };
 
@@ -1245,6 +1271,7 @@ export function initTeclear() {
         let shopOpen = false;
         let rankOpen = false;      // panel de ranking abierto
         let logrosOpen = false;    // panel de logros abierto
+        let invOpen = false;       // panel de inventario abierto
         let achData = {};          // id → { p: progreso, done: completado }
         let srAt = 0;              // instante en que arrancó la ventana del logro Speedrunner
         let srWords = 0;           // palabras escritas dentro de esa ventana de 8 segundos
@@ -1383,6 +1410,11 @@ export function initTeclear() {
         const btnRanking = document.getElementById("btnRanking");
         const btnLogros = document.getElementById("btnLogros");
         const logros = document.getElementById("logros");
+        const btnInv = document.getElementById("btnInv");
+        const inventario = document.getElementById("inventario");
+        const invGrid = document.getElementById("invGrid");
+        const invEmpty = document.getElementById("invEmpty");
+        const invCount = document.getElementById("invCount");
         const achGrid = document.getElementById("achGrid");
         const achCount = document.getElementById("achCount");
         const btnRegister = document.getElementById("btnRegister");
@@ -2901,6 +2933,10 @@ export function initTeclear() {
                 localStorage.setItem("teclear.efectosTecleo", JSON.stringify(ownedFx));
                 localStorage.setItem("teclear.efectoTecleo", fxEquipped);
             } catch (e) { /* sin almacenamiento disponible */ }
+            // El inventario se recalcula con lo que posees: si está abierto,
+            // se vuelve a pintar para que se note al instante cada compra
+            // o cada recompensa de logro recién ganada
+            if (invOpen) renderInv();
         }
 
         // ---------- Caramelos: la moneda del evento de Halloween ----------
@@ -3855,6 +3891,146 @@ export function initTeclear() {
             btnLogros.classList.remove("active");
         }
 
+        // ---------- Inventario: todo lo comprado y todo lo ganado ----------
+        // El inventario no guarda datos aparte: se recalcula a partir de lo
+        // que ya posees (estilos, fondos, extras y efectos), así que nunca
+        // se queda desfasado. Para saber de dónde sale cada artículo se
+        // comprueba su definición: los marcados con "ach" son recompensas
+        // de logros y el resto se compran en la tienda. Se enseñan también
+        // los artículos del EVENTO de Halloween que ya poseas, aunque la
+        // tienda de evento esté cerrada: el inventario es para siempre.
+
+        // Devuelve la lista completa de artículos con su estado:
+        // { tipo, id, nombre, icono, img, enUso, deLogro }
+        function invItems() {
+            const en = uiLang() === "en";
+            const out = [];
+
+            FONT_STYLES.forEach(s => {
+                if (!owned.includes(s.id)) return;
+                out.push({
+                    tipo: "font", id: s.id,
+                    nombre: en ? s.en : s.es,
+                    icono: "🔤", img: "", previewFont: s.font, cls: s.cls,
+                    enUso: equipped === s.id,
+                    deLogro: !!s.ach
+                });
+            });
+
+            BACKGROUNDS.forEach(b => {
+                if (!ownedBgs.includes(b.id)) return;
+                out.push({
+                    tipo: "bg", id: b.id,
+                    nombre: en ? b.en : b.es,
+                    icono: b.icon || "🖼️", img: b.img,
+                    enUso: bg === b.id,
+                    deLogro: !!b.ach
+                });
+            });
+
+            EXTRAS.forEach(x => {
+                if (!ownedExtras.includes(x.id)) return;
+                out.push({
+                    tipo: "extra", id: x.id,
+                    nombre: en ? x.en : x.es,
+                    icono: x.icon, img: "",
+                    enUso: !!extraOn[x.id],
+                    deLogro: !!x.ach
+                });
+            });
+
+            TYPE_EFFECTS.forEach(f => {
+                if (!ownedFx.includes(f.id)) return;
+                out.push({
+                    tipo: "fx", id: f.id,
+                    nombre: en ? f.en : f.es,
+                    icono: f.icon, img: "",
+                    enUso: fxEquipped === f.id,
+                    deLogro: !!f.ach
+                });
+            });
+
+            return out;
+        }
+
+        // Dibuja el inventario completo en su panel
+        function renderInv() {
+            if (!invGrid) return;
+            const items = invItems();
+            invGrid.innerHTML = "";
+
+            items.forEach(it => {
+                const card = document.createElement("div");
+                card.className = "inv-card" + (it.enUso ? " in-use" : "");
+
+                // Miniatura: la foto del fondo, la letra «Aa» del estilo o
+                // el icono del extra/efecto
+                const thumb = document.createElement("div");
+                thumb.className = "inv-thumb " + (it.cls || "");
+                if (it.tipo === "bg" && it.img) {
+                    thumb.style.backgroundImage = 'url("' + it.img + '")';
+                } else if (it.tipo === "font") {
+                    thumb.classList.add("font-preview");
+                    thumb.style.fontFamily = it.previewFont;
+                    thumb.textContent = "Aa";
+                } else {
+                    thumb.textContent = it.icono;
+                }
+                card.appendChild(thumb);
+
+                const name = document.createElement("div");
+                name.className = "inv-name";
+                name.textContent = it.nombre;
+                card.appendChild(name);
+
+                const cat = document.createElement("div");
+                cat.className = "inv-cat";
+                cat.textContent = t("invCat" + it.tipo.charAt(0).toUpperCase() + it.tipo.slice(1));
+                card.appendChild(cat);
+
+                // De dónde salió: comprado en la tienda o ganado jugando
+                const src = document.createElement("div");
+                src.className = "inv-src " + (it.deLogro ? "src-ach" : "src-shop");
+                src.textContent = it.deLogro ? t("invFromAch") : t("invFromShop");
+                card.appendChild(src);
+
+                const use = document.createElement("div");
+                use.className = "inv-use";
+                use.textContent = it.enUso ? t("invInUse") : t("invNotInUse");
+                card.appendChild(use);
+
+                invGrid.appendChild(card);
+            });
+
+            // Contador del encabezado y aviso si no hay nada todavía
+            if (invCount) invCount.textContent = items.length;
+            if (invEmpty) invEmpty.classList.toggle("hidden", items.length > 0);
+        }
+
+        function toggleInv() {
+            if (state === "playing") return;
+            invOpen = !invOpen;
+            inventario.classList.toggle("hidden", !invOpen);
+            btnInv.classList.toggle("active", invOpen);
+            if (invOpen) {
+                renderInv();
+                // El panel queda por debajo: se lleva a la vista para que se note
+                if (inventario.scrollIntoView) {
+                    inventario.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+        }
+
+        btnInv.addEventListener("click", toggleInv);
+
+        // El panel de inventario se cierra al empezar una partida
+        function closeInvOnPlay() {
+            if (!invOpen) return;
+            invOpen = false;
+            inventario.classList.add("hidden");
+            btnInv.classList.remove("active");
+        }
+
         // ---------- Idioma y modo ----------
         function applyLang() {
             document.documentElement.lang = uiLang();
@@ -3876,7 +4052,8 @@ export function initTeclear() {
             btnMurciano.textContent = t("btnMurciano");
             document.getElementById("bgLabel").textContent =
                 t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
-            document.getElementById("actLabel").textContent = t("actLabel");
+            document.getElementById("progLabel").textContent = t("progLabel");
+            document.getElementById("userLabel").textContent = t("userLabel");
             if (modeSelect) modeSelect.setAttribute("aria-label", t("modeSelectAria"));
             btnBgDark.textContent = t("bgDark");
             setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
@@ -3929,6 +4106,10 @@ export function initTeclear() {
             document.getElementById("achTitle").textContent = t("achTitle");
             document.getElementById("achHint").textContent = t("achHint");
             if (logrosOpen) renderLogros();
+            btnInv.textContent = t("btnInv");
+            document.getElementById("invTitle").textContent = t("invTitle");
+            document.getElementById("invHint").textContent = t("invHint");
+            if (invOpen) renderInv();
             applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent =
                 mode === "supervivencia" ? t("rTitleLives") : t("rTitle");
@@ -5774,6 +5955,7 @@ export function initTeclear() {
                 btnShop.classList.remove("active");
             }
             closeLogrosOnPlay();   // el panel de logros también
+            closeInvOnPlay();      // el panel de inventario también
             closeAccountOnPlay();   // el panel de perfil también
 
             results.classList.add("hidden");

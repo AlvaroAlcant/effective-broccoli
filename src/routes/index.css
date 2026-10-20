@@ -647,6 +647,11 @@
         .sel-row:first-child {
             border-top: 0;
         }
+        /* Corte visual entre la config de la partida (filas 1-3) y las
+           secciones auxiliares (Progreso y Cuenta) */
+        .sel-row-divider {
+            border-top: 1px solid var(--line);
+        }
         .sel-label {
             flex: 0 0 132px;
             font-size: 11px;
@@ -1274,12 +1279,13 @@
             transform: none;
         }
 
-        /* ---------- Tarjetas: resultados, tienda, ranking y perfil ---------- */
+        /* ---------- Tarjetas: resultados, tienda, ranking, perfil e inventario ---------- */
         .results,
         .shop,
         .ranking,
         .perfil,
-        .logros {
+        .logros,
+        .inventario {
             margin-top: 20px;
             padding: 20px;
             text-align: center;
@@ -1292,14 +1298,16 @@
         .shop.hidden,
         .ranking.hidden,
         .perfil.hidden,
-        .logros.hidden {
+        .logros.hidden,
+        .inventario.hidden {
             display: none;
         }
         .results h2,
         .shop-head h2,
         .ranking h2,
         .perfil h2,
-        .logros h2 {
+        .logros h2,
+        .inventario h2 {
             margin: 0 0 6px;
             font-size: 20px;
             color: var(--accent);
@@ -1990,6 +1998,95 @@
             100% { opacity: 0; transform: translate(-50%, -20px) scale(.95); }
         }
 
+        /* ---------- Inventario: todo lo comprado y todo lo ganado ----------
+           Cada tarjeta enseña el artículo (miniatura, nombre y categoría),
+           de dónde salió (comprado en la tienda o ganado con un logro) y si
+           está puesto en uso ahora mismo. El inventario se recalcula a partir
+           de lo que ya posees, así que nunca se queda desfasado. */
+        .inv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .inv-card {
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            transition: border-color .18s, transform .18s, box-shadow .18s;
+        }
+        .inv-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .3);
+        }
+        /* Artículo puesto en uso: borde de color y fondo algo más claro */
+        .inv-card.in-use {
+            border-color: var(--accent-2);
+            background-color: #0d2b27;
+            box-shadow: inset 0 0 0 1px rgba(20, 184, 166, .4);
+        }
+        .inv-thumb {
+            width: 100%;
+            height: 66px;
+            border-radius: 8px;
+            border: 1px solid var(--line-soft);
+            background-color: var(--bg);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .inv-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text);
+        }
+        .inv-cat {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+        }
+        /* De dónde salió el artículo: comprado (dorado) o logro (celeste) */
+        .inv-src {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            color: var(--muted);
+        }
+        .inv-src.src-shop {
+            color: var(--gold);
+            border-color: rgba(255, 215, 106, .5);
+        }
+        .inv-src.src-ach {
+            color: #7dd3fc;
+            border-color: rgba(125, 211, 252, .5);
+        }
+        .inv-use {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .inv-empty {
+            color: var(--muted);
+            font-size: 15px;
+            margin: 14px 0 0;
+        }
+        .inv-empty.hidden {
+            display: none;
+        }
+
         /* ---------- Estilos de letra comprados ---------- */
         body {
             --game-font: Consolas, "Courier New", monospace;
@@ -2163,7 +2260,8 @@
             .shop,
             .ranking,
             .perfil,
-            .logros {
+            .logros,
+            .inventario {
                 padding: 16px;
             }
             .pf-field input {
