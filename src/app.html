@@ -14,7 +14,16 @@
 				try {
 					var b = document.body.classList;
 					var aj = JSON.parse(localStorage.getItem("teclear.ajustes") || "{}");
-					if (aj.veyon) b.add("veyon-on");
+					// Veyon viene activo POR DEFECTO: si el ajuste no
+					// existe aún en el almacenamiento, se entiende que sí.
+					// (Espejo de settings.js, incluida la migración de la
+					// clave antigua "teclear.veyon" = "1"/"0")
+					var veyon = aj.veyon;
+					if (veyon === undefined) {
+						var oldV = localStorage.getItem("teclear.veyon");
+						veyon = oldV !== null ? oldV === "1" : true;
+					}
+					if (veyon) b.add("veyon-on");
 					var ahora = new Date();
 					var y = ahora.getFullYear();
 					var hal = ahora >= new Date(y, 9, 8) && ahora < new Date(y, 10, 3, 12);
