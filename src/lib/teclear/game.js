@@ -5,6 +5,7 @@ import imgFredi from '#lib/img/fredi.gif';
 import imgVeyonPlaceholder from '#lib/img/repuesto.svg';
 import imgVeyonFavicon from '#lib/img/repuesto-icono.svg';
 import imgLogo from '#lib/img/estesoTeclea.png';
+import { getSetting, setSetting } from './settings.js';
         // TODO el juego vive dentro de este closure: las variables internas
         // (puntuación, palabras, teclas, contadores) no son accesibles desde la
         // consola del navegador, así que no se pueden manipular con comandos.
@@ -1197,7 +1198,7 @@ export function initTeclear() {
         let encTyped = 0;            // letras acertadas en la partida Encantada
         let mode = "type";       // type | guess | imagen | aventura | supervivencia
         let bg = "dark";         // dark | franco | elprico | esteso
-        let veyon = false;       // Modo Veyon: oculta logo y fondos «General»/«Ia»
+        let veyon = getSetting("veyon");  // Modo Veyon: oculta logo y fondos «General»/«Ia» (activo por defecto)
         // Imagen de repuesto que sustituye a las de «General» e «Ia»
         // mientras el Modo Veyon está activo (tienda y selector de fondos)
         const VEYON_PLACEHOLDER = imgVeyonPlaceholder;
@@ -4085,9 +4086,7 @@ export function initTeclear() {
 
         function setVeyon(next) {
             veyon = !!next;
-            try {
-                localStorage.setItem("teclear.veyon", veyon ? "1" : "0");
-            } catch (e) { /* sin almacenamiento disponible */ }
+            setSetting("veyon", veyon);
             applyVeyon();
         }
 
@@ -6342,12 +6341,7 @@ export function initTeclear() {
         } catch (e) {
             bg = "dark";
         }
-        // Modo Veyon de la sesión anterior (oculta logo y fondos General/Ia)
-        try {
-            veyon = localStorage.getItem("teclear.veyon") === "1";
-        } catch (e) {
-            veyon = false;
-        }
+        // Modo Veyon guardado en los ajustes (oculta logo y fondos General/Ia)
         applyVeyon();
         applyStyle();
         applyFx();
