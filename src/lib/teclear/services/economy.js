@@ -7,6 +7,7 @@ import { S } from '../state.svelte.js';
 import { storage } from '../storage.js';
 import { uiLang, t } from './i18n.js';
 import { events } from './events.svelte.js';
+import { EVENTS } from '../data/events.js';
 import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from '../data/catalog.js';
 import { VEYON_BGS, VEYON_PLACEHOLDER } from '../data/veyon.js';
 
@@ -14,11 +15,24 @@ import { VEYON_BGS, VEYON_PLACEHOLDER } from '../data/veyon.js';
 // Cada tipo declara su lista, el campo de S donde viven los poseídos y
 // los textos/operaciones propias. Añadir una categoría nueva a la tienda
 // = una entrada aquí + sus datos en catalog.js.
+//
+// La lista de cada tipo se COMPONE sola: catálogo base + los items que
+// cada evento declara en data/events.js (con `event` estampado a su id).
+function withEventItems(kind, base) {
+    const out = base.slice();
+    for (const id in EVENTS) {
+        for (const it of EVENTS[id].items || []) {
+            if (it.kind === kind) out.push({ ...it, event: id });
+        }
+    }
+    return out;
+}
+
 const KINDS = {
-    font:  { list: FONT_STYLES,  owned: "owned",       icon: "🔤", buyMsg: "shopBought" },
-    bg:    { list: BACKGROUNDS,  owned: "ownedBgs",    icon: "🖼️", buyMsg: "shopBoughtBg" },
-    extra: { list: EXTRAS,       owned: "ownedExtras", icon: "",    buyMsg: "shopBought" },
-    fx:    { list: TYPE_EFFECTS, owned: "ownedFx",     icon: "",    buyMsg: "shopBoughtFx" },
+    font:  { list: withEventItems("font", FONT_STYLES),   owned: "owned",       icon: "🔤", buyMsg: "shopBought" },
+    bg:    { list: withEventItems("bg", BACKGROUNDS),     owned: "ownedBgs",    icon: "🖼️", buyMsg: "shopBoughtBg" },
+    extra: { list: withEventItems("extra", EXTRAS),       owned: "ownedExtras", icon: "",    buyMsg: "shopBought" },
+    fx:    { list: withEventItems("fx", TYPE_EFFECTS),    owned: "ownedFx",     icon: "",    buyMsg: "shopBoughtFx" },
 };
 
 export class EconomyService {
@@ -79,14 +93,15 @@ export class EconomyService {
         }
         if (!S.owned.includes("clasico")) S.owned.push("clasico");
         if (!S.ownedBgs.includes("dark")) S.ownedBgs.push("dark");
-        // Solo se admiten extras conocidos y comprados: nada de marcas raras
-        S.ownedExtras = S.ownedExtras.filter(id => EXTRAS.some(x => x.id === id));
-        EXTRAS.forEach(x => {
+        // Solo se admiten extras conocidos y comprados: nada de marcas
+        // raras. La lista es la compuesta (catálogo + items de evento)
+        S.ownedExtras = S.ownedExtras.filter(id => KINDS.extra.list.some(x => x.id === id));
+        KINDS.extra.list.forEach(x => {
             if (!S.ownedExtras.includes(x.id)) S.extraOn[x.id] = false;
             S.extraOn[x.id] = !!S.extraOn[x.id];
         });
         // Mismo criterio para los efectos de tecleo: solo los comprados
-        S.ownedFx = S.ownedFx.filter(id => TYPE_EFFECTS.some(f => f.id === id));
+        S.ownedFx = S.ownedFx.filter(id => KINDS.fx.list.some(f => f.id === id));
         if (!S.ownedFx.includes(S.fxEquipped)) S.fxEquipped = "";
     }
 
@@ -169,6 +184,13 @@ export class EconomyService {
     }
 
     // ---------- Artículos: operaciones genéricas por tipo ----------
+    // Lista COMPUESTA de un tipo: catálogo base + items de los eventos.
+    // Todo el mundo que necesite iterar artículos de un tipo pasa por
+    // aquí, así los items de evento no quedan fuera de ninguna vista
+    all(kind) {
+        return KINDS[kind].list;
+    }
+
     // Busca el artículo en la lista de su tipo (lo usan las acciones)
     findItem(kind, id) {
         return KINDS[kind].list.find(it => it.id === id);
@@ -243,49 +265,36 @@ export class EconomyService {
     }
 
     // Las tarjetas de la tienda de evento (se pagan en caramelos):
-    // los ids los trae el registro del evento activo
+    // el evento activo ya declara sus items completos en `def.items`
     eventCards() {
         const def = events.active;
-        if (!def || !def.shopItems) return [];
+        if (!def || !def.items) return [];
         const en = uiLang() === "en";
-        const { bg, fx, extra } = def.shopItems;
-        const out = [];
-        const b = BACKGROUNDS.find(x => x.id === bg);
-        if (b) out.push({
-            kind: "bg", id: b.id, icon: b.icon || "📼",
-            name: en ? b.en : b.es, desc: en ? b.descEn : b.descEs,
-            img: b.img, equipped: S.bg === b.id,
-            own: this.owns("bg", b.id), price: b.price,
-            cant: S.caramelos < b.price
+        return def.items.map(it => {
+            const kind = it.kind;
+            return {
+                kind, id: it.id,
+                icon: it.icon || KINDS[kind].icon,
+                name: en ? it.en : it.es,
+                desc: en ? it.descEn : it.descEs,
+                img: it.img, color: it.color,
+                equipped: this.itemOn(kind, it.id),
+                on: this.itemOn(kind, it.id),
+                own: this.owns(kind, it.id), price: it.price,
+                cant: S.caramelos < it.price
+            };
         });
-        const f = this.fxById(fx);
-        if (f) out.push({
-            kind: "fx", id: f.id, icon: f.icon, color: f.color,
-            name: en ? f.en : f.es, desc: en ? f.descEn : f.descEs,
-            on: this.itemOn("fx", f.id),
-            own: this.owns("fx", f.id), price: f.price,
-            cant: S.caramelos < f.price
-        });
-        const x = EXTRAS.find(e => e.id === extra);
-        if (x) out.push({
-            kind: "extra", id: x.id, icon: x.icon,
-            name: en ? x.en : x.es, desc: en ? x.descEn : x.descEs,
-            on: this.owns("extra", x.id) && !!S.extraOn[x.id],
-            own: this.owns("extra", x.id), price: x.price,
-            cant: S.caramelos < x.price
-        });
-        return out;
     }
 
     // ---------- Estilos de fuente ----------
     styleById(id) {
-        return FONT_STYLES.find(s => s.id === id) || FONT_STYLES[0];
+        return KINDS.font.list.find(s => s.id === id) || KINDS.font.list[0];
     }
 
     // Aplica el estilo equipado al tablero y a la entrada
     applyStyle() {
         const st = this.styleById(S.equipped);
-        FONT_STYLES.forEach(s => document.body.classList.remove(s.cls));
+        KINDS.font.list.forEach(s => document.body.classList.remove(s.cls));
         document.body.classList.add(st.cls);
     }
 
@@ -320,13 +329,13 @@ export class EconomyService {
     // Manda el gusto guardado (extraOn), no si ahora actúa: el menú sigue
     // enseñando la variante elegida aunque el modo actual no sea Tecleo.
     activeExtraId() {
-        const x = EXTRAS.find(e => this.ownsExtra(e.id) && S.extraOn[e.id]);
+        const x = KINDS.extra.list.find(e => this.ownsExtra(e.id) && S.extraOn[e.id]);
         return x ? x.id : "";
     }
 
     // Marca en el body qué extras actúan ahora (ilumina el tablero)
     applyExtras() {
-        EXTRAS.forEach(x => {
+        KINDS.extra.list.forEach(x => {
             document.body.classList.toggle(x.id + "-on", this.extraActive(x.id));
         });
     }
@@ -335,13 +344,13 @@ export class EconomyService {
         if (!this.ownsExtra(id) || S.state === "playing") return;
         // Solo una variante activa: usar una apaga las demás
         if (on) {
-            EXTRAS.forEach(x => S.extraOn[x.id] = (x.id === id));
+            KINDS.extra.list.forEach(x => S.extraOn[x.id] = (x.id === id));
         } else {
             S.extraOn[id] = false;
         }
         this.saveShop();
         this.applyExtras();
-        const x = EXTRAS.find(e => e.id === id);
+        const x = KINDS.extra.list.find(e => e.id === id);
         if (x) this.invSay(t(on ? x.msgOn : x.msgOff));
     }
 
@@ -349,10 +358,10 @@ export class EconomyService {
     // una en el menú se apagan las demás
     chooseExtra(id) {
         if (S.state === "playing") return;
-        EXTRAS.forEach(x => S.extraOn[x.id] = (x.id === id));
+        KINDS.extra.list.forEach(x => S.extraOn[x.id] = (x.id === id));
         this.saveShop();
         this.applyExtras();
-        const x = EXTRAS.find(e => e.id === id);
+        const x = KINDS.extra.list.find(e => e.id === id);
         S.shopMsgTxt = x ? t(x.msgOn) : t("modeClassicMsg");
     }
 
@@ -360,7 +369,7 @@ export class EconomyService {
 
     // ---------- Efectos de tecleo (chispas con cada letra) ----------
     fxById(id) {
-        return TYPE_EFFECTS.find(f => f.id === id) || null;
+        return KINDS.fx.list.find(f => f.id === id) || null;
     }
 
     ownsFx(id) {
@@ -376,7 +385,7 @@ export class EconomyService {
     // Deja el color del efecto activo en <body>: ahí lo cogen el
     // resplandor del campo de entrada y las tarjetas de la tienda
     applyFx() {
-        TYPE_EFFECTS.forEach(f => {
+        KINDS.fx.list.forEach(f => {
             document.body.classList.toggle("fx-" + f.id, !!this.activeFx() && S.fxEquipped === f.id);
         });
     }
@@ -418,7 +427,7 @@ export class EconomyService {
 
     // Texto de la habilidad del fondo equipado (vacío si no tiene ninguna)
     bgPowerDesc() {
-        const b = BACKGROUNDS.find(x => x.id === S.bg);
+        const b = KINDS.bg.list.find(x => x.id === S.bg);
         // Los fondos de decoración (Circuito, Hacker) no aportan nada:
         // son puro adorno ganado con un logro
         if (!b || b.decor || b.id === "dark") return "";

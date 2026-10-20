@@ -16,7 +16,6 @@ import {
     MAX_SCORE, MAX_WORDS, PTS_PER_WORD, SCORE_BOOST, ADV_SCORE_SLACK,
     GAME_TIME, BONUS_TIME_ELPRICO
 } from '../data/constants.js';
-import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from '../data/catalog.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
 
 // ---------- Roles de usuario ----------
@@ -185,17 +184,20 @@ export class AccountService {
         const list = (v, ids) => (Array.isArray(v)
             ? v.filter(x => typeof x === "string" && ids.indexOf(x) >= 0).slice(0, 30) : []);
 
-        const st = list(r.owned, FONT_STYLES.map(s => s.id));
+        // Las listas son las COMPUESTAS (catálogo + items de evento):
+        // sin ellas, un «Truco o trato» comprado desaparecería al
+        // sincronizar el perfil fuera de temporada
+        const st = list(r.owned, eco.all("font").map(s => s.id));
         if (st.indexOf("clasico") < 0) st.push("clasico");
-        const bgs = list(r.bgs, BACKGROUNDS.map(b => b.id));
+        const bgs = list(r.bgs, eco.all("bg").map(b => b.id));
         if (bgs.indexOf("dark") < 0) bgs.push("dark");
-        const exs = list(r.extras, EXTRAS.map(x => x.id));
-        const fxs = list(r.fxs, TYPE_EFFECTS.map(f => f.id));
+        const exs = list(r.extras, eco.all("extra").map(x => x.id));
+        const fxs = list(r.fxs, eco.all("fx").map(f => f.id));
         const eq = (typeof r.equipped === "string" && st.indexOf(r.equipped) >= 0) ? r.equipped : "clasico";
         const bg = (typeof r.bg === "string" && bgs.indexOf(r.bg) >= 0) ? r.bg : "dark";
         const fxEq = (typeof r.fx === "string" && fxs.indexOf(r.fx) >= 0) ? r.fx : "";
         const on = {};
-        EXTRAS.forEach(x => { on[x.id] = !!(r.extraOn && r.extraOn[x.id]) && exs.indexOf(x.id) >= 0; });
+        eco.all("extra").forEach(x => { on[x.id] = !!(r.extraOn && r.extraOn[x.id]) && exs.indexOf(x.id) >= 0; });
 
         return {
             coins: identity.num(r.coins, 10000000),

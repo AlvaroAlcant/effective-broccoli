@@ -25,7 +25,6 @@ import {
     WORDS, MURCIANO_WORDS, PICANTE, PHP_WORDS, ANDALUZ_WORDS,
     MINECRAFT_WORDS, HALLOWEEN_WORDS
 } from './data/words.js';
-import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from './data/catalog.js';
 import { TT_TIME_PENALTY, TT_XP_PENALTY } from './data/events.js';
 import { events } from './services/events.svelte.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
@@ -191,15 +190,15 @@ export class GameEngine {
     get rankDate() { return ranking.rankDate; }
 
     get modeOptions() { return [{ v: "", txt: t("modeClassic") }]
-                .concat(EXTRAS.filter(x => eco.ownsExtra(x.id))
+                .concat(eco.all("extra").filter(x => eco.ownsExtra(x.id))
                     .map(x => ({ v: x.id, txt: x.icon + " " + (uiLang() === "es" ? x.es : x.en) }))); }
 
     get modeSel() { return eco.activeExtraId(); }
 
-    get modeSelDis() { return EXTRAS.every(x => !eco.ownsExtra(x.id)) ||
+    get modeSelDis() { return eco.all("extra").every(x => !eco.ownsExtra(x.id)) ||
                              S.mode !== "type" || S.state === "playing"; }
 
-    get modeSelTitle() { return EXTRAS.every(x => !eco.ownsExtra(x.id)) ? t("modeSelectEmpty")
+    get modeSelTitle() { return eco.all("extra").every(x => !eco.ownsExtra(x.id)) ? t("modeSelectEmpty")
                              : (S.mode !== "type" ? t("modeSelectOff") : t("modeSelectHint")); }
 
     get supOptions() {
@@ -214,7 +213,7 @@ export class GameEngine {
 
     get supSelTitle() { return S.mode !== "supervivencia" ? t("supSelectOff") : t("supVarHint"); }
 
-    get bgChips() { return BACKGROUNDS
+    get bgChips() { return eco.all("bg")
                 .filter(b => b.id !== "dark" && b.id !== "franco" && S.ownedBgs.includes(b.id))
                 .map(b => ({
                     id: b.id,
@@ -304,7 +303,7 @@ export class GameEngine {
             // En Aventura no se juega con fondos: el cuerpo lleva el fondo
             // propio del modo (sin habilidad)
             const sinFondos = S.mode === "aventura";
-            BACKGROUNDS.forEach(b => {
+            eco.all("bg").forEach(b => {
                 document.body.classList.toggle("bg-" + b.id, !sinFondos && S.bg === b.id);
             });
             document.body.classList.toggle("bg-aventura", sinFondos);
@@ -419,7 +418,7 @@ export class GameEngine {
         }
 
     rollRandomExtras() {
-            const candidatos = EXTRAS.filter(x => x.id !== "azar" && eco.ownsExtra(x.id));
+            const candidatos = eco.all("extra").filter(x => x.id !== "azar" && eco.ownsExtra(x.id));
             this.extraRun = { azar: true };
             if (candidatos.length === 0) return [];
             // Un tercio de las veces, dos extras a la vez
@@ -631,7 +630,7 @@ export class GameEngine {
                     azarTxt = t("statusAzarNone");
                 } else {
                     const nombres = elegidos.map(id => {
-                        const x = EXTRAS.find(e => e.id === id);
+                        const x = eco.all("extra").find(e => e.id === id);
                         return x ? x.icon + " " + (uiLang() === "es" ? x.es : x.en) : id;
                     });
                     azarTxt = t("statusAzar") + nombres.join(" + ");
@@ -1004,10 +1003,10 @@ export class GameEngine {
     // "quiero probarlo todo" que sustituye al antiguo dinero infinito
     dbgGrantAll() {
             if (!acc.esAdmin()) return;
-            FONT_STYLES.forEach(s => { if (!S.owned.includes(s.id)) S.owned.push(s.id); });
-            BACKGROUNDS.forEach(b => { if (!S.ownedBgs.includes(b.id)) S.ownedBgs.push(b.id); });
-            EXTRAS.forEach(x => { if (!S.ownedExtras.includes(x.id)) S.ownedExtras.push(x.id); });
-            TYPE_EFFECTS.forEach(f => { if (!S.ownedFx.includes(f.id)) S.ownedFx.push(f.id); });
+            eco.all("font").forEach(s => { if (!S.owned.includes(s.id)) S.owned.push(s.id); });
+            eco.all("bg").forEach(b => { if (!S.ownedBgs.includes(b.id)) S.ownedBgs.push(b.id); });
+            eco.all("extra").forEach(x => { if (!S.ownedExtras.includes(x.id)) S.ownedExtras.push(x.id); });
+            eco.all("fx").forEach(f => { if (!S.ownedFx.includes(f.id)) S.ownedFx.push(f.id); });
             eco.saveShop();
             eco.applyExtras();
         }
@@ -1162,7 +1161,7 @@ this.logoBtn = document.getElementById("logoBtn");
         S.accSession = acc.loadSession();
         try {
             const savedBg = storage.get("teclear.fondo");
-            if (savedBg && BACKGROUNDS.some(b => b.id === savedBg) && S.ownedBgs.includes(savedBg)) {
+            if (savedBg && eco.all("bg").some(b => b.id === savedBg) && S.ownedBgs.includes(savedBg)) {
                 S.bg = savedBg;
             }
         } catch (e) {

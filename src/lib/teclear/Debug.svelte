@@ -1,8 +1,8 @@
 <script>
 	import { engine } from './engine.svelte.js';
 	import { events } from './services/events.svelte.js';
+	import { eco } from './services/economy.js';
 	import { EVENTS } from './data/events.js';
-	import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from './data/catalog.js';
 
 	const st = () => engine.state;
 	const dbg = engine.actions;
@@ -64,14 +64,14 @@
 					<span>🔤 Fuente</span>
 					<select value={st().equipped}
 						onchange={e => dbg.dbgSet('equipped', e.currentTarget.value)}>
-						{#each FONT_STYLES as s (s.id)}<option value={s.id}>{s.es}</option>{/each}
+						{#each eco.all('font') as s (s.id)}<option value={s.id}>{s.es}</option>{/each}
 					</select>
 				</label>
 				<label class="dbg-row">
 					<span>🖼️ Fondo</span>
 					<select value={st().bg}
 						onchange={e => dbg.dbgSet('bg', e.currentTarget.value)}>
-						{#each BACKGROUNDS as b (b.id)}<option value={b.id}>{b.es}</option>{/each}
+						{#each eco.all('bg') as b (b.id)}<option value={b.id}>{b.es}</option>{/each}
 					</select>
 				</label>
 				<label class="dbg-row">
@@ -79,14 +79,14 @@
 					<select value={st().fxEquipped}
 						onchange={e => dbg.dbgSet('fxEquipped', e.currentTarget.value)}>
 						<option value="">—</option>
-						{#each TYPE_EFFECTS as f (f.id)}<option value={f.id}>{f.es}</option>{/each}
+						{#each eco.all('fx') as f (f.id)}<option value={f.id}>{f.es}</option>{/each}
 					</select>
 				</label>
 			</section>
 
 			<section>
 				<h4>Extras</h4>
-				{#each EXTRAS as x (x.id)}
+				{#each eco.all('extra') as x (x.id)}
 					<label class="dbg-row">
 						<span>{x.icon} {x.es}</span>
 						<input type="checkbox" checked={!!st().extraOn[x.id]}

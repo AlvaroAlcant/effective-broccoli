@@ -1,7 +1,6 @@
 import imgFranco from '#lib/img/Francisco_Franco_1930.jpg';
 import imgElprico from '#lib/img/Elprico.png';
 import imgEsteso from '#lib/img/esteso.jpg';
-import imgFredi from '#lib/img/fredi.gif';
 
 // ---------- Catálogo de la tienda ----------
 // ---------- Estilos de letra de la tienda ----------
@@ -66,17 +65,8 @@ export const BACKGROUNDS = [
         descEn: "Changing green binary digits on a black background. Reward of the “Hacker” achievement!",
         img: "", icon: "💻"
     },
-    {
-        // Tienda de EVENTO (Halloween): el fondo Five Nigths con el
-        // GIF de Fredi mirando fijamente. Solo está a la venta
-        // mientras dura el evento (8 de octubre – 3 de noviembre); una vez
-        // comprado se queda para siempre.
-        id: "fivenights", price: 1987, event: "halloween", decor: true,
-        es: "Five Nigths", en: "Five Nigths",
-        descEs: "Fondo Five Nigths con Fredi mirándote fijamente desde la oscuridad. ¡Puro terror! Solo durante el evento de Halloween.",
-        descEn: "A Five Nigths background with Fredi staring at you from the darkness. Pure horror! Halloween event only.",
-        img: imgFredi, icon: "📼"
-    }
+    // (Los fondos de evento, como «Five Nigths», se declaran en su
+    //  registro de data/events.js — no aquí)
 ];
 
 // ---------- Extras de la tienda ----------
@@ -168,23 +158,8 @@ export const EXTRAS = [
         msgOn: "shopEquippedCubicoMsg",
         msgOff: "shopDeactivatedCubicoMsg"
     },
-    {
-        // Tienda de EVENTO (Halloween): modo Truco o trato. Palabras
-        // terroríficas y DOBLE de monedas por palabra, pero cada
-        // tecla fallada cuesta el doble: pierdes 2 segundos y 2 de
-        // experiencia. Solo a la venta mientras dura el evento.
-        id: "truco",
-        price: 2040,
-        event: "halloween",
-        icon: "🍬",
-        es: "Modo Truco o trato",
-        en: "Trick or treat mode",
-        descEs: "Evento de Halloween: palabras de Halloween y DOBLE de monedas, pero cada tecla fallada cuesta el doble: pierdes 2 segundos y 2 de experiencia.",
-        descEn: "Halloween event: Halloween words and DOUBLE coins, but every wrong key costs double: you lose 2 seconds and 2 experience.",
-        msgBuy: "shopBoughtTruco",
-        msgOn: "shopEquippedTrucoMsg",
-        msgOff: "shopDeactivatedTrucoMsg"
-    }
+    // (Los extras de evento, como «Truco o trato», se declaran en su
+    //  registro de data/events.js — no aquí)
 ];
 
 // La tienda enseña los modos de juego ordenados por precio,
@@ -266,23 +241,8 @@ export const TYPE_EFFECTS = [
         colors: ["#e879f9", "#c084fc", "#f0abfc", "#67e8f9"],
         glyph: "✨", count: 10, power: 95, rise: -50, size: 16, life: 900
     },
-    {
-        // Tienda de EVENTO (Halloween): gotas de sangre que
-        // salpican y gotean hacia abajo con cada letra. Solo está
-        // a la venta mientras dura el evento (8 de octubre – 3 de noviembre).
-        id: "sangre",
-        price: 666,
-        event: "halloween",
-        icon: "🩸",
-        color: "#e11d48",
-        es: "Sangre",
-        en: "Blood",
-        descEs: "Gotas de sangre que salpican y gotean con cada letra que tecleas.",
-        descEn: "Blood drops splashing and dripping with every letter you type.",
-        colors: ["#e11d48", "#b00020", "#ff2d55", "#7f0d1a"],
-        glyph: "🩸", glyphEvery: 5, count: 9, power: 65, rise: 110, size: 15, life: 950,
-        shape: "drop"
-    },
+    // (Los efectos de evento, como «Sangre», se declaran en su registro
+    //  de data/events.js — no aquí)
     {
         // No se compra con monedas: es la RECOMPENSA del logro
         // "Un poco de pólvora" (price null = no está a la venta).
