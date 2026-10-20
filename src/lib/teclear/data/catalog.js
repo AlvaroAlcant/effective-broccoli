@@ -71,7 +71,7 @@ export const BACKGROUNDS = [
         // GIF de Fredi mirando fijamente. Solo está a la venta
         // mientras dura el evento (8 de octubre – 3 de noviembre); una vez
         // comprado se queda para siempre.
-        id: "fivenights", price: 1987, event: true, decor: true,
+        id: "fivenights", price: 1987, event: "halloween", decor: true,
         es: "Five Nigths", en: "Five Nigths",
         descEs: "Fondo Five Nigths con Fredi mirándote fijamente desde la oscuridad. ¡Puro terror! Solo durante el evento de Halloween.",
         descEn: "A Five Nigths background with Fredi staring at you from the darkness. Pure horror! Halloween event only.",
@@ -175,7 +175,7 @@ export const EXTRAS = [
         // experiencia. Solo a la venta mientras dura el evento.
         id: "truco",
         price: 2040,
-        event: true,
+        event: "halloween",
         icon: "🍬",
         es: "Modo Truco o trato",
         en: "Trick or treat mode",
@@ -272,7 +272,7 @@ export const TYPE_EFFECTS = [
         // a la venta mientras dura el evento (8 de octubre – 3 de noviembre).
         id: "sangre",
         price: 666,
-        event: true,
+        event: "halloween",
         icon: "🩸",
         color: "#e11d48",
         es: "Sangre",

@@ -388,7 +388,7 @@ export class EconomyService {
                 // repuesto, igual que en la tienda y en el selector
                 img: this.veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
                 enUso: S.bg === b.id,
-                deLogro: !!b.ach, event: !!b.event,
+                deLogro: !!b.ach, event: b.event || false,
                 // Igual que los estilos: siempre hay un fondo puesto
                 usar: () => this.setBgEquipped(b.id), apagar: null
             });
@@ -401,7 +401,7 @@ export class EconomyService {
                 nombre: en ? x.en : x.es,
                 icono: x.icon, img: "",
                 enUso: !!S.extraOn[x.id],
-                deLogro: !!x.ach, event: !!x.event,
+                deLogro: !!x.ach, event: x.event || false,
                 // Un extra sí se apaga: vuelve el Tecleo clásico
                 usar: () => this.setExtra(x.id, true),
                 apagar: () => this.setExtra(x.id, false)
@@ -415,7 +415,7 @@ export class EconomyService {
                 nombre: en ? f.en : f.es,
                 icono: f.icon, img: "", art: f.art,
                 enUso: S.fxEquipped === f.id,
-                deLogro: !!f.ach, event: !!f.event,
+                deLogro: !!f.ach, event: f.event || false,
                 // Un efecto también se apaga: sin chispas al teclear
                 usar: () => this.setFx(f.id),
                 apagar: () => this.setFx("")

@@ -26,10 +26,8 @@ import {
     MINECRAFT_WORDS, HALLOWEEN_WORDS
 } from './data/words.js';
 import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from './data/catalog.js';
-import {
-    EVENT_MONTH, EVENT_DAY_START, EVENT_MONTH_END, EVENT_DAY_END, EVENT_HOUR_END,
-    TT_TIME_PENALTY, TT_XP_PENALTY, eventStartDate, eventEndDate, halloweenOn
-} from './data/events.js';
+import { TT_TIME_PENALTY, TT_XP_PENALTY } from './data/events.js';
+import { events } from './services/events.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
 import { I18N } from './data/i18n.js';
 import { VEYON_PLACEHOLDER, VEYON_FAVICON, VEYON_BGS } from './data/veyon.js';
@@ -54,7 +52,6 @@ export class GameEngine {
     savedScore = $state(false);
     gameStartAt = 0;
     gameDuration = 0;
-    halloweenTimer = null;
     logoLast = -1;
     logoHide = 0;
 
@@ -152,7 +149,7 @@ export class GameEngine {
             })); }
 
     get shopBgs() { return BACKGROUNDS
-                .filter(b => !b.event || (!S.halloween && S.ownedBgs.includes(b.id)))
+                .filter(b => !b.event || (b.event !== events.activeId() && S.ownedBgs.includes(b.id)))
                 .map(b => ({
                     id: b.id, icon: b.icon || "🌙",
                     img: eco.veyonHiddenBg(b.id) ? VEYON_PLACEHOLDER : b.img,
@@ -164,7 +161,7 @@ export class GameEngine {
                 })); }
 
     get shopExtras() { return EXTRAS
-                .filter(x => !x.event || (!S.halloween && eco.ownsExtra(x.id)))
+                .filter(x => !x.event || (x.event !== events.activeId() && eco.ownsExtra(x.id)))
                 .map(x => ({
                     id: x.id, icon: x.icon,
                     name: uiLang() === "es" ? x.es : x.en,
@@ -175,7 +172,7 @@ export class GameEngine {
                 })); }
 
     get shopFxs() { return TYPE_EFFECTS
-                .filter(f => !f.event || (!S.halloween && eco.ownsFx(f.id)))
+                .filter(f => !f.event || (f.event !== events.activeId() && eco.ownsFx(f.id)))
                 .map(f => ({
                     id: f.id, icon: f.icon, art: f.art, color: f.color,
                     name: uiLang() === "es" ? f.es : f.en,
@@ -186,10 +183,13 @@ export class GameEngine {
                 })); }
 
     get shopEvents() {
-                if (!S.halloween) return [];
+                // La tienda de evento lista lo que el registro del evento
+                // activo declara (data/events.js): fondo + efecto + extra
+                const def = events.active;
+                if (!def || !def.shopItems) return [];
                 const en = uiLang() === "en";
                 const out = [];
-                const b = BACKGROUNDS.find(x => x.id === "fivenights");
+                const b = BACKGROUNDS.find(x => x.id === def.shopItems.bg);
                 if (b) out.push({
                     kind: "bg", id: b.id, icon: b.icon || "📼",
                     name: en ? b.en : b.es, desc: en ? b.descEn : b.descEs,
@@ -197,7 +197,7 @@ export class GameEngine {
                     own: S.ownedBgs.includes(b.id), price: b.price,
                     cant: !acc.esAdmin() && S.caramelos < b.price
                 });
-                const f = eco.fxById("sangre");
+                const f = eco.fxById(def.shopItems.fx);
                 if (f) out.push({
                     kind: "fx", id: f.id, icon: f.icon, color: f.color,
                     name: en ? f.en : f.es, desc: en ? f.descEn : f.descEs,
@@ -205,7 +205,7 @@ export class GameEngine {
                     own: eco.ownsFx(f.id), price: f.price,
                     cant: !acc.esAdmin() && S.caramelos < f.price
                 });
-                const x = EXTRAS.find(e => e.id === "truco");
+                const x = EXTRAS.find(e => e.id === def.shopItems.extra);
                 if (x) out.push({
                     kind: "extra", id: x.id, icon: x.icon,
                     name: en ? x.en : x.es, desc: en ? x.descEn : x.descEs,
@@ -218,7 +218,7 @@ export class GameEngine {
 
     get invSections() {
                 const items = eco.invItems();
-                const esEvento = it => S.halloween && it.event;
+                const esEvento = it => it.event === events.activeId();
                 return [
                     { key: "event", title: t("invEventTitle"),
                       items: items.filter(esEvento) },
@@ -265,7 +265,9 @@ export class GameEngine {
 
     get supOptions() {
                 const out = [{ v: "clasico", txt: t("supVarClasico") }];
-                if (S.halloween) out.push({ v: "encantado", txt: t("supVarEncantado") });
+                // La variante del evento activo (registro data/events.js)
+                const v = events.active?.supVariant;
+                if (v) out.push({ v, txt: t("supVar" + v[0].toUpperCase() + v.slice(1)) });
                 return out;
             }
 
@@ -304,47 +306,19 @@ export class GameEngine {
         }
 
     encOn() {
-            return S.mode === "supervivencia" && S.supVariant === "encantado";
+            // ¿La variante del evento está jugándose? (la define el registro
+            // de eventos; el modo la conoce como su variante "encantada")
+            return S.mode === "supervivencia" && modes.supervivencia.enc;
         }
 
     setSupVariant(v) {
             if (S.state === "playing") return;
-            S.supVariant = (v === "encantado" && halloweenOn()) ? "encantado" : "clasico";
+            // La variante solo se puede elegir si el evento activo la ofrece
+            S.supVariant = (v === "clasico" || events.active?.supVariant === v)
+                ? v : "clasico";
             try {
                 storage.set("teclear.supVariante", S.supVariant);
             } catch (e) { /* sin almacenamiento disponible */ }
-        }
-
-    applyHalloween() {
-            S.halloween = halloweenOn();
-            document.body.classList.toggle("halloween", S.halloween);
-            // Al acabar el evento desaparece la variante Encantada del menú
-            if (S.supVariant === "encantado" && !S.halloween && S.state !== "playing") {
-                S.supVariant = "clasico";
-            }
-            if (S.halloween) {
-                this.tickHalloween();
-                // Si el evento termina con la página abierta, la barra y la
-                // tienda de evento se cierran solas en el próximo segundo
-                if (!this.halloweenTimer) this.halloweenTimer = setInterval(this.tickHalloween.bind(this), 1000);
-            }
-        }
-
-    tickHalloween() {
-            const ahora = new Date();
-            if (!halloweenOn(ahora)) {
-                clearInterval(this.halloweenTimer);
-                this.halloweenTimer = null;
-                this.applyHalloween();            // se apaga la temática…
-                return;
-            }
-            const fin = eventEndDate(ahora.getFullYear());
-            const ms = fin - ahora;
-            const d = Math.floor(ms / 86400000);
-            const h = Math.floor((ms % 86400000) / 3600000);
-            const m = Math.floor((ms % 3600000) / 60000);
-            const s = Math.floor((ms % 60000) / 1000);
-            S.eventCountTxt = "⏳ " + d + "d " + h + "h " + m + "m " + s + "s";
         }
 
     toggleShop() {
@@ -411,7 +385,7 @@ export class GameEngine {
                 S.startTxt = t("btnAgain");
             }
 
-            this.applyHalloween();   // temática del evento (solo en Halloween)
+            events.apply();   // temática del evento en curso (clase, variante, cuenta atrás)
         }
 
     setLang(next) {
@@ -1108,6 +1082,11 @@ this.verifyInput = document.getElementById("verifyInput");
             getGameDuration: () => this.gameDuration,
             getAdvTimeGained: () => modes.aventura.timeGained,
         });
+        // El servicio de eventos solo necesita saber quién es admin
+        // (las pruebas de eventos fuera de fecha son exclusivas suyas)
+        events.bind({ isAdmin: () => acc.esAdmin() });
+        events.loadTest();
+
         Object.values(modes).forEach(m => { m.engine = this; });
         this.typing.addEventListener("input", (e) => {
             if (S.state !== "playing" || S.perkOpen) {
@@ -1169,7 +1148,11 @@ this.logoBtn = document.getElementById("logoBtn");
             const sv = storage.get("teclear.supVariante");
             if (sv === "encantado" || sv === "clasico") S.supVariant = sv;
         } catch (e) { /* sin almacenamiento disponible */ }
-        if (S.supVariant === "encantado" && !halloweenOn()) S.supVariant = "clasico";
+        // Si la variante guardada pertenece a un evento que no está activo,
+        // se vuelve al clásico (p. ej. Encantado fuera de Halloween)
+        if (S.supVariant !== "clasico" && S.supVariant !== events.active?.supVariant) {
+            S.supVariant = "clasico";
+        }
         prog.achLoad();
         prog.loadProfileStats();
         S.accSession = acc.loadSession();
@@ -1250,7 +1233,12 @@ this.logoBtn = document.getElementById("logoBtn");
                 logout: () => { return acc.doLogout(); },
                 saveProfile: () => { return acc.saveProfile(); },
                 openAccount: (m) => { acc.openAccount(m); },
-                closeAccount: () => { acc.closeAccount(); }
+                closeAccount: () => { acc.closeAccount(); },
+                // Eventos (solo admin): fuerza un evento fuera de su fecha o
+                // vuelve al calendario. Útil para probarlos en la página.
+                get event() { return events.activeId(); },
+                testEvent: (id) => { return events.test(id); },
+                clearEvent: () => { events.clearTest(); }
             }),
             writable: false,
             configurable: false
