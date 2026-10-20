@@ -99,8 +99,10 @@ export function initSpiders(root) {
             const dist = Math.hypot(dx, dy) || 1;
             // El hilo se estira hasta x3 y se acorta hasta la mitad
             sp.len = Math.min(sp.restLen * 3, Math.max(sp.restLen * 0.5, dist));
-            // Ángulo respecto a la vertical, tope ±80°
-            const t = Math.atan2(dx, dy);
+            // Ángulo respecto a la vertical, tope ±80°. Ojo al signo:
+            // rotate(+) en CSS lleva el extremo inferior a la izquierda,
+            // así que un dx a la derecha es θ negativo
+            const t = Math.atan2(-dx, dy);
             sp.theta = Math.max(-1.4, Math.min(1.4, t));
             sp.hist.push({ t: e.timeStamp, theta: sp.theta, len: sp.len });
             if (sp.hist.length > 5) sp.hist.shift();
