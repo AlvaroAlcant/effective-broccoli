@@ -19,6 +19,8 @@ export class GameState {
     wrongLetters = $state([]);
     misses = $state(0);
     score = $state(0);
+    hits = $state(0);            // teclas / letras acertadas en la partida
+    errors = $state(0);          // fallos cometidos en la partida
     streak = $state(0);
     completed = $state(0);
     prevLen = $state(0);

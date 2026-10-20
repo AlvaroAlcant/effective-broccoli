@@ -9,14 +9,11 @@ import { prog } from './services/progression.js';
 import * as identity from './services/identity.js';
 import { ranking } from './services/ranking.svelte.js';
 import { acc } from './services/account.js';
+import { modes } from './modes/index.js';
 import {
     GAME_TIME, MAX_MISSES, SPEEDRUN_MS, BONUS_TIME_ELPRICO, SOUP_GIVEN,
     ADV_TIME, ADV_EVERY, ADV_EVERY_MAX, ADV_SPEED_STEP, ADV_SPEED_MAX, ADV_SCORE_SLACK,
-    SUP_LIVES, SUP_TIME, SUP_TIME_MIN, SUP_TIME_STEP, SUP_SPEED_STEP, SUP_SPEED_MAX,
-    SUP_XP_WORD, SUP_MAX_WORDS, SUP_GRACE, SUP_RAMP, SHOT_MS, SHOT_GAP,
-    SUP_LANES_WIDE, SUP_LANES_NARROW,
-    ENC_ALFABETO, ENC_CANDY_HIT, ENC_CANDY_FAIL, ENC_MAX_GHOSTS, ENC_MIN_TIME,
-    ENC_GHOST_STEP, ENC_TIME_STEP, ENC_SPEED_STEP,
+    SUP_LIVES, SUP_XP_WORD,
     RANK_URL, RANK_ADV_URL, NAMES_URL, RESETS_URL, RANK_MAX, NAMES_MAX,
     RANK_TIMEOUT, NAME_MAX, MAX_SCORE, MAX_WORDS, PTS_PER_WORD, SCORE_BOOST,
     SEAL_SALT, PROFILES_URL, PASS_MIN, KDF_ROUNDS
@@ -79,29 +76,9 @@ export function initTeclear() {
         // Experiencia que las teclas falladas se han tragado en la partida
         // en curso (se descuenta al acabar, en endGame)
         let ttXpLoss = 0;
-
-
-
-        // ---------- Estado ----------
-                 // es | en | mur (murciano)
-        // ---------- Caramelos y variante Encantada (evento de Halloween) ----------
-                   // caramelos guardados (moneda del evento)
-                    // cambio de caramelos durante la partida
-          // variante de Supervivencia: clasico | encantado
-        let encTyped = 0;            // letras acertadas en la partida Encantada
-               // type | guess | imagen | aventura | supervivencia
-                 // dark | franco | elprico | esteso
-          // Modo Veyon: oculta logo y fondos «General»/«Ia» (activo por defecto)
-              // idle | playing | over
-        
-           // imagen en pantalla (modo Imágenes)
-                  // modo adivinar: "start" | "hidden" | "found"
-          // modo adivinar
-                 // modo adivinar
-        
-        
-        let hits = 0;           // teclas / letras acertadas
-        let errors = 0;         // fallos
+            // letras acertadas en la partida Encantada
+           // teclas / letras acertadas
+         // fallos
         
                 // longitud aceptada en el modo tecleo
         
@@ -162,18 +139,9 @@ export function initTeclear() {
         let advStops = 0;          // paradas de ventaja ya celebradas
         let advNextPerk = ADV_EVERY;  // palabras escritas en las que toca parar
 
-        // ---------- Estado del modo Supervivencia ----------
-          // vidas que quedan (5 al empezar)
-        // Palabras que hay ahora en pantalla. Cada una lleva lo suyo: la
-        // palabra, las letras ya disparadas, su hueco y sus segundos restantes
-        let supItems = [];
-        // Reloj que repinta el campo de Supervivencia: los ítems mutan cada
-        // tick (bajan, reciben letras), así que la vista se suscribe a este
-        // contador y relee el array en cada pulso — sin proxies de por medio
-        
-        let supSerial = 0;       // id incremental de cada palabra en pantalla
-        let supTarget = null;      // palabra a la que apunta el teclado
-        let supStartAt = 0;        // instante en que empezó la partida (dificultad)
+       // id incremental de cada palabra en pantalla
+      // palabra a la que apunta el teclado
+        // instante en que empezó la partida (dificultad)
 
         // ---------- Perfil de usuario ----------
                // panel de perfil abierto
@@ -288,7 +256,7 @@ export function initTeclear() {
             rankWhoTxt:  () => S.accSession ? t("accRankWith") + S.accSession.n : t("accRankNo"),
             perkOpen:    () => S.perkOpen,
             perkOpts:    () => S.perkOpts,
-            supTargetN:  () => supTarget ? supTarget.n : -1,
+            supTargetN:  () => modes.supervivencia.target ? modes.supervivencia.target.n : -1,
             supLives:    () => S.supLives,
             supMax:      () => SUP_LIVES,
             picErr:      () => S.picErr,
@@ -299,20 +267,9 @@ export function initTeclear() {
                 if (S.state !== "playing") {
                     return { kind: "hint", txt: S.state === "over" ? t("boardEnd") : t("boardIdle") };
                 }
-                if (S.mode === "supervivencia") {
-                    S.supTick;   // se repinta con cada pulso del campo
-                    // Los ítems mutan en sitio (bajan, reciben letras), así que
-                    // la vista recibe una COPIA de cada uno: al cambiar la
-                    // referencia, el {#each} con clave vuelve a pintar la caja
-                    return { kind: "sup",
-                             items: supItems.map(it => ({
-                                 n: it.n, w: it.w, typed: it.typed,
-                                 shotFrom: it.shotFrom, lane: it.lane,
-                                 span: it.span, y: it.y, fresh: it.fresh
-                             })),
-                             targetN: supTarget ? supTarget.n : -1,
-                             enc: encOn(), shotMs: SHOT_MS, shotGap: SHOT_GAP };
-                }
+                // Los modos con tablero propio devuelven su vista
+                const mv = modes[S.mode].boardView();
+                if (mv) return mv;
                 if (S.mode === "imagen") {
                     return { kind: "img", em: S.currentImg ? S.currentImg.em : "🖼️",
                              src: S.currentImg ? emojiSrc(S.currentImg.em) : "" };
@@ -523,7 +480,7 @@ export function initTeclear() {
             saveScore: saveScore,
             choosePerk: choosePerk,
             supAim: n => {
-                supAim(supItems.find(x => x.n === n));
+                modes.supervivencia.aimByN(n);
                 if (typing) typing.focus();
             },
             verifyKey: acc.verifyKey,
@@ -554,7 +511,7 @@ export function initTeclear() {
         // elementos que toca y las consultas que necesita del juego
         fx.bind({
             stage, board, typing,
-            getSupTarget: () => supTarget,
+            getSupTarget: () => modes.supervivencia.target,
             getActiveFx: () => eco.activeFx(),
         });
         fx.mount();
@@ -575,9 +532,18 @@ export function initTeclear() {
             perfil, accName, accPass, accPass2, verifyInput,
             applyLang,
             saveScore,
-            getHits: () => hits,
+            getHits: () => S.hits,
             getGameDuration: () => gameDuration,
             getAdvTimeGained: () => advTimeGained,
+        });
+
+        // Los modos reciben la interfaz del motor: elementos que tocan
+        // y operaciones compartidas del ciclo de juego
+        Object.values(modes).forEach(m => {
+            m.engine = {
+                typing, board,
+                nextWord, endGame, updateHud, pagaPalabra, typeInput
+            };
         });
 
 
@@ -877,19 +843,14 @@ export function initTeclear() {
 
         // ---------- Utilidades ----------
         function level() {
+            // Los modos con dificultad propia la calculan ellos
+            const lv = modes[S.mode].level();
+            if (lv != null) return lv;
             // En el modo Aventura la dificultad sube más deprisa: con cada
             // palabra escrita toca antes una más larga y menos pistas.
             // La ventaja "remanso" descuenta palabras para que no suba tanto.
             if (S.mode === "aventura") {
                 return 1 + Math.floor(Math.max(0, S.completed - advRelief) / 3);
-            }
-            // En Supervivencia manda el RELOJ, no lo que se escribe: los
-            // primeros segundos todo va muy despacio (nivel 1) y a partir de
-            // ahí sube un nivel cada SUP_RAMP segundos, con lo que las
-            // palabras caen más deprisa, tardan menos en recorrer el tablero
-            // y caben más a la vez en pantalla.
-            if (S.mode === "supervivencia") {
-                return 1 + Math.floor(Math.max(0, supElapsed() - SUP_GRACE) / SUP_RAMP);
             }
             return 1 + Math.floor(S.completed / 5);
         }
@@ -913,55 +874,10 @@ export function initTeclear() {
             return Math.min(ADV_SPEED_MAX, 1 + extra);
         }
 
-        // ---------- Modo Supervivencia ----------
-        // Segundos que lleva corriendo la partida. Es el que manda la
-        // dificultad: al principio todo va muy despacio y con el tiempo el
-        // nivel va subiendo y las palabras bajan cada vez más deprisa.
-        function supElapsed() {
-            return supStartAt > 0 ? (Date.now() - supStartAt) / 1000 : 0;
-        }
 
-        // Segundos que tarda una palabra en recorrer el tablero de arriba
-        // abajo: van bajando con el nivel, así que cada vez hay que disparar
-        // sus letras más deprisa antes de que toque el fondo.
-        function supWordTime() {
-            // Modo Encantado: cada letra que aciertas hace que los fantasmas
-            // siguientes bajen antes (nunca por debajo de ENC_MIN_TIME)
-            if (encOn()) {
-                const base = SUP_TIME - encTyped * ENC_TIME_STEP;
-                return Math.max(ENC_MIN_TIME, Math.round(base * 10) / 10);
-            }
-            const base = SUP_TIME - (level() - 1) * SUP_TIME_STEP;
-            return Math.max(SUP_TIME_MIN, Math.round(base * 10) / 10);
-        }
 
-        // Velocidad a la que bajan las palabras: acelera con el nivel hasta el
-        // doble, de modo que TODAS bajan cada vez más deprisa justo cuando son
-        // más largas y sus letras dan más trabajo.
-        function supSpeed() {
-            // En el modo Encantado la aceleración la marcan las LETRAS
-            // acertadas, no el reloj: escribir más hace a los fantasmas más
-            // rápidos (hasta el mismo tope de doble velocidad)
-            const extra = encOn()
-                ? encTyped * ENC_SPEED_STEP
-                : (level() - 1) * SUP_SPEED_STEP;
-            return Math.min(SUP_SPEED_MAX, 1 + extra);
-        }
 
-        // Segundos que le quedan a una palabra antes de tocar el fondo
-        function supLeft(it) {
-            return Math.max(0, (1 - it.y) * it.span / supSpeed());
-        }
 
-        // Palabras que pueden estar en pantalla a la vez: se empieza con una
-        // y el tope va subiendo con el NIVEL (que crece con el tiempo), así
-        // que la pantalla se va llenando según pasan los segundos.
-        function supMaxWords() {
-            // Modo Encantado: los fantasmas salen según lo que ESCRIBES (al
-            // principio pocos, y crece el tope con cada letra acertada)
-            if (encOn()) return Math.min(ENC_MAX_GHOSTS, 2 + Math.floor(encTyped / ENC_GHOST_STEP));
-            return Math.min(SUP_MAX_WORDS, 1 + Math.floor((level() - 1) / 2));
-        }
 
         // Palabras que faltan para la próxima parada de ventaja: el hueco va
         // creciendo de dos en dos palabras cada vez que se para, hasta
@@ -1104,7 +1020,7 @@ export function initTeclear() {
                 apply: function () {
                     const n = Math.max(20, S.streak * 10);
                     eco.giveCoins(n);
-                    fx.fx.showCoin(n);
+                    fx.showCoin(n);
                 }
             },
             {
@@ -1366,258 +1282,18 @@ export function initTeclear() {
             prog.achBest("hacker", S.score);
         }
 
-        // ---------- Modo Supervivencia: palabras que bajan desde arriba ----------
-        // El tablero es un campo con varias columnas. Cada palabra nace arriba
-        // del todo y va bajando por su columna hasta el fondo, con sus letras
-        // y su barra de descenso; solo la apuntada está encendida y es la que
-        // se teclea. Se apunta con el clic o con Tab, y si una llega hasta
-        // abajo se pierde una vida.
 
-        // (Las cajas de las palabras las dibuja Svelte con un {#each} sobre
-        //  supItems: posición, letras disparadas y barra salen de los datos)
 
-        // El span de la letra i de una palabra en pantalla (para el disparo)
-        function supLetterEl(it, i) {
-            const box = board && board.querySelector('[data-n="' + it.n + '"]');
-            const ls = box && box.querySelector(".sup-letters");
-            return ls ? (ls.children[i] || null) : null;
-        }
 
-        // Letra aleatoria que baja en el modo Encantado (con su fantasma)
-        function encLetter() {
-            return ENC_ALFABETO[Math.floor(Math.random() * ENC_ALFABETO.length)];
-        }
 
-        // Nueva palabra: nace arriba del todo en la columna que tenga más
-        // aire (solo datos, la caja la pinta Svelte al entrar en la lista)
-        function supSpawn() {
-            if (supItems.length >= supMaxWords()) return null;
-            const lanes = board && board.clientWidth < 520
-                ? SUP_LANES_NARROW : SUP_LANES_WIDE;
-            // Se elige la columna cuya palabra más alta deja más hueco
-            // arriba, así que las letras no se pisan al bajar
-            let lane = lanes[0];
-            let mejor = -1;
-            for (const ln of lanes) {
-                let alto = 2;                       // 2 = columna vacía
-                for (const x of supItems) {
-                    if (x.lane === ln && x.y < alto) alto = x.y;
-                }
-                if (alto > mejor) { mejor = alto; lane = ln; }
-            }
 
-            // En el modo Encantado caen LETRAS sueltas (cada una en su
-            // fantasma); en el clásico, palabras como siempre
-            const enc = encOn();
-            let w = enc ? encLetter() : nextWord();
-            // Se evita repetir las que ya están en pantalla
-            for (let i = 0; i < 8 && supItems.some(x => x.w === w); i++) w = enc ? encLetter() : nextWord();
 
-            const seg = supWordTime();
-            const it = {
-                n: ++supSerial,      // id estable para el {#each} y el disparo
-                w: w, typed: 0, shotFrom: 0, fresh: true,
-                lane: lane,
-                span: seg, y: 0      // y: 0 = arriba del todo, 1 = fondo
-            };
-            supItems.push(it);
-            return it;
-        }
 
-        // Rellena el tablero hasta el tope del nivel: cada vez hay más
-        // palabras en pantalla según avanzas. Devuelve la última en entrar.
-        function supFillBoard() {
-            let nueva = null;
-            while (supItems.length < supMaxWords()) {
-                const it = supSpawn();
-                if (!it) break;
-                nueva = it;
-            }
-            return nueva;
-        }
 
-        // Saca una palabra del tablero (completada o escapada)
-        function supRemove(it) {
-            const i = supItems.indexOf(it);
-            if (i >= 0) supItems.splice(i, 1);
-            if (supTarget === it) supTarget = null;
-        }
 
-        // Apunta a una palabra: a partir de ahí es la que se teclea. El reloj
-        // del HUD pasa a marcar lo que LE FALTA de camino al fondo y se
-        // recupera lo que ya se había disparado de ella antes de cambiar.
-        function supAim(it) {
-            if (!it) return;
-            supTarget = it;
-            S.word = it.w;                     // las recompensas trabajan sobre `word`
-            S.prevLen = it.typed;
-            S.typedStr = it.w.slice(0, it.typed);
-            typing.value = S.typedStr;
-            S.timeLeft = supLeft(it);
-            updateHud();
-        }
 
-        // La siguiente en apuntar es la que está más cerca del fondo
-        function supAimNext() {
-            let mejor = null;
-            for (const x of supItems) if (!mejor || x.y > mejor.y) mejor = x;
-            supAim(mejor);
-        }
 
-        // Tab (o un clic) para pasar a apuntar a la siguiente palabra
-        function supCycle() {
-            if (supItems.length < 2) return;
-            const i = supItems.indexOf(supTarget);
-            supAim(supItems[(i + 1) % supItems.length]);
-        }
 
-        // Palabra terminada: cobra puntos, monedas y experiencia, se va del
-        // tablero y... ¡van apareciendo más! (el tope lo manda el nivel)
-        function supComplete() {
-            const it = supTarget;
-            if (!it) return;
-            // El modo Encantado solo paga CARAMELOS (ni monedas ni experiencia)
-            if (encOn()) encReward();
-            else pagaPalabra();           // recompensas, racha y logros
-            supRemove(it);
-            supFillBoard();
-            supAimNext();
-            updateHud();
-        }
-
-        // Letra acertada en el modo Encantado: su recompensa son caramelos.
-        // Cuenta para nivel, racha y resultados, pero NUNCA da monedas ni
-        // experiencia (el modo se paga solo en la moneda del evento).
-        function encReward() {
-            encTyped++;
-            S.completed++;
-            S.streak++;
-            S.score += 10;
-            eco.giveCandy(ENC_CANDY_HIT);     // +1 caramelos por letra
-            fx.fx.showCandy(ENC_CANDY_HIT);
-            S.statusTxt = t("encHit");
-        }
-
-        // Una palabra ha llegado hasta el fondo del tablero: se pierde una
-        // vida y sigue la partida con las que queden (sin vidas se acaba)
-        function supEscape(it) {
-            const escapada = it.w;
-            supRemove(it);
-            S.supLives--;
-            fx.shake();
-            if (S.supLives <= 0) {
-                S.supLives = 0;
-                S.timeLeft = 0;
-                S.statusTxt = t("supFailEnd");
-                updateHud();
-                endGame();
-                return;
-            }
-            S.statusTxt = t("supFail") + S.supLives + " ❤️ · " + t("supFell") + escapada;
-            // En el hueco de la que se ha caído entra otra por arriba y se
-            // apunta a ella
-            supFillBoard();
-            supAimNext();
-        }
-
-        // ---------- Disparo de las letras ----------
-        // Cada letra aceptada sale volando desde el campo de escritura hasta
-        // su casilla de la palabra apuntada. El vuelo dura SHOT_MS y la
-        // explosión de la casilla espera a que la letra llegue, así que se
-        // ve el disparo y después el impacto. Va en la capa de efectos, que
-        // no estorba ni al ratón ni al teclado.
-        function supShoot(ch, destino, espera) {
-            if (!fxLayer || !typing || !destino) return;
-            const a = typing.getBoundingClientRect();
-            const b = destino.getBoundingClientRect();
-            if (!a.width || !b.width) return;
-            const x0 = a.left + a.width / 2;
-            const y0 = a.top + a.height / 2;
-            const dx = (b.left + b.width / 2) - x0;
-            const dy = (b.top + b.height / 2) - y0;
-            const p = document.createElement("i");
-            p.className = "sup-shot";
-            p.textContent = ch;
-            p.style.left = x0 + "px";
-            p.style.top = y0 + "px";
-            p.style.setProperty("--shot-dx", dx.toFixed(1) + "px");
-            p.style.setProperty("--shot-dy", dy.toFixed(1) + "px");
-            // La letra gira en el sentido del vuelo: se ve que va disparada
-            p.style.setProperty("--shot-rot",
-                Math.round(Math.atan2(dy, dx) * 180 / Math.PI) + "deg");
-            p.style.setProperty("--shot-dur", SHOT_MS + "ms");
-            p.style.animationDelay = (espera || 0) + "ms";
-            fxLayer.appendChild(p);
-            setTimeout(function () { p.remove(); }, SHOT_MS + (espera || 0) + 120);
-        }
-
-        // Lo que se teclea se compara con la palabra APUNTADA: la primera
-        // letra mal puesta se rechaza y penaliza, como en el modo Tecleo
-        function supInput() {
-            let val = typing.value.toLowerCase();
-            if (typing.value !== val) typing.value = val;
-
-            const tgt = supTarget;
-            if (!tgt) {
-                typing.value = "";
-                return;
-            }
-
-            if (val.length > tgt.w.length) {
-                val = val.slice(0, tgt.w.length);
-                typing.value = val;
-            }
-
-            let bad = -1;
-            for (let i = 0; i < val.length; i++) {
-                if (val[i] !== tgt.w[i]) {
-                    bad = i;
-                    break;
-                }
-            }
-
-            if (bad !== -1) {
-                val = val.slice(0, bad);
-                typing.value = val;
-                errors++;
-                S.streak = 0;
-                S.score = Math.max(0, S.score - 5);
-                fx.shake();
-                // Modo Encantado: fallar cuesta CARAMELOS, pero el contador
-                // nunca baja de cero (con 0 caramelos no se mueve)
-                if (encOn()) {
-                    const perdidos = Math.min(ENC_CANDY_FAIL, Math.max(0, S.caramelos));
-                    if (perdidos > 0) {
-                        eco.giveCandy(-perdidos);
-                        S.statusTxt = t("encFail") + perdidos + t("encFailEnd");
-                    } else {
-                        S.statusTxt = t("encFailZero");
-                    }
-                } else {
-                    S.statusTxt = t("statusError");
-                }
-            } else {
-                if (val.length > S.prevLen) hits += val.length - S.prevLen;
-                S.statusTxt = t("statusOk");
-            }
-
-            const antes = S.prevLen;
-            S.prevLen = val.length;
-            tgt.typed = val.length;
-            tgt.shotFrom = antes;   // desde dónde llegó esta ráfaga (retardo del blast)
-            updateHud();
-
-            // Letras recién aceptadas: salen disparadas del campo de
-            // escritura hacia su casilla (una tras otra, con su desfase)
-            if (bad === -1) {
-                for (let i = antes; i < val.length; i++) {
-                    const espera = (i - antes) * SHOT_GAP;
-                    supShoot(tgt.w[i], supLetterEl(tgt, i), espera);
-                }
-            }
-
-            if (val === tgt.w) supComplete();
-        }
 
         // (El tablero — letras, foto del modo Imágenes, máscara de Adivinar
         //  y el campo de Supervivencia — lo dibuja Svelte desde G.boardView;
@@ -1637,13 +1313,10 @@ export function initTeclear() {
                 soupReveal();    // letras que deja Sopa de Letras
             } else if (S.mode === "type" || S.mode === "aventura") {
                 soupPrefill();   // letras que deja Sopa de Letras
-            } else if (S.mode === "supervivencia") {
-                // La partida empieza con una sola palabra en pantalla: el
-                // resto van apareciendo según escribes (ya se apunta a esta)
-                supItems = [];
-                supTarget = null;
-                supSpawn();
-                supAim(supItems[0]);
+            } else {
+                // Los modos con tablero propio lo montan ellos (en
+                // Supervivencia cae la primera palabra ya apuntada)
+                modes[S.mode].onNewWord();
             }
             updateHud();
         }
@@ -1725,30 +1398,21 @@ export function initTeclear() {
             S.state = "playing";
             S.score = 0;
             S.streak = 0;
-            hits = 0;
-            errors = 0;
+            S.hits = 0;
+            S.errors = 0;
             S.completed = 0;
             S.prevLen = 0;
             S.misses = 0;
             S.wrongLetters = [];
             ttXpLoss = 0;   // experiencia robada por fallos (Truco o trato)
-            encTyped = 0;   // letras acertadas del modo Encantado (si se juega)
             S.candyRun = 0;   // caramelos ganados en esta partida
+            // Cada modo arranca su parte (vidas, tablero, clase del body…)
+            modes[S.mode].enter();
             // El modo Aventura se juega contra un cronómetro propio: 50 s
             // En Supervivencia el reloj es el de la palabra apuntada
-            S.timeLeft = S.mode === "aventura" ? ADV_TIME :
-                (S.mode === "supervivencia" ? supWordTime() : gameTime());
+            S.timeLeft = modes[S.mode].timerStart() ??
+                (S.mode === "aventura" ? ADV_TIME : gameTime());
             S.coinsRun = 0;
-            // Modo Supervivencia: se empieza con todas las vidas y con una
-            // sola palabra en pantalla (las demás van apareciendo) y el
-            // tablero se ensancha para el campo de juego
-            S.supLives = SUP_LIVES;
-            supItems = [];
-            supTarget = null;
-            // El reloj de la dificultad arranca aquí: los primeros segundos
-            // las palabras bajan muy despacio y a partir de ahí se aceleran
-            supStartAt = Date.now();
-            document.body.classList.toggle("modo-supervivencia", S.mode === "supervivencia");
             // Estado del modo Aventura: ventajas y pausas a cero
             S.perkOpen = false;
             pausedTotal = 0;
@@ -1852,32 +1516,17 @@ export function initTeclear() {
                 updateHud();
                 return;
             }
-            // En Supervivencia todas las palabras bajan a la vez: la que
-            // llegue hasta el fondo del tablero se cae (una vida menos) hasta
-            // acabar la partida
-            if (S.mode === "supervivencia") {
-                const dt = (now - lastTick) / 1000 * supSpeed();
+            // Los modos con pulso propio se ocupan solos (Supervivencia
+            // mueve su campo de palabras y su reloj particular)
+            const dt = now - lastTick;
+            if (modes[S.mode].tick(now, dt)) {
                 lastTick = now;
-                // Se recorre una copia: al caerse puede entrar otra palabra
-                // (por arriba del todo) y a esa no le toca todavía
-                const vivas = supItems.slice();
-                for (const it of vivas) {
-                    if (supItems.indexOf(it) < 0) continue;   // ya se cayó
-                    it.y += dt / Math.max(0.5, it.span);
-                    if (it.y >= 1) {
-                        supEscape(it);
-                        if (S.state !== "playing") return;      // sin vidas: fin
-                    }
-                }
-                // El reloj del HUD marca lo que le falta a la palabra apuntada
-                S.timeLeft = supTarget ? supLeft(supTarget) : 0;
-                updateHud();
                 return;
             }
             // En Aventura el reloj va acelerando con el nivel: el tiempo que
             // queda se consume cada vez más deprisa (velocidad normal en el
             // resto de modos, donde tickSpeed() devuelve 1)
-            S.timeLeft -= (now - lastTick) / 1000 * tickSpeed();
+            S.timeLeft -= dt / 1000 * tickSpeed();
             lastTick = now;
             // Ventaja "salvavidas": el cronómetro no muere de golpe, salta a 15 s
             if (S.timeLeft <= 0 && advRevive > 0) {
@@ -1907,12 +1556,9 @@ export function initTeclear() {
                 ? Math.max(0, (Date.now() - gameStartAt - pausedTotal) / 1000)
                 : gameTime();
             S.state = "over";
-            // El tablero de Supervivencia se retira: palabras, apuntado y
-            // la pantalla grande vuelven a su sitio hasta la próxima partida
-            supItems = [];
-            supTarget = null;
-            supStartAt = 0;
-            document.body.classList.remove("modo-supervivencia");
+            // Cada modo retira lo suyo (el tablero de Supervivencia, la
+            // pantalla grande, sus contadores…)
+            modes[S.mode].exit();
             // Por si se termina con la ventana de ventajas abierta
             if (S.perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
             S.perkOpen = false;
@@ -1925,8 +1571,8 @@ export function initTeclear() {
             }
             S.startTxt = t("btnAgain");
 
-            const total = hits + errors;
-            const accPct = total === 0 ? 100 : Math.round((hits / total) * 100);
+            const total = S.hits + S.errors;
+            const accPct = total === 0 ? 100 : Math.round((S.hits / total) * 100);
             // Los ppm se calculan sobre lo que duró de verdad la partida
             // (Aventura y Supervivencia no tienen duración fija: usan la real)
             const fija = S.mode === "aventura" || S.mode === "supervivencia";
@@ -2031,7 +1677,7 @@ export function initTeclear() {
                     advShield--;
                     S.statusTxt = t("statusShield");
                 } else {
-                    errors++;
+                    S.errors++;
                     // Ventaja "indulgencia": un rato sin que el fallo rompa la racha
                     const indul = S.mode === "aventura" && performance.now() < advGrace;
                     if (!indul) S.streak = 0;
@@ -2047,7 +1693,7 @@ export function initTeclear() {
                     }
                 }
             } else {
-                if (val.length > S.prevLen) hits += val.length - S.prevLen;
+                if (val.length > S.prevLen) S.hits += val.length - S.prevLen;
                 S.statusTxt = t("statusOk");
             }
 
@@ -2066,7 +1712,7 @@ export function initTeclear() {
             if (!/^[a-záéíóúüñ]$/.test(ch)) return;       // ignorar espacios y símbolos
             if (S.wrongLetters.includes(ch)) return;         // letra ya fallada
             if (!S.word.includes(ch)) {                      // fallo
-                errors++;
+                S.errors++;
                 S.streak = 0;
                 S.misses++;
                 S.score = Math.max(0, S.score - 5);
@@ -2093,7 +1739,7 @@ export function initTeclear() {
             }
             if (revealed === 0) return; // la letra ya se veía: no cuenta
 
-            hits += revealed;
+            S.hits += revealed;
             S.streak++;
             const points = 10 * multiplier() * revealed;
             S.score += points;
@@ -2125,10 +1771,8 @@ export function initTeclear() {
                     if (S.state !== "playing") break;
                     guessChar(ch);
                 }
-            } else if (S.mode === "supervivencia") {
-                supInput();
             } else {
-                typeInput();
+                modes[S.mode].input();
             }
         });
 
@@ -2141,12 +1785,9 @@ export function initTeclear() {
             if (!e.repeat && !S.perkOpen && e.key && e.key.length === 1 && !/\s/.test(e.key)) {
                 fx.fxBurst();
             }
-            // Supervivencia: Tab cambia el objetivo a la siguiente palabra
-            // (sin salir del campo de escritura)
-            if (S.mode === "supervivencia" && e.key === "Tab") {
-                e.preventDefault();
-                supCycle();
-            }
+            // Teclas propias del modo (Supervivencia: Tab cambia el
+            // objetivo a la siguiente palabra sin salir del campo)
+            modes[S.mode].keydown(e);
         });
 
         // Pegar o arrastrar texto no vale: hay que teclearlo
@@ -2334,8 +1975,8 @@ export function initTeclear() {
                 get state() { return S.state; },
                 get score() { return S.score; },
                 get completed() { return S.completed; },
-                get hits() { return hits; },
-                get errors() { return errors; },
+                get hits() { return S.hits; },
+                get errors() { return S.errors; },
                 get word() { return S.word; },
                 get mode() { return ranking.entryMode(); },
                 get lang() { return S.lang; },
