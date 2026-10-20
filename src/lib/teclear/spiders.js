@@ -80,6 +80,13 @@ export function initSpiders(root) {
             sp.bug.setPointerCapture(e.pointerId);
             sp.dragging = true;
             sp.grabbed = true;
+            // Ancla del hilo en coordenadas de viewport. Se toma de
+            // offsetLeft/offsetTop (layout) porque getBoundingClientRect
+            // del hilo YA viene rotado y su bounding box se desplaza —
+            // eso hacía el arrastre asimétrico
+            const dr = root.getBoundingClientRect();
+            sp.ax = dr.left + sp.el.offsetLeft;
+            sp.ay = dr.top + sp.el.offsetTop;
             // El decor puede estar oculto al montar (fuera de evento):
             // el largo real del hilo se mide al primer agarre
             if (!sp.restLen) { sp.restLen = sp.el.offsetHeight || 110; sp.len = sp.restLen; }
@@ -92,10 +99,8 @@ export function initSpiders(root) {
 
         sp.bug.addEventListener("pointermove", e => {
             if (!sp.dragging) return;
-            // Ancla del hilo: esquina superior (width 0 → x del borde)
-            const r = sp.el.getBoundingClientRect();
-            const dx = e.clientX - r.left;
-            const dy = e.clientY - r.top;
+            const dx = e.clientX - sp.ax;
+            const dy = e.clientY - sp.ay;
             const dist = Math.hypot(dx, dy) || 1;
             // El hilo se estira hasta x3 y se acorta hasta la mitad
             sp.len = Math.min(sp.restLen * 3, Math.max(sp.restLen * 0.5, dist));
