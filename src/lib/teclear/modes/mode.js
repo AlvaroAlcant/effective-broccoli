@@ -28,6 +28,9 @@ export class GameMode {
     // Teclas propias del modo (Tab para cambiar de objetivo…)
     keydown(e) {}
 
+    // Palabra propia del modo (null = sale del pozo de siempre)
+    pickWord() { return null; }
+
     // Toca sacar palabra (o lo que el modo ponga en el tablero)
     onNewWord() {}
 
@@ -36,6 +39,9 @@ export class GameMode {
 
     // Datos del tablero para la vista (null = el motor usa el suyo)
     boardView() { return null; }
+
+    // Datos del hueco de vidas/fallos (null = hueco apagado)
+    missesView() { return null; }
 
     // Nivel de dificultad del modo (null = fórmula estándar)
     level() { return null; }

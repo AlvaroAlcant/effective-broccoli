@@ -21,7 +21,7 @@ import {
     WORDS, MURCIANO_WORDS, PICANTE, PHP_WORDS, ANDALUZ_WORDS,
     MINECRAFT_WORDS, HALLOWEEN_WORDS
 } from './data/words.js';
-import { IMAGENES, emojiSrc } from './data/images.js';
+
 import { FONT_STYLES, BACKGROUNDS, EXTRAS, TYPE_EFFECTS } from './data/catalog.js';
 import {
     EVENT_MONTH, EVENT_DAY_START, EVENT_MONTH_END, EVENT_DAY_END, EVENT_HOUR_END,
@@ -264,30 +264,15 @@ export function initTeclear() {
                 // Los modos con tablero propio devuelven su vista
                 const mv = modes[S.mode].boardView();
                 if (mv) return mv;
-                if (S.mode === "imagen") {
-                    return { kind: "img", em: S.currentImg ? S.currentImg.em : "🖼️",
-                             src: S.currentImg ? emojiSrc(S.currentImg.em) : "" };
-                }
-                if (S.mode === "guess") {
-                    const firstHidden = S.mask.indexOf("hidden");
-                    return { kind: "letters", letters: S.word.split("").map((ch, i) => ({
-                        ch: S.mask[i] === "hidden" ? "_" : ch,
-                        cls: S.mask[i] === "hidden" ? "blank" + (i === firstHidden ? " cursor" : "")
-                             : (S.mask[i] === "found" ? "ok" : "")
-                    })) };
-                }
                 return { kind: "letters", letters: S.word.split("").map((ch, i) => ({
                     ch: ch,
                     cls: i < S.typedStr.length ? (S.typedStr[i] === ch ? "ok" : "bad")
                          : (i === S.typedStr.length ? "cursor" : "")
                 })) };
             },
-            // Vidas de Supervivencia / fallos de Adivinar, en el mismo hueco
-            missesView:  () => {
-                if (S.mode === "supervivencia") return { kind: "lives", n: S.supLives };
-                if (S.mode === "guess") return { kind: "guess", n: S.misses, wrong: S.wrongLetters };
-                return { kind: "off" };
-            },
+            // Vidas de Supervivencia / fallos de Adivinar, en el mismo
+            // hueco: cada modo devuelve lo suyo
+            missesView:  () => modes[S.mode].missesView() ?? { kind: "off" },
             maxMisses:   () => MAX_MISSES,
             // Efectos activos del modo Aventura (los calcula el modo; se
             // recalculan con cada tick porque leen timeLeft aunque no lo muestren)
@@ -520,8 +505,8 @@ export function initTeclear() {
         Object.values(modes).forEach(m => {
             m.engine = {
                 typing, board,
-                nextWord, endGame, updateHud, pagaPalabra, typeInput,
-                completeWord
+                nextWord, newWord, endGame, updateHud, pagaPalabra,
+                typeInput, completeWord, level, multiplier, soupReveal
             };
         });
 
@@ -920,35 +905,13 @@ export function initTeclear() {
             return elegidos;
         }
 
-        // ---------- Modo Imágenes ----------
-        // Palabra que nombra la imagen, según el idioma elegido
-        function imageWord(im) {
-            return uiLang() === "en" ? im.en : im.es;
-        }
 
-        // Elige una imagen cuya palabra encaje con el nivel actual
-        function nextImageWord() {
-            const lvl = level();
-            const cabe = w => {
-                if (lvl <= 1) return w.length <= 5;
-                if (lvl <= 3) return w.length <= 7;
-                if (lvl <= 6) return w.length >= 5;
-                return w.length >= 6;
-            };
-            let pool = IMAGENES.filter(im => cabe(imageWord(im)));
-            if (pool.length === 0) pool = IMAGENES;
-
-            let im;
-            do {
-                im = pool[Math.floor(Math.random() * pool.length)];
-            } while (im === S.currentImg && pool.length > 1);
-            S.currentImg = im;
-            S.picErr = false;   // imagen nueva: de momento se confía en que cargue
-            return imageWord(im);
-        }
 
         function nextWord() {
-            if (S.mode === "imagen") return nextImageWord();
+            // El modo puede traer su propia palabra (Imágenes elige una
+            // imagen y pide la palabra que la nombra)
+            const picked = modes[S.mode].pickWord();
+            if (picked) return picked;
             const list = wordPool();
             const lvl = level();
             let pool;
@@ -1015,26 +978,6 @@ export function initTeclear() {
             S.prevLen = give;   // ya tecleadas: no suman golpes ni fallos
         }
 
-        // Oculta letras de la palabra según el nivel:
-        // nivel 1-2 → la mitad, nivel 3-5 → casi todas, nivel 6+ → todas
-        // Solo se ocultan letras: los símbolos (como el "_" de las funciones
-        // de PHP) se quedan a la vista porque no se pueden adivinar a tecla.
-        function makeMask(w) {
-            const unique = [...new Set(w.split("").filter(ch => /[a-záéíóúüñ]/i.test(ch)))];
-            for (let i = unique.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                const tmp = unique[i];
-                unique[i] = unique[j];
-                unique[j] = tmp;
-            }
-            const lvl = level();
-            let ratio = 0.5;
-            if (lvl >= 6) ratio = 1;
-            else if (lvl >= 3) ratio = 0.7;
-            const hideCount = Math.max(1, Math.ceil(unique.length * ratio));
-            const hidden = new Set(unique.slice(0, hideCount));
-            return w.split("").map(ch => (hidden.has(ch) ? "hidden" : "start"));
-        }
 
         function updateHud() {
             // (todo el HUD lo pinta Svelte leyendo G; el pulso repinta el
@@ -1070,17 +1013,11 @@ export function initTeclear() {
             S.typedStr = "";
             S.prevLen = 0;
             S.word = nextWord();
-            if (S.mode === "guess") {
-                S.mask = makeMask(S.word);
-                S.misses = 0;
-                S.wrongLetters = [];
-                soupReveal();    // letras que deja Sopa de Letras
-            } else if (S.mode === "type" || S.mode === "aventura") {
+            // El modo prepara su tablero (Adivinar monta la máscara,
+            // Supervivencia suelta la primera palabra apuntada)
+            modes[S.mode].onNewWord();
+            if (S.mode === "type" || S.mode === "aventura") {
                 soupPrefill();   // letras que deja Sopa de Letras
-            } else {
-                // Los modos con tablero propio lo montan ellos (en
-                // Supervivencia cae la primera palabra ya apuntada)
-                modes[S.mode].onNewWord();
             }
             updateHud();
         }
@@ -1418,52 +1355,6 @@ export function initTeclear() {
             }
         }
 
-        // ---------- Modo adivinar: descubrir letras ocultas ----------
-        function guessChar(raw) {
-            const ch = raw.toLowerCase();
-            if (!/^[a-záéíóúüñ]$/.test(ch)) return;       // ignorar espacios y símbolos
-            if (S.wrongLetters.includes(ch)) return;         // letra ya fallada
-            if (!S.word.includes(ch)) {                      // fallo
-                S.errors++;
-                S.streak = 0;
-                S.misses++;
-                S.score = Math.max(0, S.score - 5);
-                S.wrongLetters.push(ch);
-                fx.shake();
-
-                if (S.misses >= MAX_MISSES) {
-                    S.statusTxt = t("wordFailed") + S.word;
-                    newWord();
-                } else {
-                    S.statusTxt = t("statusError");
-                }
-                updateHud();
-                return;
-            }
-
-            // Acierto: revela todas las instancias que seguían ocultas
-            let revealed = 0;
-            for (let i = 0; i < S.word.length; i++) {
-                if (S.word[i] === ch && S.mask[i] === "hidden") {
-                    S.mask[i] = "found";
-                    revealed++;
-                }
-            }
-            if (revealed === 0) return; // la letra ya se veía: no cuenta
-
-            S.hits += revealed;
-            S.streak++;
-            const points = 10 * multiplier() * revealed;
-            S.score += points;
-            fx.showPoints(points);
-            S.statusTxt = t("statusOk");
-
-            updateHud();
-
-            if (!S.mask.includes("hidden")) {
-                completeWord();
-            }
-        }
 
         // ---------- Entrada del teclado ----------
         // Se anota cada evento de escritura para comprobar al final de la partida
@@ -1476,16 +1367,9 @@ export function initTeclear() {
             acc.inputEvents++;
             if (e && e.isTrusted) acc.trustedInput++;
 
-            if (S.mode === "guess") {
-                const raw = typing.value;
-                typing.value = "";
-                for (const ch of raw) {
-                    if (S.state !== "playing") break;
-                    guessChar(ch);
-                }
-            } else {
-                modes[S.mode].input();
-            }
+            // Cada modo procesa la entrada a su manera (Adivinar letra
+            // a letra, Supervivencia contra la palabra apuntada…)
+            modes[S.mode].input();
         });
 
         // Teclas reales de la partida: marca de tiempo entre pulsaciones

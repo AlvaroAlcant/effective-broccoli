@@ -386,6 +386,11 @@ export class SurvivalMode extends GameMode {
         if (val === tgt.w) this.complete();
     }
 
+    // Las vidas ocupan el hueco de fallos/vidas del HUD
+    missesView() {
+        return { kind: "lives", n: S.supLives };
+    }
+
     // ---------- Vista ----------
     // Los ítems mutan en sitio (bajan, reciben letras), así que la vista
     // recibe una COPIA de cada uno: al cambiar la referencia, el {#each}
