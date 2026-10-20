@@ -965,7 +965,7 @@
             border-radius: 14px;
             cursor: pointer;
             will-change: top;
-            transition: top .12s linear, border-color .15s, background-color .15s, opacity .15s;
+            transition: top .12s linear, transform .12s linear, border-color .15s, background-color .15s, opacity .15s;
         }
         /* La palabra a la que apuntas: encendida. Las demás esperan su turno */
         .sup-word.target {

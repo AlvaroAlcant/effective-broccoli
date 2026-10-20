@@ -1,20 +1,35 @@
 <script>
 	import { G } from './game.svelte.js';
+	const tabs = [
+		{ key: 'normal', title: 'rankTitle', hint: 'rankHint', empty: 'rankEmpty' },
+		{ key: 'aventura', title: 'rankTitleAdv', hint: 'rankHintAdv', empty: 'rankEmptyAdv' }
+	];
+	const rankStatus = d => {
+		if (!d.loaded) return '';
+		// 🔒 datos verificados con su huella · ⚠️ el JSON venía alterado
+		return d.online ? G.t('rankSync') + (d.tampered ? ' ⚠️' : ' 🔒') : G.t('rankLocal');
+	};
 </script>
 
     <section class="ranking" id="ranking" class:hidden={!G.rankOpen}>
-        <div class="rank-tab" id="rankTabNormal">
-            <h2 id="rankTitle">🏆 Ranking global</h2>
-            <p class="rank-hint" id="rankHint">Las mejores puntuaciones de todos los jugadores (Top 10).</p>
-            <ol class="rank-list" id="rankList"></ol>
-            <p class="rank-empty" id="rankEmpty">Todavía no hay puntuaciones en el ranking. ¡Sé el primero! 🚀</p>
-            <p class="rank-status" id="rankStatus"></p>
-        </div>
-        <div class="rank-tab" id="rankTabAventura">
-            <h2 id="rankTitleAdv">🗺️ Ranking de Aventura</h2>
-            <p class="rank-hint" id="rankHintAdv">Las mejores puntuaciones de la aventura: aquí solo cuenta el modo Aventura (Top 10).</p>
-            <ol class="rank-list" id="rankListAdv"></ol>
-            <p class="rank-empty" id="rankEmptyAdv">Todavía no hay puntuaciones en la aventura. ¡Sé el primero! 🚀</p>
-            <p class="rank-status" id="rankStatusAdv"></p>
-        </div>
+        {#each tabs as tab (tab.key)}
+            {@const d = G.rank[tab.key]}
+            <div class="rank-tab" class:rank-focus={G.rankFocus === tab.key}>
+                <h2>{G.t(tab.title)}</h2>
+                <p class="rank-hint">{G.t(tab.hint)}</p>
+                <ol class="rank-list">
+                    {#each d.entries as e, i (e.id + '-' + i)}
+                        <li class:me={e.id === G.myId}>
+                            <span class="rank-pos">{G.uiEn ? '#' + (i + 1) : (i + 1) + 'º'}</span>
+                            <span class="rank-name">{e.n}</span>
+                            <span class="rank-score">{e.s}</span>
+                            <span class="rank-words">� {e.w}</span>
+                            <span class="rank-date">{G.rankDate(e.d)}</span>
+                        </li>
+                    {/each}
+                </ol>
+                <p class="rank-empty" class:hidden={d.entries.length > 0}>{G.t(tab.empty)}</p>
+                <p class="rank-status">{rankStatus(d)}</p>
+            </div>
+        {/each}
     </section>
