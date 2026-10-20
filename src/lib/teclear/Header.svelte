@@ -1,4 +1,5 @@
 <script>
+	import { G } from './game.svelte.js';
 	let { logo } = $props();
 </script>
 
@@ -10,8 +11,8 @@
             </button>
             <span class="logo-phrase" id="logoPhrase" aria-live="polite"></span>
         </div>
-        <h1 id="title">⌨️ Teclear</h1>
-        <p id="subtitle">Escribe cada palabra antes de que se acabe el tiempo. ¡Las teclas erróneas rompen la racha!</p>
+        <h1 id="title">{G.t('title')}</h1>
+        <p id="subtitle">{G.subtitle}</p>
         <!-- Evento de Halloween: barra con la cuenta atrás hasta el final del evento -->
         <p class="event-bar hidden" id="eventBar">
             🎃 <span id="eventText">Evento de Halloween: la tienda de evento está abierta hasta el 3 de noviembre a las 12:00</span>

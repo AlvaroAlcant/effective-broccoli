@@ -1,3 +1,7 @@
+<script>
+	import { G } from './game.svelte.js';
+</script>
+
     <div class="stage" id="stage">
         <div class="board" id="board">
             <em class="hint">Pulsa "Jugar" o la barra espaciadora para empezar</em>
@@ -20,7 +24,7 @@
 
     <div class="controls">
         <input id="typing" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
-               placeholder="Escribe aquí..." disabled>
+               placeholder={G.t('placeholder')} disabled>
 
         <p id="status">Modo relájado: sin presión, teclea a tu ritma… ¡hasta que empiezas!</p>
 

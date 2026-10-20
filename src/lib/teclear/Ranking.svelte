@@ -1,4 +1,8 @@
-    <section class="ranking hidden" id="ranking">
+<script>
+	import { G } from './game.svelte.js';
+</script>
+
+    <section class="ranking" id="ranking" class:hidden={!G.rankOpen}>
         <div class="rank-tab" id="rankTabNormal">
             <h2 id="rankTitle">🏆 Ranking global</h2>
             <p class="rank-hint" id="rankHint">Las mejores puntuaciones de todos los jugadores (Top 10).</p>

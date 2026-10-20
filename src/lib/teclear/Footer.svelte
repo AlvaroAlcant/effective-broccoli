@@ -1,3 +1,7 @@
+<script>
+	import { G } from './game.svelte.js';
+</script>
+
     <footer>
-        <p id="footer">&copy; 2026 Minijuegos Web · Juego: Teclear</p>
+        <p id="footer">{@html G.t('footer')}</p>
     </footer>

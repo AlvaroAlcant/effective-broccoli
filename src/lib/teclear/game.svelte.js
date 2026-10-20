@@ -8,12 +8,26 @@ import imgLogo from '#lib/img/estesoTeclea.png';
 import { getSetting, setSetting } from './settings.js';
 
 // ---------- Fachada reactiva (runes) ----------
-// Estado del juego expuesto a los componentes: initTeclear() publica
-// aquí getters sobre sus variables $state, de modo que cualquier
-// componente Svelte puede leer G.score, G.coins… y re-renderizarse
-// solo cuando ese dato cambia. El objeto es plano a propósito: la
-// reactividad la proporcionan los getters sobre las variables $state.
-export const G = {};
+// Estado del juego expuesto a los componentes. Cada lectura de G.x la
+// resuelve el proxy llamando a impl[x], que initTeclear() registra como
+// una función que lee la variable $state real — así la lectura queda
+// suscrita al dato que usa y Svelte re-renderiza solo lo que cambia.
+// «rev» marca cuándo la fachada ya está lista: los componentes
+// renderizan antes del onMount (donde corre initTeclear), así que sus
+// primeras lecturas caen en los stubs; al subir rev se repintan solos.
+const impl = {};
+let rev = $state(0);
+const STUBS = {
+    t: k => k,
+    owned: [], ownedBgs: [], ownedExtras: [], ownedFx: [],
+    extraOn: {}, achData: {}
+};
+export const G = new Proxy({}, {
+    get: (_, k) => {
+        rev;   // toda lectura queda suscrita al momento «fachada lista»
+        return k in impl ? impl[k]() : STUBS[k];
+    }
+});
         // TODO el juego vive dentro de este closure: las variables internas
         // (puntuación, palabras, teclas, contadores) no son accesibles desde la
         // consola del navegador, así que no se pueden manipular con comandos.
@@ -1260,7 +1274,7 @@ export function initTeclear() {
         let errors = 0;         // fallos
         let completed = $state(0);
         let prevLen = 0;        // longitud aceptada en el modo tecleo
-        let timeLeft = GAME_TIME;
+        let timeLeft = $state(GAME_TIME);
         let lastTick = 0;
         let timerId = null;
         let best = $state(0);
@@ -1374,45 +1388,64 @@ export function initTeclear() {
         let gamesPlayed = $state(0);       // partidas terminadas
         let wordsTotal = $state(0);        // palabras escritas en total
 
-        // Publicación del estado para los componentes: cada propiedad de
-        // G es un getter que lee la variable $state correspondiente, así
-        // que Svelte re-renderiza solo cuando cambia ese dato.
-        Object.defineProperties(G, {
-            lang:        { get: () => lang },
-            mode:        { get: () => mode },
-            state:       { get: () => state },
-            supVariant:  { get: () => supVariant },
-            bg:          { get: () => bg },
-            veyon:       { get: () => veyon },
-            score:       { get: () => score },
-            streak:      { get: () => streak },
-            completed:   { get: () => completed },
-            best:        { get: () => best },
-            bestWords:   { get: () => bestWords },
-            coins:       { get: () => coins },
-            coinsRun:    { get: () => coinsRun },
-            caramelos:   { get: () => caramelos },
-            candyRun:    { get: () => candyRun },
-            owned:       { get: () => owned },
-            equipped:    { get: () => equipped },
-            ownedBgs:    { get: () => ownedBgs },
-            ownedExtras: { get: () => ownedExtras },
-            extraOn:     { get: () => extraOn },
-            ownedFx:     { get: () => ownedFx },
-            fxEquipped:  { get: () => fxEquipped },
-            achData:     { get: () => achData },
-            xp:          { get: () => xp },
-            gamesPlayed: { get: () => gamesPlayed },
-            wordsTotal:  { get: () => wordsTotal },
-            shopOpen:    { get: () => shopOpen },
-            rankOpen:    { get: () => rankOpen },
-            logrosOpen:  { get: () => logrosOpen },
-            invOpen:     { get: () => invOpen },
-            accOpen:     { get: () => accOpen },
-            accMode:     { get: () => accMode },
-            accSession:  { get: () => accSession },
-            rankFocus:   { get: () => rankFocus }
+        // Publicación del estado para los componentes: impl[k] devuelve
+        // el valor actual del dato k leyendo las variables $state (los
+        // derivados se reevalúan al cambiar cualquiera que lean dentro).
+        Object.assign(impl, {
+            lang:        () => lang,
+            mode:        () => mode,
+            state:       () => state,
+            supVariant:  () => supVariant,
+            bg:          () => bg,
+            veyon:       () => veyon,
+            score:       () => score,
+            streak:      () => streak,
+            completed:   () => completed,
+            best:        () => best,
+            bestWords:   () => bestWords,
+            coins:       () => coins,
+            coinsRun:    () => coinsRun,
+            caramelos:   () => caramelos,
+            candyRun:    () => candyRun,
+            owned:       () => owned,
+            equipped:    () => equipped,
+            ownedBgs:    () => ownedBgs,
+            ownedExtras: () => ownedExtras,
+            extraOn:     () => extraOn,
+            ownedFx:     () => ownedFx,
+            fxEquipped:  () => fxEquipped,
+            achData:     () => achData,
+            xp:          () => xp,
+            gamesPlayed: () => gamesPlayed,
+            wordsTotal:  () => wordsTotal,
+            shopOpen:    () => shopOpen,
+            rankOpen:    () => rankOpen,
+            logrosOpen:  () => logrosOpen,
+            invOpen:     () => invOpen,
+            accOpen:     () => accOpen,
+            accMode:     () => accMode,
+            accSession:  () => accSession,
+            rankFocus:   () => rankFocus,
+            t:           () => t,
+            subtitle:    () => mode === "imagen" ? t("subtitleI") :
+                             mode === "guess" ? t("subtitleG") :
+                             mode === "aventura" ? t("subtitleA") :
+                             mode === "supervivencia" ? t("subtitleS") :
+                             lang === "mur" ? t("subtitleM") : t("subtitleT"),
+            streakTxt:   () => streak + " (x" + multiplier() + ")",
+            level:       () => level(),
+            timeTxt:     () => Math.max(0, Math.ceil(timeLeft)),
+            timeLow:     () => state === "playing" &&
+                             (mode === "supervivencia" ? timeLeft <= 4 : timeLeft <= 10),
+            coinsTxt:    () => fmtCoins(coins),
+            accHintTxt:  () => accSession ? t("accDataHint") : t("accHint"),
+            btnRegTxt:   () => accSession ? t("btnProfile") : t("btnRegister"),
+            candyTxt:    () => fmtCandy(caramelos),
+            achCountTxt: () => Object.values(achData).filter(d => d.done).length +
+                             "/" + ACHIEVEMENTS.length,
+            invCountTxt: () => invItems().length
         });
+        rev++;   // fachada lista: los componentes pasan de stubs a datos
 
         // El murciano es un dialecto: los textos, récords y fechas se guardan
         // igual que en español, pero las palabras salen del diccionario murciano.
@@ -1433,15 +1466,7 @@ export function initTeclear() {
         const typing = document.getElementById("typing");
         const startBtn = document.getElementById("startBtn");
         const status = document.getElementById("status");
-        const scoreEl = document.getElementById("score");
-        const timeEl = document.getElementById("time");
-        const timeBox = document.getElementById("timeBox");
-        const streakEl = document.getElementById("streak");
-        const levelEl = document.getElementById("level");
-        const bestEl = document.getElementById("best");
-        const bestWordsEl = document.getElementById("bestWords");
-        const coinsEl = document.getElementById("coins");
-        const shop = document.getElementById("shop");
+        // (marcador, reloj, racha, nivel, récords y monedas los pinta Svelte)
         const shopGrid = document.getElementById("shopGrid");
         const shopBgGrid = document.getElementById("shopBgGrid");
         const bgExtra = document.getElementById("bgExtra");
@@ -1455,10 +1480,7 @@ export function initTeclear() {
         const eventText = document.getElementById("eventText");
         const eventCount = document.getElementById("eventCount");
         const shopMsg = document.getElementById("shopMsg");
-        const shopCoins = document.getElementById("shopCoins");
         const candyStat = document.getElementById("candyStat");
-        const candyEl = document.getElementById("candy");
-        const shopCandy = document.getElementById("shopCandy");
         const eventCash = document.getElementById("eventCash");
         const eventCashTxt = document.getElementById("eventCashTxt");
         const rCandyRow = document.getElementById("rCandyRow");
@@ -1483,16 +1505,13 @@ export function initTeclear() {
         const invFxTitle = document.getElementById("invFxTitle");
         const invMsg = document.getElementById("invMsg");
         const invEmpty = document.getElementById("invEmpty");
-        const invCount = document.getElementById("invCount");
         const achGrid = document.getElementById("achGrid");
-        const achCount = document.getElementById("achCount");
         const btnRegister = document.getElementById("btnRegister");
         const btnLogin = document.getElementById("btnLogin");
         const perfil = document.getElementById("perfil");
         const accForm = document.getElementById("accForm");
         const accData = document.getElementById("accData");
         const accMsg = document.getElementById("accMsg");
-        const accHint = document.getElementById("accHint");
         const accRole = document.getElementById("accRole");
         const accName = document.getElementById("accName");
         const accPass = document.getElementById("accPass");
@@ -1505,7 +1524,6 @@ export function initTeclear() {
         const accSave = document.getElementById("accSave");
         const accOut = document.getElementById("accOut");
         const accWho = document.getElementById("accWho");
-        const accCoins = document.getElementById("accCoins");
         const ranking = document.getElementById("ranking");
         const rankForm = document.getElementById("rankForm");
         const rankSaved = document.getElementById("rankSaved");
@@ -1532,16 +1550,6 @@ export function initTeclear() {
         const perkHint = document.getElementById("perkHint");
         const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, supSelect, btnGuess, btnImagen, btnAventura, btnSup,
             btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon];
-        // Celdas con datos del perfil (etiqueta + valor)
-        const accCells = [
-            ["accKCoins", "accVCoins", "kCoins"],
-            ["accKXp", "accVXp", "accXp"],
-            ["accKLevel", "accVLevel", "kLevel"],
-            ["accKGames", "accVGames", "accGames"],
-            ["accKWords", "accVWords", "accWords"],
-            ["accKBest", "accVBest", "kBest"]
-        ];
-
         // ---------- Récord por idioma ----------
         function loadBest() {
             try {
@@ -2356,7 +2364,6 @@ export function initTeclear() {
             const logged = !!accSession;
             accForm.classList.toggle("hidden", logged);
             accData.classList.toggle("hidden", !logged);
-            accHint.textContent = logged ? t("accDataHint") : t("accHint");
             // La insignia del rol solo la ven los Administradores
             if (accRole) accRole.classList.toggle("hidden", !esAdmin());
 
@@ -2370,17 +2377,11 @@ export function initTeclear() {
                     const e = document.getElementById(id);
                     if (e) e.textContent = String(vals[id]);
                 });
-                if (accCoins) accCoins.textContent = fmtCoins(coins);
             } else {
                 accSubmit.textContent = accMode === "reg" ? t("accSubmitReg") : t("accSubmitLogin");
                 accSwitch.textContent = accMode === "reg" ? t("accSwitchToLogin") : t("accSwitchToReg");
                 accPass2Box.classList.toggle("hidden", accMode !== "reg");
             }
-            btnRegister.classList.toggle("active", accOpen && !logged && accMode === "reg");
-            btnLogin.classList.toggle("active", accOpen && !logged && accMode === "login");
-            // Con la sesión abierta el botón pasa a «Mi perfil» y ya no se ofrece entrar
-            btnRegister.textContent = logged ? t("btnProfile") : t("btnRegister");
-            btnLogin.classList.toggle("hidden", logged);
             updateRankWho();   // los resultados avisan con quién se guardará
         }
 
@@ -2392,16 +2393,12 @@ export function initTeclear() {
                 setAccMsg("", false);
             }
             accOpen = true;
-            perfil.classList.remove("hidden");
             renderAccount();
             if (perfil.scrollIntoView) perfil.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
 
         function closeAccount() {
             accOpen = false;
-            if (perfil) perfil.classList.add("hidden");
-            if (btnRegister) btnRegister.classList.remove("active");
-            if (btnLogin) btnLogin.classList.remove("active");
         }
 
         function toggleAccount(mode) {
@@ -2912,8 +2909,6 @@ export function initTeclear() {
         function toggleRanking(tab) {
             if (state === "playing") return;
             rankOpen = !rankOpen;
-            ranking.classList.toggle("hidden", !rankOpen);
-            btnRanking.classList.toggle("active", rankOpen);
             if (rankOpen) {
                 refreshRanking();
                 // Si se guarda una marca, su tabla se resalta (una partida de
@@ -3062,14 +3057,8 @@ export function initTeclear() {
         }
 
         function updateCoins() {
-            const txt = fmtCoins(coins);   // ∞ si se es Administrador
-            coinsEl.textContent = txt;
-            shopCoins.textContent = txt;
-            if (accCoins) accCoins.textContent = txt;
-            // Caramelos (moneda del evento): HUD, tienda de evento y perfil
-            const caram = fmtCandy(caramelos);
-            if (candyEl) candyEl.textContent = caram;
-            if (shopCandy) shopCandy.textContent = caram;
+            // Los contadores los pinta Svelte leyendo G.coinsTxt / G.candyTxt;
+            // aquí solo queda refrescar los paneles que aún se dibujan a mano
             if (shopOpen) renderShop();
             if (accOpen && accSession) renderAccount();
         }
@@ -3725,8 +3714,6 @@ export function initTeclear() {
         function toggleShop() {
             if (state === "playing") return;
             shopOpen = !shopOpen;
-            shop.classList.toggle("hidden", !shopOpen);
-            btnShop.classList.toggle("active", shopOpen);
             if (shopOpen) {
                 shopMsg.textContent = "";
                 renderShop();
@@ -3871,7 +3858,7 @@ export function initTeclear() {
         function renderLogros() {
             if (!achGrid) return;
             achGrid.innerHTML = "";
-            let hechos = 0;
+            let hechos = 0;   // (contador; el «hechos/total» lo pinta Svelte)
 
             ACHIEVEMENTS.forEach(a => {
                 const d = achData[a.id] || { p: 0, done: false };
@@ -3922,15 +3909,11 @@ export function initTeclear() {
 
                 achGrid.appendChild(card);
             });
-
-            if (achCount) achCount.textContent = hechos + "/" + ACHIEVEMENTS.length;
         }
 
         function toggleLogros() {
             if (state === "playing") return;
             logrosOpen = !logrosOpen;
-            logros.classList.toggle("hidden", !logrosOpen);
-            btnLogros.classList.toggle("active", logrosOpen);
             if (logrosOpen) {
                 renderLogros();
                 // El panel queda por debajo: se lleva a la vista para que se note
@@ -3946,8 +3929,6 @@ export function initTeclear() {
         function closeLogrosOnPlay() {
             if (!logrosOpen) return;
             logrosOpen = false;
-            logros.classList.add("hidden");
-            btnLogros.classList.remove("active");
         }
 
         // ---------- Inventario: todo lo comprado y todo lo ganado ----------
@@ -4120,16 +4101,13 @@ export function initTeclear() {
                 if (sec.title) sec.title.classList.toggle("hidden", vacia);
             });
 
-            // Contador del encabezado y aviso si no hay nada todavía
-            if (invCount) invCount.textContent = items.length;
+            // El aviso de vacío sigue a mano (el contador lo pinta Svelte)
             if (invEmpty) invEmpty.classList.toggle("hidden", items.length > 0);
         }
 
         function toggleInv() {
             if (state === "playing") return;
             invOpen = !invOpen;
-            inventario.classList.toggle("hidden", !invOpen);
-            btnInv.classList.toggle("active", invOpen);
             if (invOpen) {
                 if (invMsg) invMsg.textContent = "";   // aviso de la acción anterior
                 renderInv();
@@ -4146,8 +4124,6 @@ export function initTeclear() {
         function closeInvOnPlay() {
             if (!invOpen) return;
             invOpen = false;
-            inventario.classList.add("hidden");
-            btnInv.classList.remove("active");
         }
 
         // ---------- Idioma y modo ----------
@@ -4155,85 +4131,20 @@ export function initTeclear() {
             document.documentElement.lang = uiLang();
             document.title = t("docTitle");
 
-            document.getElementById("title").textContent = t("title");
-            document.getElementById("subtitle").textContent =
-                mode === "imagen" ? t("subtitleI") :
-                mode === "guess" ? t("subtitleG") :
-                mode === "aventura" ? t("subtitleA") :
-                mode === "supervivencia" ? t("subtitleS") :
-                lang === "mur" ? t("subtitleM") : t("subtitleT");
-            document.getElementById("modeLabel").textContent = t("modeLabel");
-            btnType.textContent = t("btnType");
-            btnGuess.textContent = t("btnGuess");
-            btnImagen.textContent = t("btnImagen");
-            if (btnAventura) btnAventura.textContent = t("btnAventura");
-            if (btnSup) btnSup.textContent = t("btnSup");
-            btnMurciano.textContent = t("btnMurciano");
-            document.getElementById("bgLabel").textContent =
-                t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
-            document.getElementById("progLabel").textContent = t("progLabel");
-            document.getElementById("userLabel").textContent = t("userLabel");
+            // (título, subtítulo, etiquetas, chips, contadores y paneles los
+            // pinta Svelte leyendo G: aquí solo queda lo que aún se dibuja a mano)
             if (modeSelect) modeSelect.setAttribute("aria-label", t("modeSelectAria"));
-            btnBgDark.textContent = t("bgDark");
             setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
-            document.getElementById("kScore").textContent = t("kScore");
-            // En Supervivencia el reloj marca lo que queda de la palabra apuntada
-            document.getElementById("kTime").textContent =
-                mode === "supervivencia" ? t("kTimeWord") : t("kTime");
-            document.getElementById("kStreak").textContent = t("kStreak");
-            document.getElementById("kLevel").textContent = t("kLevel");
-            document.getElementById("kBest").textContent = t("kBest");
-            document.getElementById("kCoins").textContent = t("kCoins");
-            document.getElementById("kCandy").textContent = t("kCandy");
-            document.getElementById("kBestWords").textContent = t("kBestWords");
-            btnShop.textContent = t("btnShop");
-            btnRanking.textContent = t("btnRanking");
             renderRankLabels();   // títulos y avisos de los dos rankings
             if (verifyLabel) verifyLabel.textContent = t("verifyLabel");
             saveScoreBtn.textContent = t("rankSave");
-            btnRegister.textContent = t("btnRegister");
-            btnLogin.textContent = t("btnLogin");
-            if (btnVeyon) btnVeyon.textContent = t("veyon");
             renderRanking();
-            // Textos del panel de perfil
-            document.getElementById("accTitle").textContent = t("accTitle");
-            if (accRole) accRole.textContent = t("accRole");
-            document.getElementById("accNameLabel").textContent = t("accNameLabel");
-            document.getElementById("accPassLabel").textContent = t("accPassLabel");
-            document.getElementById("accPass2Label").textContent = t("accPass2Label");
-            accClose.textContent = t("accClose");
-            accClose2.textContent = t("accClose");
-            accSave.textContent = t("accSave");
-            accOut.textContent = t("accOut");
-            accCells.forEach(c => {
-                const e = document.getElementById(c[0]);
-                if (e) e.textContent = t(c[2]);
-            });
+            // Textos del panel de perfil que dependen del estado interno
             document.getElementById("rkXp").textContent = t("accXpGain");
             renderAccount();
-            document.getElementById("shopTitle").textContent = t("shopTitle");
-            document.getElementById("shopHint").textContent = t("shopHint");
-            document.getElementById("shopFontsTitle").textContent = t("shopFontsTitle");
-            document.getElementById("shopBgsTitle").textContent =
-                t("shopBgsTitle") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
-            document.getElementById("shopExtrasTitle").textContent = t("shopExtrasTitle");
-            document.getElementById("shopFxTitle").textContent = t("shopFxTitle");
-            if (shopEventTitle) shopEventTitle.textContent = t("shopEventTitle");
             if (eventText) eventText.textContent = t("eventBar");
             if (eventCashTxt) eventCashTxt.textContent = t("eventCashTxt");
-            btnLogros.textContent = t("btnLogros");
-            document.getElementById("achTitle").textContent = t("achTitle");
-            document.getElementById("achHint").textContent = t("achHint");
             if (logrosOpen) renderLogros();
-            btnInv.textContent = t("btnInv");
-            document.getElementById("invTitle").textContent = t("invTitle");
-            document.getElementById("invHint").textContent = t("invHint");
-            // Títulos de las secciones (los mismos que en la tienda)
-            if (invEventTitle) invEventTitle.textContent = t("invEventTitle");
-            if (invFontsTitle) invFontsTitle.textContent = t("invFontsTitle");
-            if (invBgsTitle) invBgsTitle.textContent = t("invBgsTitle");
-            if (invExtrasTitle) invExtrasTitle.textContent = t("invExtrasTitle");
-            if (invFxTitle) invFxTitle.textContent = t("invFxTitle");
             if (invOpen) renderInv();
             applyExtras();   // chips de los extras + acento de color del tablero
             document.getElementById("rTitle").textContent =
@@ -4246,27 +4157,10 @@ export function initTeclear() {
             document.getElementById("rkCoins").textContent = t("rkCoins");
             document.getElementById("rkCandy").textContent = t("rkCandy");
             document.getElementById("rkBestWords").textContent = t("rkBestWords");
-            document.getElementById("footer").innerHTML = t("footer");
 
-            typing.placeholder = t("placeholder");
-            btnEs.classList.toggle("active", lang === "es");
-            btnEn.classList.toggle("active", lang === "en");
-            btnMurciano.classList.toggle("active", lang === "mur");
-            btnType.classList.toggle("active", mode === "type");
-            btnGuess.classList.toggle("active", mode === "guess");
-            btnImagen.classList.toggle("active", mode === "imagen");
-            if (btnAventura) btnAventura.classList.toggle("active", mode === "aventura");
-            if (btnSup) btnSup.classList.toggle("active", mode === "supervivencia");
             // En Aventura no se juega con fondos: el selector queda fuera de
             // servicio y el cuerpo lleva el fondo propio del modo (sin habilidad)
             const sinFondos = mode === "aventura";
-            btnBgDark.disabled = sinFondos;
-            btnBgDark.classList.toggle("active", !sinFondos && bg === "dark");
-            // El fondo de Franco solo aparece en el selector si está desbloqueado
-            const hasFranco = ownedBgs.includes("franco");
-            btnBgFranco.style.display = hasFranco ? "" : "none";
-            btnBgFranco.disabled = sinFondos;
-            btnBgFranco.classList.toggle("active", !sinFondos && bg === "franco");
             BACKGROUNDS.forEach(b => {
                 document.body.classList.toggle("bg-" + b.id, !sinFondos && bg === b.id);
             });
@@ -4276,9 +4170,7 @@ export function initTeclear() {
             syncHacker(!sinFondos && bg === "hacker");     // binario verde solo con ese fondo
 
             best = loadBest();
-            bestEl.textContent = best;
             bestWords = loadBestWords();
-            bestWordsEl.textContent = bestWords;
 
             renderMisses();
 
@@ -4380,10 +4272,6 @@ export function initTeclear() {
             // verse el de estesoTeclea y se pone el de repuesto
             document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')
                 .forEach(l => { l.href = veyon ? VEYON_FAVICON : imgLogo; });
-            if (btnVeyon) {
-                btnVeyon.classList.toggle("active", veyon);
-                btnVeyon.setAttribute("aria-pressed", veyon ? "true" : "false");
-            }
             renderBgChips();                    // iconos del selector de fondos
             // El chip «General» es fijo en el HTML: su contenido se repinta aquí
             setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
@@ -5315,15 +5203,7 @@ export function initTeclear() {
         }
 
         function updateHud() {
-            scoreEl.textContent = score;
-            streakEl.textContent = streak + " (x" + multiplier() + ")";
-            levelEl.textContent = level();
-            timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
-            // En Supervivencia el "bajo" avisa de la última parte del plazo
-            // de la palabra a la que apuntas
-            timeBox.classList.toggle("low",
-                state === "playing" &&
-                (mode === "supervivencia" ? timeLeft <= 4 : timeLeft <= 10));
+            // (puntos, racha, nivel, reloj y el «bajo» los pinta Svelte leyendo G)
             if (mode === "aventura") renderAdvBar();   // efectos y tiempo por palabra
             // (las barras de todas las palabras se repintan en cada tick)
             // Logro «Hacker»: se anota la mejor puntuación de UNA partida.
@@ -6076,8 +5956,6 @@ export function initTeclear() {
 
             if (shopOpen) { // la tienda se cierra al empezar
                 shopOpen = false;
-                shop.classList.add("hidden");
-                btnShop.classList.remove("active");
             }
             closeLogrosOnPlay();   // el panel de logros también
             closeInvOnPlay();      // el panel de inventario también
@@ -6256,12 +6134,10 @@ export function initTeclear() {
             if (newScoreRecord) {
                 best = score;
                 saveBest();
-                bestEl.textContent = best;
             }
             if (newWordsRecord) {
                 bestWords = completed;
                 saveBestWords();
-                bestWordsEl.textContent = bestWords;
             }
             document.getElementById("rBestWords").textContent = bestWords;
 
