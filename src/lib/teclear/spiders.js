@@ -1,32 +1,34 @@
-// Arañas de Halloween con físicas: cada hilo (.hwn-thread) es un péndulo
-// colgado de su ancla superior. Arrastrar la araña tensa el hilo (resorte)
-// y la desvía (ángulo); al soltarla oscila amortiguada hasta volver a su
-// sitio, donde retoma el vaivén suave del CSS.
+// Arañas de Halloween con físicas: cada hilo (.hwn-thread) cuelga de su
+// ancla superior como una cuerda elástica. Se integra en coordenadas
+// cartesianas (x, y respecto al ancla, y hacia abajo): la gravedad tira
+// siempre y la cuerda solo frena cuando está tensa (dist > largo). Así,
+// arrastrar la araña hacia arriba destensa el hilo — al soltarla cae
+// hasta que la cuerda la engancha, y acaba colgando en la vertical,
+// donde retoma el vaivén suave del CSS.
 export function initSpiders(root) {
     const threads = [...root.querySelectorAll(".hwn-thread")];
     if (!threads.length) return;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const GRAV = 2600;      // px/s² — tira del péndulo hacia la vertical
-    const DAMP = 1.9;       // amortiguación angular (rozamiento del aire)
-    const SPRING = 110;     // k del resorte del hilo (vuelve a su largo)
-    const SDAMP = 12;       // amortiguación del resorte
-    const EPS = 0.02;       // umbral de "ya está quieta"
-    const MAX_OMEGA = 9;    // rad/s — tope del impulso de suelta (giro y pico)
-    const MAX_LEN_V = 700;  // px/s — tope de la velocidad de estirado
+    const GRAV = 2600;      // px/s² — gravedad
+    const SPRING = 380;     // k de la cuerda cuando está tensa (px/s² por px)
+    const RDAMP = 14;       // amortiguación radial (frena el estirado)
+    const ADRAG = 0.55;     // rozamiento del aire sobre la velocidad total
+    const EPS_V = 45;       // px/s — velocidad máxima "casi quieta"
+    const EPS_AMP = 4.5;    // px — amplitud residual que cuenta como reposo
+    const MAX_V = 1600;     // px/s — tope del impulso de suelta
 
     const spiders = threads.map(el => ({
         el,
         bug: el.querySelector("i"),
         restLen: el.offsetHeight,
-        len: el.offsetHeight,
-        lenV: 0,
-        theta: 0,           // ángulo respecto a la vertical (rad)
-        omega: 0,
+        x: 0, y: el.offsetHeight,   // posición respecto al ancla (y abajo)
+        vx: 0, vy: 0,
+        ax: 0, ay: 0,               // ancla en coordenadas de viewport
         dragging: false,
-        grabbed: false,     // al menos una vez: el CSS ya no manda
-        hist: [],           // muestras {t, theta, len} para la velocidad de suelta
-        calm: 0,            // tiempo acumulado casi en reposo
+        grabbed: false,             // al menos una vez: el CSS ya no manda
+        hist: [],                   // muestras {t, x, y} para la suelta
+        calm: 0,                    // tiempo acumulado casi en reposo
     }));
 
     let last = 0, raf = 0;
@@ -37,32 +39,55 @@ export function initSpiders(root) {
         for (const sp of spiders) {
             if (!sp.grabbed) continue;
             if (!sp.dragging) {
-                // Péndulo: θ'' = -(g/L)·sin θ - c·ω. θ se normaliza a
-                // ±π cada frame: sin θ es periódico y si el lanzamiento
-                // da vueltas enteras θ crecería sin límite
-                sp.omega += (-(GRAV / sp.len) * Math.sin(sp.theta) - DAMP * sp.omega) * dt;
-                sp.theta += sp.omega * dt;
-                if (sp.theta > Math.PI) sp.theta -= 2 * Math.PI;
-                else if (sp.theta < -Math.PI) sp.theta += 2 * Math.PI;
-                // Resorte del hilo: L'' = -k·(L-L0) - c·L'
-                sp.lenV += (-SPRING * (sp.len - sp.restLen) - SDAMP * sp.lenV) * dt;
-                sp.len += sp.lenV * dt;
-                // ¿Ya llegó a su sitio? → vuelve el vaivén del CSS
-                const quiet = Math.abs(sp.theta) < EPS && Math.abs(sp.omega) < EPS &&
-                              Math.abs(sp.len - sp.restLen) < 0.6;
+                sp.vy += GRAV * dt;
+                const dist = Math.hypot(sp.x, sp.y) || 1;
+                if (dist > sp.restLen) {
+                    // Cuerda tensa: resorte radial que la devuelve a su
+                    // largo y frena el estiramiento (péndulo amortiguado)
+                    const nx = sp.x / dist, ny = sp.y / dist;
+                    const vr = sp.vx * nx + sp.vy * ny;
+                    const a = -SPRING * (dist - sp.restLen) - RDAMP * vr;
+                    sp.vx += a * nx * dt;
+                    sp.vy += a * ny * dt;
+                }
+                // Aire: frena todo el movimiento, más suave que la
+                // cuerda. Cuando va lento el rozamiento sube (fricción),
+                // si no la oscilación residual tardaría una eternidad
+                const slow = Math.hypot(sp.vx, sp.vy) < 90;
+                const dragK = Math.exp(-(slow ? 3.2 : ADRAG) * dt);
+                sp.vx *= dragK;
+                sp.vy *= dragK;
+                sp.x += sp.vx * dt;
+                sp.y += sp.vy * dt;
+                // ¿Ya llegó a su sitio? La AMPLITUD — distancia al punto
+                // de reposo — es casi constante durante el ciclo: una
+                // vez decae por debajo del umbral ya no vuelve a subir.
+                // El reposo no está en restLen: la gravedad estira la
+                // cuerda elástica sag = g/k píxeles por debajo
+                const sag = GRAV / SPRING;
+                const amp = Math.hypot(sp.x, dist - (sp.restLen + sag));
+                const quiet = amp < EPS_AMP &&
+                              Math.hypot(sp.vx, sp.vy) < EPS_V;
                 sp.calm = quiet ? sp.calm + dt : 0;
                 if (sp.calm > 0.6) {
                     sp.grabbed = false;
-                    sp.theta = sp.omega = sp.lenV = 0;
-                    sp.len = sp.restLen;
+                    sp.vx = sp.vy = 0;
+                    sp.x = 0;
+                    sp.y = sp.restLen;
                     sp.el.style.transform = "";
                     sp.el.style.height = "";
+                    sp.el.style.opacity = "";
                     sp.el.style.animation = "";
                     continue;
                 }
             }
-            sp.el.style.transform = `rotate(${sp.theta}rad)`;
-            sp.el.style.height = sp.len + "px";
+            // Posición → hilo: largo = distancia, ángulo = desviación.
+            // Ojo al signo: rotate(+) en CSS lleva la punta a la izquierda
+            const dist = Math.hypot(sp.x, sp.y);
+            sp.el.style.height = Math.max(4, dist) + "px";
+            sp.el.style.transform = `rotate(${-Math.atan2(sp.x, sp.y)}rad)`;
+            // Hilo destensado: se ve más tenue para distinguirlo
+            sp.el.style.opacity = dist < sp.restLen * 0.98 ? "0.35" : "";
         }
         if (spiders.some(sp => sp.grabbed)) raf = requestAnimationFrame(frame);
         else raf = 0;
@@ -89,7 +114,7 @@ export function initSpiders(root) {
             sp.ay = dr.top + sp.el.offsetTop;
             // El decor puede estar oculto al montar (fuera de evento):
             // el largo real del hilo se mide al primer agarre
-            if (!sp.restLen) { sp.restLen = sp.el.offsetHeight || 110; sp.len = sp.restLen; }
+            if (!sp.restLen) { sp.restLen = sp.el.offsetHeight || 110; }
             sp.calm = 0;
             sp.hist = [];
             sp.el.style.animation = "none";   // el CSS deja de mandar
@@ -99,17 +124,11 @@ export function initSpiders(root) {
 
         sp.bug.addEventListener("pointermove", e => {
             if (!sp.dragging) return;
-            const dx = e.clientX - sp.ax;
-            const dy = e.clientY - sp.ay;
-            const dist = Math.hypot(dx, dy) || 1;
-            // El hilo se estira hasta x3 y se acorta hasta la mitad
-            sp.len = Math.min(sp.restLen * 3, Math.max(sp.restLen * 0.5, dist));
-            // Ángulo respecto a la vertical, tope ±80°. Ojo al signo:
-            // rotate(+) en CSS lleva el extremo inferior a la izquierda,
-            // así que un dx a la derecha es θ negativo
-            const t = Math.atan2(-dx, dy);
-            sp.theta = Math.max(-1.4, Math.min(1.4, t));
-            sp.hist.push({ t: e.timeStamp, theta: sp.theta, len: sp.len });
+            // La araña va donde está el puntero: arriba destensa el hilo,
+            // abajo lo estira. Sin topes: la propia cuerda marca el juego
+            sp.x = e.clientX - sp.ax;
+            sp.y = e.clientY - sp.ay;
+            sp.hist.push({ t: e.timeStamp, x: sp.x, y: sp.y });
             if (sp.hist.length > 5) sp.hist.shift();
         });
 
@@ -117,16 +136,14 @@ export function initSpiders(root) {
             if (!sp.dragging) return;
             sp.dragging = false;
             sp.bug.style.cursor = "grab";
-            // Impulso de suelta: velocidad angular y de estirado estimadas
-            // con las últimas muestras del arrastre
+            // Impulso de suelta: velocidad estimada con las últimas
+            // muestras del arrastre, con tope para que no salga disparada
             const h = sp.hist;
             if (h.length > 1) {
                 const a = h[0], b = h[h.length - 1];
                 const dt = Math.max(1, b.t - a.t) / 1000;
-                // Impulso de suelta, con tope: un tirón brusco lanza la
-                // araña pero sin que dé vueltas de campana eternas
-                sp.omega = Math.max(-MAX_OMEGA, Math.min(MAX_OMEGA, (b.theta - a.theta) / dt));
-                sp.lenV = Math.max(-MAX_LEN_V, Math.min(MAX_LEN_V, (b.len - a.len) / dt));
+                sp.vx = Math.max(-MAX_V, Math.min(MAX_V, (b.x - a.x) / dt));
+                sp.vy = Math.max(-MAX_V, Math.min(MAX_V, (b.y - a.y) / dt));
             }
         };
         sp.bug.addEventListener("pointerup", drop);
