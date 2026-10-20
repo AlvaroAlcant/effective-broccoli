@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import logo from '#lib/img/estesoTeclea.png';
-	import { initTeclear } from '#lib/teclear/game.js';
+	import { initTeclear } from '#lib/teclear/game.svelte.js';
 	import Decor from '#lib/teclear/Decor.svelte';
 	import Header from '#lib/teclear/Header.svelte';
 	import Selectors from '#lib/teclear/Selectors.svelte';
