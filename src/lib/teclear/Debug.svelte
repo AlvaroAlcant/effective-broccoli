@@ -102,6 +102,7 @@
 					<select value={events.testId || ''}
 						onchange={e => dbg.dbgEvent(e.currentTarget.value || null)}>
 						<option value="">calendario</option>
+						<option value="none">normal (sin evento)</option>
 						{#each Object.keys(EVENTS) as id (id)}
 							<option value={id}>{id}</option>
 						{/each}

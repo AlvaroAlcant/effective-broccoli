@@ -15,11 +15,13 @@ export class EventService {
 
     def(id) { return id && EVENTS[id] ? EVENTS[id] : null; }
 
-    // El evento en curso: si un admin lo está probando, ese manda; si no,
-    // el primero del registro cuya fecha encaje
+    // El evento en curso: si un admin lo está probando, ese manda («none»
+    // simula una fecha sin evento); si no, el primero del registro cuya
+    // fecha encaje
     activeId(now) {
-        if (this.testId && this.deps.isAdmin() && EVENTS[this.testId]) {
-            return this.testId;
+        if (this.testId && this.deps.isAdmin()) {
+            if (this.testId === "none") return null;
+            if (EVENTS[this.testId]) return this.testId;
         }
         for (const id in EVENTS) {
             if (eventOn(EVENTS[id], now)) return id;
@@ -65,10 +67,11 @@ export class EventService {
     }
 
     // ---------- Pruebas de administrador ----------
-    // Un admin puede forzar un evento aunque no sea su fecha; la elección
+    // Un admin puede forzar un evento aunque no sea su fecha —o «none»,
+    // que simula una fecha sin evento en plena temporada—; la elección
     // se guarda para que sobreviva a la recarga de la página.
     test(id) {
-        if (!this.deps.isAdmin() || !EVENTS[id]) return false;
+        if (!this.deps.isAdmin() || (id !== "none" && !EVENTS[id])) return false;
         this.testId = id;
         storage.set("teclear.testEvent", id);
         this.apply();
