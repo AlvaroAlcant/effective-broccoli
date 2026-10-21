@@ -1,7 +1,9 @@
     <!-- ===================== Menú principal =====================
          Ordenado de lo más importante a lo auxiliar:
-         1· Modo de juego · 2· Idioma · 3· Fondo · 4· Progreso
-         5· Controles · 6· Cuenta -->
+         1· Modo de juego · 2· Idioma · 3· Progreso
+         4· Controles · 5· Cuenta
+         El fondo de pantalla se elige en el Inventario (y se desbloquea
+         comprándolo en la tienda o ganándolo con un logro). -->
     <div class="selectors">
         <!-- 1 · Cómo se juega (con sus variantes al lado) -->
         <div class="sel-row">
@@ -22,14 +24,7 @@
             <button class="chip-btn" id="btnEn">🇬🇧 English</button>
             <button class="chip-btn" id="btnMurciano">🗣️ Murciano</button>
         </div>
-        <!-- 3 · Apariencia (los fondos comprados se añaden en #bgExtra) -->
-        <div class="sel-row">
-            <span class="sel-label" id="bgLabel">🖼️ Fondo de pantalla</span>
-            <button class="chip-btn active" id="btnBgDark">🌙 Oscuro</button>
-            <button class="chip-btn" id="btnBgFranco">🖼️ General</button>
-            <span id="bgExtra"></span>
-        </div>
-        <!-- 4 · Dónde mirar tu progreso y qué desbloquear -->
+        <!-- 3 · Dónde mirar tu progreso y qué desbloquear -->
         <div class="sel-row sel-row-divider">
             <span class="sel-label" id="progLabel">🏆 Progreso</span>
             <button class="chip-btn" id="btnShop">🛒 Tienda</button>
@@ -37,13 +32,13 @@
             <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
             <button class="chip-btn" id="btnLogros">🏅 Logros</button>
         </div>
-        <!-- 5 · Controles: la tecla reservada de la habilidad del fondo -->
+        <!-- 4 · Controles: la tecla reservada de la habilidad del fondo -->
         <div class="sel-row">
             <span class="sel-label" id="ctrlLabel">🎮 Controles</span>
             <button class="chip-btn" id="btnAbilityKey" type="button">⚡ Habilidad: F1</button>
             <span class="sel-hint" id="ctrlHint">Púlsala durante la partida para activar el poder del fondo que lleves puesto.</span>
         </div>
-        <!-- 6 · Cuenta de jugador y herramientas del profe -->
+        <!-- 5 · Cuenta de jugador y herramientas del profe -->
         <div class="sel-row">
             <span class="sel-label" id="userLabel">👤 Cuenta y ajustes</span>
             <button class="chip-btn" id="btnRegister">👤 Registrar</button>

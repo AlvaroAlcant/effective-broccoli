@@ -839,12 +839,9 @@ export function initTeclear() {
                 btnAventura: "🗺️ Aventura",
                 btnSup: "🛡️ Supervivencia",
                 btnMurciano: "🗣️ Murciano",
-                bgLabel: "🖼️ Fondo de pantalla",
                 bgOffAventura: "no se usa en Aventura (el modo lleva el suyo)",
                 progLabel: "🏆 Progreso",
                 userLabel: "👤 Cuenta y ajustes",
-                bgDark: "🌙 Oscuro",
-                bgFranco: "🖼️ General",
                 veyon: "🖥️ Modo Veyon",
                 kScore: "Puntos", kTime: "Tiempo", kStreak: "Racha", kLevel: "Nivel", kBest: "Récord",
                 kCoins: "Monedas",
@@ -1069,12 +1066,9 @@ export function initTeclear() {
                 btnAventura: "🗺️ Adventure",
                 btnSup: "🛡️ Survival",
                 btnMurciano: "🗣️ Murcia dialect",
-                bgLabel: "🖼️ Background",
                 bgOffAventura: "not used in Adventure (that mode has its own)",
                 progLabel: "🏆 Progress",
                 userLabel: "👤 Account & settings",
-                bgDark: "🌙 Dark",
-                bgFranco: "🖼️ General",
                 veyon: "🖥️ Veyon mode",
                 kScore: "Points", kTime: "Time", kStreak: "Streak", kLevel: "Level", kBest: "Best",
                 kCoins: "Coins",
@@ -1508,7 +1502,6 @@ export function initTeclear() {
         const shop = document.getElementById("shop");
         const shopGrid = document.getElementById("shopGrid");
         const shopBgGrid = document.getElementById("shopBgGrid");
-        const bgExtra = document.getElementById("bgExtra");
         const modeSelect = document.getElementById("modeSelect");
         const supSelect = document.getElementById("supSelect");
         const shopExtraGrid = document.getElementById("shopExtraGrid");
@@ -1587,8 +1580,6 @@ export function initTeclear() {
         const btnAventura = document.getElementById("btnAventura");
         const btnSup = document.getElementById("btnSup");
         const btnMurciano = document.getElementById("btnMurciano");
-        const btnBgDark = document.getElementById("btnBgDark");
-        const btnBgFranco = document.getElementById("btnBgFranco");
         const btnVeyon = document.getElementById("btnVeyon");
         // Fila «Controles»: la tecla reservada de la habilidad del fondo
         const btnAbilityKey = document.getElementById("btnAbilityKey");
@@ -2409,6 +2400,15 @@ export function initTeclear() {
         function esAdmin() {
             if (accSession && ADMIN_NAMES.indexOf(nameKey(accSession.n)) >= 0) return true;
             return ADMIN_NAMES.indexOf(nameKey(loadPlayerName())) >= 0;
+        }
+
+        // ¿La CUENTA abierta es la del Administrador? A diferencia de
+        // esAdmin() —que también vale por el nombre de este equipo y por eso
+        // da dinero infinito—, los logros completados de arriba solo se
+        // desbloquean teniendo la sesión abierta: quien juegue sin cuenta se
+        // gana los suyos jugando, como cualquier alumno.
+        function esAdminSesion() {
+            return !!(accSession && ADMIN_NAMES.indexOf(nameKey(accSession.n)) >= 0);
         }
 
         // Cómo se pintan las cantidades de dinero en pantalla: los
@@ -3854,10 +3854,12 @@ export function initTeclear() {
             achData = limpio;
 
             // El Administrador (Alvaro) lo tiene TODO hecho: es el profe y
-            // necesita poder probarlo todo sin jugarlo. Como se aplica al
-            // cargar, cualquier logro que se añada más adelante también le
-            // sale completado, y solo en SU cuenta.
-            if (esAdmin()) ACHIEVEMENTS.forEach(a => { achData[a.id] = { p: a.goal, done: true }; });
+            // necesita poder probarlo todo sin jugarlo. Solo contando con SU
+            // CUENTA ABIERTA, no por el nombre del equipo (esAdmin() da
+            // dinero infinito también a quien juegue aquí sin sesión). Como
+            // se aplica al cargar, cualquier logro nuevo que se añada más
+            // adelante también le sale completado, y solo en su partida.
+            if (esAdminSesion()) ACHIEVEMENTS.forEach(a => { achData[a.id] = { p: a.goal, done: true }; });
 
             achSave();
             // Un logro completado que hubiera perdido su recompensa la recupera
@@ -3923,7 +3925,6 @@ export function initTeclear() {
                 if (!ownedBgs.includes(r.id)) {
                     ownedBgs.push(r.id);
                     saveShop();
-                    renderBgChips();    // aparece en el selector de fondos
                     if (shopOpen) renderBgShop();
                 }
             }
@@ -4281,13 +4282,9 @@ export function initTeclear() {
             if (btnAventura) btnAventura.textContent = t("btnAventura");
             if (btnSup) btnSup.textContent = t("btnSup");
             btnMurciano.textContent = t("btnMurciano");
-            document.getElementById("bgLabel").textContent =
-                t("bgLabel") + (mode === "aventura" ? " · " + t("bgOffAventura") : "");
             document.getElementById("progLabel").textContent = t("progLabel");
             document.getElementById("userLabel").textContent = t("userLabel");
             if (modeSelect) modeSelect.setAttribute("aria-label", t("modeSelectAria"));
-            btnBgDark.textContent = t("bgDark");
-            setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
             document.getElementById("kScore").textContent = t("kScore");
             // En Supervivencia el reloj marca lo que queda de la palabra apuntada
             document.getElementById("kTime").textContent =
@@ -4369,21 +4366,14 @@ export function initTeclear() {
             btnImagen.classList.toggle("active", mode === "imagen");
             if (btnAventura) btnAventura.classList.toggle("active", mode === "aventura");
             if (btnSup) btnSup.classList.toggle("active", mode === "supervivencia");
-            // En Aventura no se juega con fondos: el selector queda fuera de
-            // servicio y el cuerpo lleva el fondo propio del modo (sin habilidad)
+            // En Aventura no se juega con fondos: el cuerpo lleva el fondo
+            // propio del modo (sin habilidad). El fondo se elige (y se
+            // compra) en el Inventario y en la tienda, aquí solo se aplica.
             const sinFondos = mode === "aventura";
-            btnBgDark.disabled = sinFondos;
-            btnBgDark.classList.toggle("active", !sinFondos && bg === "dark");
-            // El fondo de Franco solo aparece en el selector si está desbloqueado
-            const hasFranco = ownedBgs.includes("franco");
-            btnBgFranco.style.display = hasFranco ? "" : "none";
-            btnBgFranco.disabled = sinFondos;
-            btnBgFranco.classList.toggle("active", !sinFondos && bg === "franco");
             BACKGROUNDS.forEach(b => {
                 document.body.classList.toggle("bg-" + b.id, !sinFondos && bg === b.id);
             });
             document.body.classList.toggle("bg-aventura", sinFondos);
-            renderBgChips();
             syncLetterSoup(!sinFondos && bg === "sopa");   // letras rebotando solo con ese fondo
             syncHacker(!sinFondos && bg === "hacker");     // binario verde solo con ese fondo
 
@@ -4449,19 +4439,6 @@ export function initTeclear() {
         if (btnSup) btnSup.addEventListener("click", () => setMode("supervivencia"));
 
         // ---------- Fondo de pantalla ----------
-        function setBg(next) {
-            // La habilidad del fondo no se puede cambiar a mitad de partida
-            if (state === "playing" || bg === next || !ownedBgs.includes(next)) return;
-            bg = next;
-            try {
-                localStorage.setItem("teclear.fondo", bg);
-            } catch (e) { /* sin almacenamiento disponible */ }
-            applyLang();
-        }
-
-        btnBgDark.addEventListener("click", () => setBg("dark"));
-        btnBgFranco.addEventListener("click", () => setBg("franco"));
-
         // ---------- Modo Veyon ----------
         // El botón «Modo Veyon» oculta el icono de estesoTeclea (el logo de
         // la cabecera) y las imágenes de los fondos «General» (franco) e
@@ -4470,22 +4447,6 @@ export function initTeclear() {
         // ¿Este fondo se tapa con el Modo Veyon?
         function veyonHiddenBg(id) {
             return veyon && VEYON_BGS.includes(id);
-        }
-
-        // Contenido de un chip de fondo en el selector: con el Modo Veyon
-        // activo, «General» e «Ia» enseñan la imagen de repuesto en lugar
-        // de su icono (el nombre del fondo se queda para poder usarlo).
-        function setBgChipContent(btn, id, label) {
-            if (!btn) return;
-            const hidden = veyonHiddenBg(id);
-            btn.textContent = hidden ? label.replace(/^\S+\s+/, "") : label;
-            if (hidden) {
-                const img = document.createElement("img");
-                img.className = "chip-img";
-                img.src = VEYON_PLACEHOLDER;
-                img.alt = "";
-                btn.insertBefore(img, btn.firstChild);
-            }
         }
 
         function applyVeyon() {
@@ -4498,9 +4459,6 @@ export function initTeclear() {
                 btnVeyon.classList.toggle("active", veyon);
                 btnVeyon.setAttribute("aria-pressed", veyon ? "true" : "false");
             }
-            renderBgChips();                    // iconos del selector de fondos
-            // El chip «General» es fijo en el HTML: su contenido se repinta aquí
-            setBgChipContent(btnBgFranco, "franco", t("bgFranco"));
             if (shopOpen) renderBgShop();       // miniaturas de la tienda
             if (invOpen) renderInv();           // … y las del Inventario
         }
@@ -4518,24 +4476,6 @@ export function initTeclear() {
         // La variante de Tecleo se cambia en el menú desplegable
         if (modeSelect) {
             modeSelect.addEventListener("change", () => chooseExtra(modeSelect.value));
-        }
-
-        // Añade al selector los fondos comprados en la tienda
-        function renderBgChips() {
-            bgExtra.innerHTML = "";
-            BACKGROUNDS.forEach(b => {
-                if (b.id === "dark" || b.id === "franco") return;
-                if (!ownedBgs.includes(b.id)) return;
-                const btn = document.createElement("button");
-                btn.className = "chip-btn";
-                setBgChipContent(btn, b.id,
-                    (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
-                    (uiLang() === "es" ? b.es : b.en));
-                btn.classList.toggle("active", bg === b.id);
-                btn.disabled = mode === "aventura";   // los fondos no actúan en Aventura
-                btn.addEventListener("click", () => setBg(b.id));
-                bgExtra.appendChild(btn);
-            });
         }
 
         // ---------- Fondo "Sopa de Letras": letras que rebotan ----------
@@ -4861,7 +4801,6 @@ export function initTeclear() {
             ownedBgs.push(b.id);
             // La compra solo DESBLOQUEA: usarse se hace en el Inventario
             saveShop();
-            renderBgChips();    // el fondo ya aparece en el selector
             updateCoins();
             shopMsg.textContent = t("shopBoughtBg");
         }
