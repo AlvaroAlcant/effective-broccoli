@@ -36,6 +36,13 @@ const LOGO_PHRASES = [
             "arreglo", "IA", "veyon", "va a botarlo", "yo soy la IA", "enseñe su array"
         ];
 
+// Campos que, tocados desde la depuración en plena partida, la dejan
+// como «de pruebas»: no es trampa, pero tampoco una marca real que
+// pueda entrar en el ranking
+const DBG_RUN_FIELDS = new Set(
+            ["score", "completed", "hits", "errors", "timeLeft", "streak", "supLives"]
+        );
+
 export class GameEngine {
     // Estado reactivo compartido (engine.state.score, engine.state.mode…)
     state = S;
@@ -618,6 +625,7 @@ export class GameEngine {
             S.timeLeft = modes[S.mode].timerStart() ?? this.gameTime();
             S.coinsRun = 0;
             // Telemetría anti-automatización: se reinicia en cada partida
+            S.dbgRun = false;
             acc.keyStamps = [];
             acc.inputEvents = 0;
             acc.trustedInput = 0;
@@ -921,7 +929,14 @@ export class GameEngine {
             }
             const name = S.accSession.n;
 
-            // 2) Nada de escritura automática ni puntuaciones imposibles
+            // 2) Una partida retocada desde la depuración no es trampa,
+            // pero tampoco una marca real: no entra en el ranking
+            if (S.dbgRun) {
+                this.rankSay(t("rankDbg"), true);
+                return;
+            }
+
+            // 3) Nada de escritura automática ni puntuaciones imposibles
             const why = acc.checkAutoPlay();
             if (why.length > 0) {
                 this.rankSay(t("rankBot"), true);
@@ -1019,6 +1034,7 @@ export class GameEngine {
                     return;
                 default:
                     S[key] = val;
+                    if (S.state === "playing" && DBG_RUN_FIELDS.has(key)) S.dbgRun = true;
             }
         }
 
@@ -1027,6 +1043,7 @@ export class GameEngine {
             if (!acc.esAdmin()) return;
             S[key] = (S[key] || 0) + n;
             if (key === "caramelos") eco.saveCandy();
+            if (S.state === "playing" && DBG_RUN_FIELDS.has(key)) S.dbgRun = true;
         }
 
     // Concede TODOS los artículos del catálogo — la forma explícita de
@@ -1098,6 +1115,7 @@ export class GameEngine {
             accOut: () => acc.doLogout(),
             buyItem: (kind, id) => eco.buyItem(kind, eco.findItem(kind, id)),
             startGame: this.startGame.bind(this),
+            quitGame: () => this.endGame(),
             saveScore: this.saveScore.bind(this),
             useAbility: () => abilities.useAbility(),
             bindAbilityKey: () => { S.bindingKey = !S.bindingKey; },

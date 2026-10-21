@@ -34,6 +34,7 @@ export class GameState {
     bg = $state("dark");
     veyon = $state(getSetting("veyon"));
     state = $state("idle");
+    dbgRun = $state(false);      // la partida fue retocada desde la depuración
     word = $state("");
     currentImg = $state(null);
     mask = $state([]);
