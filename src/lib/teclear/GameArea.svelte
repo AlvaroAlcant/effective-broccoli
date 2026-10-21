@@ -108,6 +108,11 @@
                 onclick={() => engine.actions.useAbility()}>{engine.abilityView.txt}</button>
 
         <button class="main-btn" id="startBtn" onclick={() => engine.actions.startGame()}>{engine.state.startTxt}</button>
+
+        <!-- Salir de la partida en curso: termina como si se agotara el tiempo -->
+        <button class="chip-btn" id="quitBtn" type="button"
+                class:hidden={engine.state.state !== 'playing'}
+                onclick={() => engine.actions.quitGame()}>{engine.t('btnQuit')}</button>
     </div>
 
     <div class="results" class:hidden={!engine.state.resOpen} id="results">

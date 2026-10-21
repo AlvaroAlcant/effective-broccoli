@@ -36,6 +36,13 @@ const LOGO_PHRASES = [
             "arreglo", "IA", "veyon", "va a botarlo", "yo soy la IA", "enseñe su array"
         ];
 
+// Campos que, tocados desde la depuración en plena partida, la dejan
+// como «de pruebas»: no es trampa, pero tampoco una marca real que
+// pueda entrar en el ranking
+const DBG_RUN_FIELDS = new Set(
+            ["score", "completed", "hits", "errors", "timeLeft", "streak", "supLives"]
+        );
+
 export class GameEngine {
     // Estado reactivo compartido (engine.state.score, engine.state.mode…)
     state = S;
@@ -52,6 +59,7 @@ export class GameEngine {
     savedScore = $state(false);
     gameStartAt = 0;
     gameDuration = 0;
+    dbgTime = null;         // duración fijada desde la depuración estando en el menú
     logoLast = -1;
     logoHide = 0;
 
@@ -615,9 +623,12 @@ export class GameEngine {
             modes[S.mode].enter();
             // El modo Aventura se juega contra un cronómetro propio: 50 s
             // En Supervivencia el reloj es el de la palabra apuntada
-            S.timeLeft = modes[S.mode].timerStart() ?? this.gameTime();
+            S.timeLeft = this.dbgTime ?? modes[S.mode].timerStart() ?? this.gameTime();
             S.coinsRun = 0;
             // Telemetría anti-automatización: se reinicia en cada partida
+            S.dbgRun = false;
+            // Una duración salida de la depuración tampoco es marca real
+            if (this.dbgTime != null) S.dbgRun = true;
             acc.keyStamps = [];
             acc.inputEvents = 0;
             acc.trustedInput = 0;
@@ -743,13 +754,16 @@ export class GameEngine {
                 eco.applyExtras();
             }
             S.startTxt = t("btnAgain");
+            // El campo «Tiempo» del depurador enseña otra vez la duración
+            // fijada, no lo que quedó del reloj al terminar
+            if (this.dbgTime != null) S.timeLeft = this.dbgTime;
 
             const total = S.hits + S.errors;
             const accPct = total === 0 ? 100 : Math.round((S.hits / total) * 100);
             // Los ppm se calculan sobre lo que duró de verdad la partida
             // (Aventura y Supervivencia no tienen duración fija: usan la real)
             const fija = S.mode === "aventura" || S.mode === "supervivencia";
-            const dur = (fija && this.gameDuration > 0) ? this.gameDuration : this.gameTime();
+            const dur = (fija && this.gameDuration > 0) ? this.gameDuration : (this.dbgTime ?? this.gameTime());
             const ppm = S.completed / (dur / 60);
 
             const newScoreRecord = S.score > S.best;
@@ -921,7 +935,14 @@ export class GameEngine {
             }
             const name = S.accSession.n;
 
-            // 2) Nada de escritura automática ni puntuaciones imposibles
+            // 2) Una partida retocada desde la depuración no es trampa,
+            // pero tampoco una marca real: no entra en el ranking
+            if (S.dbgRun) {
+                this.rankSay(t("rankDbg"), true);
+                return;
+            }
+
+            // 3) Nada de escritura automática ni puntuaciones imposibles
             const why = acc.checkAutoPlay();
             if (why.length > 0) {
                 this.rankSay(t("rankBot"), true);
@@ -1017,8 +1038,16 @@ export class GameEngine {
                     if (val === "playing" && S.state !== "playing") this.startGame();
                     else if (S.state === "playing") this.endGame();
                     return;
+                case "timeLeft":
+                    S.timeLeft = val;
+                    // En el menú es la duración de la próxima partida
+                    // (0 quita el override); en partida mueve el reloj actual
+                    if (S.state === "playing") S.dbgRun = true;
+                    else this.dbgTime = val > 0 ? val : null;
+                    return;
                 default:
                     S[key] = val;
+                    if (S.state === "playing" && DBG_RUN_FIELDS.has(key)) S.dbgRun = true;
             }
         }
 
@@ -1027,6 +1056,10 @@ export class GameEngine {
             if (!acc.esAdmin()) return;
             S[key] = (S[key] || 0) + n;
             if (key === "caramelos") eco.saveCandy();
+            if (key === "timeLeft" && S.state !== "playing") {
+                this.dbgTime = S.timeLeft > 0 ? S.timeLeft : null;
+            }
+            if (S.state === "playing" && DBG_RUN_FIELDS.has(key)) S.dbgRun = true;
         }
 
     // Concede TODOS los artículos del catálogo — la forma explícita de
@@ -1098,6 +1131,7 @@ export class GameEngine {
             accOut: () => acc.doLogout(),
             buyItem: (kind, id) => eco.buyItem(kind, eco.findItem(kind, id)),
             startGame: this.startGame.bind(this),
+            quitGame: () => this.endGame(),
             saveScore: this.saveScore.bind(this),
             useAbility: () => abilities.useAbility(),
             bindAbilityKey: () => { S.bindingKey = !S.bindingKey; },
