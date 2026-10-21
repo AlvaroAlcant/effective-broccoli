@@ -520,9 +520,19 @@
             text-align: center;
         }
         .event-bar strong {
+            display: inline-block;
             margin-left: 8px;
             color: #c084fc;
             font-weight: 700;
+            /* Espacio reservado: la cuenta atrás cambia cada segundo y
+               no debe empujar el layout ni aparecer de golpe */
+            min-width: 14ch;
+            text-align: left;
+            font-variant-numeric: tabular-nums;
+        }
+        .event-bar strong:empty::after {
+            content: "⏳ ··d ··h ··m ··s";
+            opacity: .45;
         }
 
         /* ---------- Cabecera ---------- */
@@ -980,7 +990,7 @@
             border-radius: 14px;
             cursor: pointer;
             will-change: top;
-            transition: top .12s linear, border-color .15s, background-color .15s, opacity .15s;
+            transition: top .12s linear, transform .12s linear, border-color .15s, background-color .15s, opacity .15s;
         }
         /* La palabra a la que apuntas: encendida. Las demás esperan su turno */
         .sup-word.target {
@@ -2471,4 +2481,118 @@
             .ability-btn.on {
                 animation: none !important;
             }
+        }
+
+        /* ---------- Panel de depuración (solo administradores) ----------
+           Un botón redondo fijo abajo a la derecha abre una consola
+           lateral con los valores del juego editables en caliente:
+           recursos, tema, extras y evento activo. */
+        .dbg-toggle {
+            position: fixed;
+            right: 14px;
+            bottom: 14px;
+            z-index: 60;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: var(--surface-2, #16202e);
+            font-size: 20px;
+            cursor: pointer;
+            opacity: .85;
+        }
+        .dbg-toggle:hover { opacity: 1; }
+        .dbg-toggle.on {
+            border-color: var(--accent, #14b8a6);
+            box-shadow: 0 0 10px rgba(20, 184, 166, .45);
+        }
+        .dbg-panel {
+            position: fixed;
+            right: 14px;
+            bottom: 66px;
+            z-index: 60;
+            width: 285px;
+            max-height: 70vh;
+            overflow-y: auto;
+            background: var(--surface-2, #16202e);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 13px;
+            color: var(--text, #e8ecf4);
+            box-shadow: 0 14px 34px rgba(0, 0, 0, .45);
+        }
+        .dbg-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .dbg-x {
+            background: none;
+            border: none;
+            color: var(--muted, #94a3b8);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .dbg-panel h4 {
+            margin: 10px 0 6px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--accent, #14b8a6);
+        }
+        .dbg-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 4px 0;
+        }
+        .dbg-row span {
+            flex: 1 1 auto;
+            white-space: nowrap;
+        }
+        .dbg-row input[type="number"] {
+            width: 64px;
+            background: var(--bg, #0b1220);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--text, #e8ecf4);
+            padding: 2px 4px;
+            font-size: 12px;
+        }
+        .dbg-row select {
+            max-width: 140px;
+            background: var(--bg, #0b1220);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--text, #e8ecf4);
+            padding: 2px 4px;
+            font-size: 12px;
+        }
+        .dbg-row button {
+            background: var(--bg, #0b1220);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--text, #e8ecf4);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 2px 6px;
+        }
+        .dbg-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .dbg-btns button {
+            background: var(--bg, #0b1220);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--text, #e8ecf4);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+        .dbg-btns button:hover {
+            border-color: var(--accent, #14b8a6);
         }

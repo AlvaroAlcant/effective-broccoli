@@ -1,53 +1,60 @@
+<script>
+	import { engine } from './engine.svelte.js';
+</script>
+
     <!-- Perfil: registro e inicio de sesión (guarda dinero, experiencia, récords…) -->
-    <section class="perfil hidden" id="perfil">
+    <section class="perfil" id="perfil" class:hidden={!engine.state.accOpen}>
         <div class="shop-head">
-            <h2 id="accTitle">👤 Tu perfil</h2>
-            <span class="shop-coins">🪙 <span id="accCoins">0</span></span>
+            <h2>{engine.t('accTitle')}</h2>
+            <span class="shop-coins">🪙 {engine.coinsTxt}</span>
         </div>
-        <p class="shop-hint" id="accHint">Crea una cuenta con tu nombre y una contraseña para guardar tu dinero, tu experiencia y tus récords. Se guarda solo al terminar cada partida.</p>
+        <p class="shop-hint">{engine.accHintTxt}</p>
 
         <!-- Rol del jugador: visible solo para el Administrador (Alvaro) -->
-        <p class="shop-hint hidden" id="accRole">👑 Rol: Administrador · dinero infinito para probarlo todo</p>
+        <p class="shop-hint" class:hidden={!engine.esAdmin}>{engine.t('accRole')}</p>
 
-        <form class="perfil-form hidden" id="accForm" novalidate>
-            <div class="pf-field">
-                <label for="accName" id="accNameLabel">Tu nombre</label>
-                <input id="accName" type="text" maxlength="20" autocomplete="username"
-                       placeholder="Anónimo" spellcheck="false">
+        {#if !engine.state.accSession}
+            <form class="perfil-form" novalidate
+                  onsubmit={e => { e.preventDefault(); engine.actions.submitAccount(); }}>
+                <div class="pf-field">
+                    <label for="accName">{engine.t('accNameLabel')}</label>
+                    <input id="accName" type="text" maxlength="20" autocomplete="username"
+                           placeholder="Anónimo" spellcheck="false">
+                </div>
+                <div class="pf-field">
+                    <label for="accPass">{engine.t('accPassLabel')}</label>
+                    <input id="accPass" type="password" maxlength="64" autocomplete="current-password"
+                           placeholder="••••••">
+                </div>
+                <div class="pf-field" class:hidden={engine.state.accMode !== 'reg'}>
+                    <label for="accPass2">{engine.t('accPass2Label')}</label>
+                    <input id="accPass2" type="password" maxlength="64" autocomplete="new-password"
+                           placeholder="••••••">
+                </div>
+                <div class="perfil-actions">
+                    <button type="submit" class="chip-btn" disabled={engine.state.accBusy}>{engine.accSubmitTxt}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.accSwitchMode()}>{engine.accSwitchTxt}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.closeAccount()}>{engine.t('accClose')}</button>
+                </div>
+            </form>
+        {:else}
+            <div class="perfil-data">
+                <div class="perfil-who"><span class="perfil-avatar">👤</span><strong>{engine.accWhoTxt}</strong></div>
+                <div class="perfil-grid">
+                    <div class="perfil-cell"><span>{engine.t('kCoins')}</span><strong>{engine.coinsTxt}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('accXp')}</span><strong>{engine.state.xp}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('kLevel')}</span><strong>{engine.level()}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('accGames')}</span><strong>{engine.state.gamesPlayed}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('accWords')}</span><strong>{engine.state.wordsTotal}</strong></div>
+                    <div class="perfil-cell"><span>{engine.t('kBest')}</span><strong>{engine.state.best}</strong></div>
+                </div>
+                <div class="perfil-actions">
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.accSave()}>{engine.t('accSave')}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.accOut()}>{engine.t('accOut')}</button>
+                    <button type="button" class="chip-btn" onclick={() => engine.actions.closeAccount()}>{engine.t('accClose')}</button>
+                </div>
             </div>
-            <div class="pf-field">
-                <label for="accPass" id="accPassLabel">Contraseña</label>
-                <input id="accPass" type="password" maxlength="64" autocomplete="current-password"
-                       placeholder="••••••">
-            </div>
-            <div class="pf-field hidden" id="accPass2Box">
-                <label for="accPass2" id="accPass2Label">Repite la contraseña</label>
-                <input id="accPass2" type="password" maxlength="64" autocomplete="new-password"
-                       placeholder="••••••">
-            </div>
-            <div class="perfil-actions">
-                <button type="submit" class="chip-btn" id="accSubmit">Crear perfil</button>
-                <button type="button" class="chip-btn" id="accSwitch">🔑 Ya tengo cuenta</button>
-                <button type="button" class="chip-btn" id="accClose">✖ Cerrar</button>
-            </div>
-        </form>
+        {/if}
 
-        <div class="perfil-data hidden" id="accData">
-            <div class="perfil-who"><span class="perfil-avatar">👤</span><strong id="accWho">-</strong></div>
-            <div class="perfil-grid">
-                <div class="perfil-cell"><span id="accKCoins">Monedas</span><strong id="accVCoins">0</strong></div>
-                <div class="perfil-cell"><span id="accKXp">Experiencia</span><strong id="accVXp">0</strong></div>
-                <div class="perfil-cell"><span id="accKLevel">Nivel</span><strong id="accVLevel">1</strong></div>
-                <div class="perfil-cell"><span id="accKGames">Partidas</span><strong id="accVGames">0</strong></div>
-                <div class="perfil-cell"><span id="accKWords">Palabras escritas</span><strong id="accVWords">0</strong></div>
-                <div class="perfil-cell"><span id="accKBest">Récord</span><strong id="accVBest">0</strong></div>
-            </div>
-            <div class="perfil-actions">
-                <button type="button" class="chip-btn" id="accSave">💾 Guardar ahora</button>
-                <button type="button" class="chip-btn" id="accOut">🚪 Cerrar sesión</button>
-                <button type="button" class="chip-btn" id="accClose2">✖ Cerrar</button>
-            </div>
-        </div>
-
-        <p class="shop-msg" id="accMsg"></p>
+        <p class="shop-msg" class:warn={engine.state.accMsgWarn}>{engine.state.accMsgTxt}</p>
     </section>

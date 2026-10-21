@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import logo from '#lib/img/estesoTeclea.png';
-	import { initTeclear } from '#lib/teclear/game.svelte.js';
+	import { engine } from '#lib/teclear/engine.svelte.js';
 	import Decor from '#lib/teclear/Decor.svelte';
 	import Header from '#lib/teclear/Header.svelte';
 	import Selectors from '#lib/teclear/Selectors.svelte';
@@ -12,11 +12,12 @@
 	import Ranking from '#lib/teclear/Ranking.svelte';
 	import Logros from '#lib/teclear/Logros.svelte';
 	import Inventario from '#lib/teclear/Inventario.svelte';
+	import Debug from '#lib/teclear/Debug.svelte';
 	import Footer from '#lib/teclear/Footer.svelte';
 	// Los estilos de Teclea viven ya en src/app.css (hoja global del sitio),
 	// solo se aplican dentro de esta página: ver «body:has(.logo-wrap)».
 
-	onMount(() => initTeclear());
+	onMount(() => engine.mount());
 </script>
 
 <svelte:head>
@@ -41,4 +42,5 @@
 <Ranking />
 <Logros />
 <Inventario />
+<Debug />
 <Footer />
