@@ -50,19 +50,23 @@ export const BACKGROUNDS = [
     {
         // No se compra con monedas: es la RECOMPENSA del logro
         // "Speedrunner" (price null = no está a la venta, ach = solo
-        // se gana jugando). Pura estética: coches disparados.
-        id: "carreras", price: null, ach: true, decor: true,
+        // se gana jugando). Coches disparados + habilidad Turbo.
+        id: "carreras", price: null, ach: true,
         es: "Circuito", en: "Race Track",
-        descEs: "Coches que cruzan la pantalla a toda velocidad. ¡Recompensa del logro «Speedrunner»!",
-        descEn: "Cars crossing the screen at full speed. Reward of the “Speedrunner” achievement!",
+        descEs: "Habilidad «Turbo»: 10 segundos con el cronómetro congelado y palabras muy cortas, una sola vez por partida. Con coches cruzando la pantalla. ¡Recompensa del logro «Speedrunner»!",
+        descEn: "“Turbo” ability: 10 seconds with the clock frozen and very short words, once per match. Cars cross the screen. Reward of the “Speedrunner” achievement!",
+        powEs: "«Turbo»: 10 s con el tiempo congelado y palabras muy cortas (1 vez por partida).",
+        powEn: "“Turbo”: 10 s with the clock frozen and very short words (once per match).",
         img: "", icon: "🏁"
     },
     {
         // Igual que Circuito, pero con la lluvia binaria de Matrix
-        id: "hacker", price: null, ach: true, decor: true,
+        id: "hacker", price: null, ach: true,
         es: "Hacker", en: "Hacker",
-        descEs: "Números binarios verdes cambiando sobre fondo negro. ¡Recompensa del logro «Hacker»!",
-        descEn: "Changing green binary digits on a black background. Reward of the “Hacker” achievement!",
+        descEs: "Habilidad pasiva: +1 segundo en el cronómetro por cada palabra escrita. Con números binarios verdes cambiando sobre fondo negro. ¡Recompensa del logro «Hacker»!",
+        descEn: "Passive ability: +1 second on the clock for every word you type. Changing green binary digits on a black background. Reward of the “Hacker” achievement!",
+        powEs: "+1 segundo en el cronómetro por cada palabra escrita.",
+        powEn: "+1 second on the clock for every word you type.",
         img: "", icon: "💻"
     },
     // (Los fondos de evento, como «Five Nigths», se declaran en su

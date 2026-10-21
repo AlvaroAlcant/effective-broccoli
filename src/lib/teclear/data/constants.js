@@ -10,6 +10,19 @@ export const BONUS_TIME_ELPRICO = 15;
 // Letras que la habilidad del fondo Sopa de Letras deja ya puestas
 export const SOUP_GIVEN = 2;
 
+// ---------- Habilidades ACTIVAS de los fondos ----------
+// Se disparan con la tecla reservada del apartado «Controles» (o con
+// el botón de la habilidad). Turbo (Circuito) y Chica Rush (Five
+// Nigths) solo se pueden usar UNA VEZ por partida; Hacker es pasiva
+// y no se activa: se aplica sola con cada palabra escrita.
+export const TURBO_MS = 10000;     // duración del modo Turbo (milisegundos)
+export const TURBO_MAX = 4;        // letras de las palabras durante el Turbo
+export const CHICA_MS = 20000;     // duración del Chica Rush
+export const CHICA_SPAWN = 650;    // ms entre un cupcake y el siguiente
+export const CHICA_LIFE = 2600;    // ms que espera cada cupcake a ser tocado
+export const CHICA_MAX = 9;        // cupcakes vivos a la vez (no saturar la capa)
+export const CHICA_CHANCE = 0.25;  // probabilidad de que el cupcake dé +1 s
+
 // ---------- Modo Aventura ----------
 // Segundos con los que se empieza: cada palabra escrita suma más
 export const ADV_TIME = 50;

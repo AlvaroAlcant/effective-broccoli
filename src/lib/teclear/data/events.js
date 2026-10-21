@@ -22,12 +22,16 @@ export const EVENTS = {
         bodyClass: "halloween",          // clase que viste el <body>
         supVariant: "encantado",         // variante que ofrece el selector
         items: [
-            {   // Fondo Five Nigths con el GIF de Fredi mirando fijamente
+            {   // Fondo Five Nigths con el GIF de Fredi mirando fijamente.
+                // Solo está a la venta mientras dura el evento; una vez
+                // comprado se queda para siempre. Su habilidad es el Chica Rush.
                 kind: "bg",
-                id: "fivenights", price: 1987, decor: true,
+                id: "fivenights", price: 1987,
                 es: "Five Nigths", en: "Five Nigths",
-                descEs: "Fondo Five Nigths con Fredi mirándote fijamente desde la oscuridad. ¡Puro terror! Solo durante el evento de Halloween.",
-                descEn: "A Five Nigths background with Fredi staring at you from the darkness. Pure horror! Halloween event only.",
+                descEs: "Habilidad «Chica Rush»: el tiempo se congela durante 20 segundos sin poder escribir y aparecen cupcakes sin parar; toca uno y tienes un 25 % de ganar 1 segundo y un 75 % de ganarte un caramelo (una sola vez por partida). ¡Fredi te mira desde la oscuridad! Solo durante el evento de Halloween.",
+                descEn: "“Chica Rush” ability: time freezes for 20 seconds while you cannot type and cupcakes keep popping up; tap one for a 25% chance of +1 second or a 75% chance of a candy (once per match). Freddy is staring at you from the dark! Halloween event only.",
+                powEs: "«Chica Rush»: 20 s con el tiempo congelado cazando cupcakes (+1 s o un caramelo).",
+                powEn: "“Chica Rush”: 20 s of frozen time catching cupcakes (+1 s or a candy).",
                 img: imgFredi, icon: "📼"
             },
             {   // Efecto Sangre: gotas que salpican y gotean con cada letra

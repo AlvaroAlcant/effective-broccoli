@@ -14,7 +14,8 @@
 	import Inventario from '#lib/teclear/Inventario.svelte';
 	import Debug from '#lib/teclear/Debug.svelte';
 	import Footer from '#lib/teclear/Footer.svelte';
-	import './index.css';
+	// Los estilos de Teclea viven ya en src/app.css (hoja global del sitio),
+	// solo se aplican dentro de esta página: ver «body:has(.logo-wrap)».
 
 	onMount(() => engine.mount());
 </script>

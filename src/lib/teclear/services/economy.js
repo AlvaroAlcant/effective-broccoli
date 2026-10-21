@@ -428,10 +428,11 @@ export class EconomyService {
     // Texto de la habilidad del fondo equipado (vacío si no tiene ninguna)
     bgPowerDesc() {
         const b = KINDS.bg.list.find(x => x.id === S.bg);
-        // Los fondos de decoración (Circuito, Hacker) no aportan nada:
-        // son puro adorno ganado con un logro
-        if (!b || b.decor || b.id === "dark") return "";
-        return uiLang() === "es" ? b.descEs : b.descEn;
+        if (!b || b.id === "dark") return "";
+        // En la partida se usa la versión corta (powEs/powEn) cuando el
+        // fondo la trae: la de la tienda se explica más larga
+        const es = uiLang() === "es";
+        return es ? (b.powEs || b.descEs) : (b.powEn || b.descEn);
     }
 
     // ---------- Inventario ----------

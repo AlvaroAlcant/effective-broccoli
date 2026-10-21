@@ -70,6 +70,17 @@ export class ProgressionService {
         });
     }
 
+    // El Administrador (Alvaro) lo tiene TODO hecho: es el profe y
+    // necesita poder probarlo todo sin jugarlo. Solo contando con SU
+    // CUENTA ABIERTA, no por el nombre del equipo (esAdmin() da dinero
+    // infinito también a quien juegue aquí sin sesión). Lo llama el
+    // motor tras cargar la sesión.
+    grantAllAch() {
+        ACHIEVEMENTS.forEach(a => { S.achData[a.id] = { p: a.goal, done: true }; });
+        this.achSave();
+        ACHIEVEMENTS.forEach(a => this.grantAchReward(a, true));
+    }
+
     achSave() {
         storage.setJSON("teclear.logros", S.achData);
     }

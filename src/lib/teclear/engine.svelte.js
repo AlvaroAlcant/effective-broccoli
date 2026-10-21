@@ -14,9 +14,10 @@ import * as identity from './services/identity.js';
 import { ranking } from './services/ranking.svelte.js';
 import { acc } from './services/account.js';
 import { modes } from './modes/index.js';
+import { abilities } from './services/abilities.js';
 import {
     GAME_TIME, MAX_MISSES, SPEEDRUN_MS, BONUS_TIME_ELPRICO, SOUP_GIVEN,
-    SUP_LIVES, SUP_XP_WORD,
+    TURBO_MAX, SUP_LIVES, SUP_XP_WORD,
     RANK_URL, RANK_ADV_URL, NAMES_URL, RESETS_URL, RANK_MAX, NAMES_MAX,
     RANK_TIMEOUT, NAME_MAX, MAX_SCORE, MAX_WORDS, PTS_PER_WORD, SCORE_BOOST,
     SEAL_SALT, PROFILES_URL, PASS_MIN, KDF_ROUNDS
@@ -213,19 +214,21 @@ export class GameEngine {
 
     get supSelTitle() { return S.mode !== "supervivencia" ? t("supSelectOff") : t("supVarHint"); }
 
-    get bgChips() { return eco.all("bg")
-                .filter(b => b.id !== "dark" && b.id !== "franco" && S.ownedBgs.includes(b.id))
-                .map(b => ({
-                    id: b.id,
-                    hidden: eco.veyonHiddenBg(b.id),
-                    label: (b.id === "elprico" ? "😎 " : b.icon ? b.icon + " " : "🎨 ") +
-                           (uiLang() === "es" ? b.es : b.en),
-                    active: S.bg === b.id
-                })); }
-
-    get francoHidden() { return eco.veyonHiddenBg("franco"); }
-
     get veyonImg() { return VEYON_PLACEHOLDER; }
+
+    // Botón de la habilidad del fondo (junto al campo de escritura).
+    // S.supTick lo refresca con cada pulso: lleva la cuenta atrás
+    get abilityView() {
+            S.supTick;
+            return abilities.view();
+        }
+
+    // Botón de la fila «Controles»: la tecla reservada, o «pulsa una
+    // tecla…» mientras espera la reasignación
+    get ctrlKeyTxt() {
+            return S.bindingKey ? "⌨️ " + t("ctrlKeyWait")
+                                : "⚡ " + t("ctrlKey") + ": " + abilities.keyLabel(S.abilityKey);
+        }
 
     // ---------- Ciclo de juego y utilidades ----------
     toggleRanking(tab) {
@@ -443,6 +446,11 @@ export class GameEngine {
             const list = this.wordPool();
             const lvl = this.level();
             let pool;
+            // Modo Turbo del fondo Circuito: mientras dura, palabras MUY
+            // cortas (manda sobre el filtro del modo y el nivel)
+            if (abilities.turboOn()) {
+                pool = list.filter(w => w.length <= TURBO_MAX);
+            } else {
             // El modo puede imponer su filtro (ventaja "camino corto" de
             // Aventura: palabras cortas mientras dure)
             const filtered = modes[S.mode].filterPool(list);
@@ -451,6 +459,7 @@ export class GameEngine {
             else if (lvl <= 3) pool = list.filter(w => w.length <= 7);
             else if (lvl <= 6) pool = list.filter(w => w.length >= 5);
             else pool = list.filter(w => w.length >= 6);
+            }
 
             if (pool.length === 0) pool = list;
 
@@ -568,6 +577,13 @@ export class GameEngine {
             // Recompensa propia del modo (Supervivencia: XP en caliente;
             // Aventura: segundos al cronómetro)
             modes[S.mode].onReward(points);
+            // Fondo Hacker: habilidad pasiva, cada palabra escrita regala
+            // un segundo al cronómetro (en Supervivencia el reloj es el de
+            // la palabra, así que ahí no suma)
+            if (abilities.hackerOn() && S.mode !== "supervivencia") {
+                S.timeLeft += 1;
+                fx.float("+1s", "time");
+            }
         }
 
     completeWord() {
@@ -592,6 +608,9 @@ export class GameEngine {
             S.wrongLetters = [];
             this.ttXpLoss = 0;   // experiencia robada por fallos (Truco o trato)
             S.candyRun = 0;   // caramelos ganados en esta partida
+            // Habilidades de los fondos: cada partida empieza con la suya
+            // lista —Turbo y Chica Rush solo valen UNA vez por partida—
+            abilities.reset();
             // Cada modo arranca su parte (vidas, tablero, clase del body…)
             modes[S.mode].enter();
             // El modo Aventura se juega contra un cronómetro propio: 50 s
@@ -674,6 +693,15 @@ export class GameEngine {
                 this.lastTick = now;
                 return;
             }
+            // El Turbo del fondo Circuito se apaga solo al pasar sus 10 s
+            if (S.turboUntil && now >= S.turboUntil) abilities.turboStop();
+            // Las habilidades Turbo y Chica Rush congelan el reloj mientras
+            // duran (en Supervivencia eso congela también las palabras)
+            if (abilities.frozen(now)) {
+                this.lastTick = now;
+                this.updateHud();
+                return;
+            }
             // Los modos con pulso propio se ocupan solos (Supervivencia
             // mueve su campo, Aventura su congelación y su salvavidas)
             const dt = now - this.lastTick;
@@ -707,6 +735,8 @@ export class GameEngine {
             // Cada modo retira lo suyo (el tablero de Supervivencia, la
             // pantalla grande, las ventanas de ventajas…)
             modes[S.mode].exit();
+            // Si se acaba la partida con una habilidad encendida, se corta
+            abilities.stopAll();
             // Modo Al azar: al acabar se olvida lo sorteado en esta partida
             if (this.extraRun) {
                 this.extraRun = null;
@@ -1069,6 +1099,8 @@ export class GameEngine {
             buyItem: (kind, id) => eco.buyItem(kind, eco.findItem(kind, id)),
             startGame: this.startGame.bind(this),
             saveScore: this.saveScore.bind(this),
+            useAbility: () => abilities.useAbility(),
+            bindAbilityKey: () => { S.bindingKey = !S.bindingKey; },
             choosePerk: p => modes.aventura.choosePerk(p),
             supAim: n => {
                 modes.supervivencia.aimByN(n);
@@ -1109,6 +1141,10 @@ this.verifyInput = document.getElementById("verifyInput");
             getActiveFx: () => eco.activeFx(),
         });
         fx.mount();
+        // Habilidades de los fondos: sus capas fijas y la escucha de la
+        // reasignación de la tecla reservada
+        abilities.bind({ typing: this.typing });
+        abilities.mount();
         eco.bind({
             isAdmin: () => acc.esAdmin(),
             achAdd: (id, n) => prog.achAdd(id, n),
@@ -1131,7 +1167,8 @@ this.verifyInput = document.getElementById("verifyInput");
 
         Object.values(modes).forEach(m => { m.engine = this; });
         this.typing.addEventListener("input", (e) => {
-            if (S.state !== "playing" || S.perkOpen) {
+            // Chica Rush: mientras dura no se puede escribir
+            if (S.state !== "playing" || S.perkOpen || abilities.chicaOn()) {
                 this.typing.value = "";
                 return;
             }
@@ -1144,6 +1181,11 @@ this.verifyInput = document.getElementById("verifyInput");
         });
         this.typing.addEventListener("keydown", (e) => {
             if (S.state !== "playing") return;
+            // Chica Rush: mientras dura no se teclea ni una letra
+            if (abilities.chicaOn()) {
+                e.preventDefault();
+                return;
+            }
             if (e.isTrusted) acc.trustedKeys++;
             if (!e.repeat) acc.keyStamps.push(performance.now()); // el auto-repetido no cuenta
             // Efecto de tecleo comprado en la tienda: estalla con cada letra
@@ -1173,6 +1215,18 @@ this.verifyInput = document.getElementById("verifyInput");
                 (destino.tagName === "INPUT" || destino.tagName === "TEXTAREA" ||
                  destino.tagName === "SELECT" || destino.isContentEditable === true);
 
+            // Tecla reservada de la habilidad del fondo (fila «Controles»):
+            // solo se intercepta si hay habilidad DISPONIBLE, así que con
+            // otro fondo —o mientras corre— la tecla sigue siendo una tecla
+            // normal. Si ya se gastó, se avisa sin comerse la tecla.
+            if (S.state === "playing" && !e.repeat && e.code === S.abilityKey && abilities.abilityId()) {
+                if (abilities.abilityReady()) {
+                    e.preventDefault();
+                    abilities.useAbility();
+                    return;
+                }
+                if (!abilities.frozen()) S.statusTxt = t("stAbUsed");
+            }
             if (S.state === "playing") {
                 // En plena partida la barra nunca se introduce: las palabras no llevan espacios
                 if (e.code === "Space") e.preventDefault();
@@ -1195,9 +1249,12 @@ this.logoBtn = document.getElementById("logoBtn");
         if (S.supVariant !== "clasico" && S.supVariant !== events.active?.supVariant) {
             S.supVariant = "clasico";
         }
+        S.accSession = acc.loadSession();
         prog.achLoad();
         prog.loadProfileStats();
-        S.accSession = acc.loadSession();
+        // El Administrador con SU sesión abierta lo tiene todo hecho:
+        // puede probar las recompensas de los logros sin ganarlas
+        if (acc.esAdminSesion()) prog.grantAllAch();
         try {
             const savedBg = storage.get("teclear.fondo");
             if (savedBg && eco.all("bg").some(b => b.id === savedBg) && S.ownedBgs.includes(savedBg)) {

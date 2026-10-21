@@ -19,6 +19,14 @@ const evIni = (() => {
 
 export class GameState {
     lang = $state("es");
+    // Habilidades activas de los fondos (tecla reservada de «Controles»):
+    // Turbo (Circuito) y Chica Rush (Five Nigths) — una vez por partida
+    abilityKey = $state(getSetting("abilityKey") || "F1");
+    bindingKey = $state(false);  // esperando la tecla a reasignar
+    turboUntil = $state(0);      // instante en que acaba el Turbo (0 = apagado)
+    turboUsed = $state(false);
+    chicaUntil = $state(0);      // …y el del Chica Rush
+    chicaUsed = $state(false);
     caramelos = $state(storage.getInt("teclear.caramelos", 0));
     candyRun = $state(0);
     supVariant = $state("clasico");

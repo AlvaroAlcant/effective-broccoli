@@ -1,12 +1,13 @@
 <script>
 	import { engine } from './engine.svelte.js';
-	const sinFondos = $derived(engine.state.mode === 'aventura');
-	const hasFranco = $derived(engine.state.ownedBgs.includes('franco'));
 </script>
 
     <!-- ===================== Menú principal =====================
          Ordenado de lo más importante a lo auxiliar:
-         1· Modo de juego · 2· Idioma · 3· Fondo · 4· Progreso · 5· Cuenta -->
+         1· Modo de juego · 2· Idioma · 3· Progreso
+         4· Controles · 5· Cuenta
+         El fondo de pantalla se elige en el Inventario (y se desbloquea
+         comprándolo en la tienda o ganándolo con un logro). -->
     <div class="selectors">
         <!-- 1 · Cómo se juega (con sus variantes al lado) -->
         <div class="sel-row">
@@ -47,23 +48,7 @@
             <button class="chip-btn" class:active={engine.state.lang === 'mur'}
                     onclick={() => engine.actions.setLang('mur')}>🗣️ Murciano</button>
         </div>
-        <!-- 3 · Apariencia (los fondos comprados se añaden como chips extra) -->
-        <div class="sel-row">
-            <span class="sel-label">{engine.t('bgLabel')}{sinFondos ? ' · ' + engine.t('bgOffAventura') : ''}</span>
-            <button class="chip-btn" disabled={sinFondos}
-                    class:active={!sinFondos && engine.state.bg === 'dark'}
-                    onclick={() => engine.actions.setBg('dark')}>{engine.t('bgDark')}</button>
-            <button class="chip-btn" disabled={sinFondos}
-                    class:active={!sinFondos && engine.state.bg === 'franco'}
-                    hidden={!hasFranco || engine.francoHidden}
-                    onclick={() => engine.actions.setBg('franco')}>🖼️ General</button>
-            {#each engine.bgChips as c (c.id)}
-                <button class="chip-btn" class:active={!sinFondos && c.active}
-                        disabled={sinFondos} hidden={c.hidden}
-                        onclick={() => engine.actions.setBg(c.id)}>{c.label}</button>
-            {/each}
-        </div>
-        <!-- 4 · Dónde mirar tu progreso y qué desbloquear -->
+        <!-- 3 · Dónde mirar tu progreso y qué desbloquear -->
         <div class="sel-row sel-row-divider">
             <span class="sel-label">{engine.t('progLabel')}</span>
             <button class="chip-btn" class:active={engine.state.shopOpen}
@@ -74,6 +59,13 @@
                     onclick={() => engine.actions.toggleRanking()}>{engine.t('btnRanking')}</button>
             <button class="chip-btn" class:active={engine.state.logrosOpen}
                     onclick={() => engine.actions.toggleLogros()}>{engine.t('btnLogros')}</button>
+        </div>
+        <!-- 4 · Controles: la tecla reservada de la habilidad del fondo -->
+        <div class="sel-row">
+            <span class="sel-label">{engine.t('ctrlLabel')}</span>
+            <button class="chip-btn" class:active={engine.state.bindingKey} type="button"
+                    onclick={() => engine.actions.bindAbilityKey()}>{engine.ctrlKeyTxt}</button>
+            <span class="sel-hint">{engine.t('ctrlHint')}</span>
         </div>
         <!-- 5 · Cuenta de jugador y herramientas del profe -->
         <div class="sel-row">

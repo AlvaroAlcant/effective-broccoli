@@ -100,6 +100,13 @@
 
         <p id="status">{engine.state.statusTxt}</p>
 
+        <!-- Habilidad del fondo equipado: se dispara con la tecla
+             reservada de «Controles» (o con este botón, para el táctil) -->
+        <button class="ability-btn" class:hidden={!engine.abilityView.show}
+                class:on={engine.abilityView.on} class:used={engine.abilityView.used}
+                disabled={!engine.abilityView.ready} id="abilityBtn" type="button"
+                onclick={() => engine.actions.useAbility()}>{engine.abilityView.txt}</button>
+
         <button class="main-btn" id="startBtn" onclick={() => engine.actions.startGame()}>{engine.state.startTxt}</button>
     </div>
 

@@ -424,6 +424,15 @@ export class AccountService {
         return ADMIN_NAMES.indexOf(identity.nameKey(identity.loadPlayerName())) >= 0;
     }
 
+    // ¿La CUENTA abierta es la del Administrador? A diferencia de
+    // esAdmin() —que también vale por el nombre de este equipo y por eso
+    // da dinero infinito—, los logros completados de regalo solo se
+    // desbloquean teniendo la sesión abierta: quien juegue sin cuenta se
+    // gana los suyos jugando, como cualquier alumno.
+    esAdminSesion() {
+        return !!(S.accSession && ADMIN_NAMES.indexOf(identity.nameKey(S.accSession.n)) >= 0);
+    }
+
     // ---------- Panel de cuenta ----------
     // (El panel se dibuja solo leyendo G: aquí solo queda su lógica)
     setAccMsg(key, warn) {

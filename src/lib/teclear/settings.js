@@ -3,7 +3,8 @@
 const STORAGE_KEY = "teclear.ajustes";
 
 const DEFAULTS = {
-    veyon: true,    // Modo Veyon activo por defecto
+    veyon: true,        // Modo Veyon activo por defecto
+    abilityKey: "F1",   // Tecla reservada de la habilidad del fondo (Controles)
 };
 
 let cache = null;
