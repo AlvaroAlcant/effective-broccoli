@@ -187,6 +187,37 @@ export const MINECRAFT_WORDS = [
     "oveja", "cabra", "conejo", "zorro", "oso", "llama", "tortuga"
 ];
 
+// ---------- Palabras de HUESOS (habilidad «Baile calaca») ----------
+// Vocabulario del fondo Calaca de la tienda de Halloween: mientras dura
+// la habilidad, las palabras salen de aquí —huesos y partes del cuerpo—
+// y cuentan DOBLE de puntos, monedas y caramelos. Como en las de
+// Halloween, se escriben SIN ACENTOS para poder teclearlas en cualquier
+// teclado.
+export const HUESO_WORDS = {
+    es: [
+        "hueso", "craneo", "calavera", "esqueleto", "femur",
+        "tibia", "fibula", "humero", "radio", "cubito", "costilla",
+        "vertebra", "coxis", "mandibula", "esternon", "clavicula",
+        "escapula", "pelvis", "cadera", "rotula", "tendon",
+        "cartilago", "falange", "metacarpo", "tarso", "calcaneo",
+        "sacro", "columna", "diente", "molar", "colmillo",
+        "espalda", "cuello", "hombro", "codo", "muneca",
+        "rodilla", "tobillo", "talon", "pecho", "costillas",
+        "brazo", "pierna", "mano", "pie", "dedo", "muslo",
+        "pantorrilla", "clavo", "articulacion", "medula"
+    ],
+    en: [
+        "bone", "skull", "skeleton", "femur", "tibia", "fibula",
+        "humerus", "radius", "ulna", "rib", "spine", "tailbone",
+        "jaw", "breastbone", "collarbone", "shoulder", "pelvis",
+        "hip", "kneecap", "ankle", "elbow", "wrist", "knee",
+        "tendon", "cartilage", "finger", "toe", "heel", "sacrum",
+        "teeth", "molar", "neck", "chest", "back", "arm", "leg",
+        "hand", "foot", "thigh", "calf", "skullcap", "sinew",
+        "marrow", "joint", "shin", "groin", "vertebrae"
+    ]
+};
+
 // ---------- Palabras del modo Truco o trato (evento de Halloween) ----------
 // Vocabulario terrorífico del evento de Halloween: calabazas,
 // fantasmas y criaturas de la noche. Se escribe sin acentos para

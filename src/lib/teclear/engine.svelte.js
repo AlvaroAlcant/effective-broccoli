@@ -24,7 +24,7 @@ import {
 } from './data/constants.js';
 import {
     WORDS, MURCIANO_WORDS, PICANTE, PHP_WORDS, ANDALUZ_WORDS,
-    MINECRAFT_WORDS, HALLOWEEN_WORDS
+    MINECRAFT_WORDS, HALLOWEEN_WORDS, HUESO_WORDS
 } from './data/words.js';
 import { TT_TIME_PENALTY, TT_XP_PENALTY } from './data/events.js';
 import { events } from './services/events.svelte.js';
@@ -56,6 +56,15 @@ export class GameEngine {
     extraRun = null;
     srAt = 0;
     srWords = 0;
+    // ¿Se ha empezado a teclear la palabra actual? Lo usa el fondo
+    // ViejaEnLaGolden, que mantiene el cronómetro parado mientras no
+    // se teclea nada (se reinicia con cada palabra nueva)
+    wordTyped = false;
+    // Milisegundos de reloj congelado en ESTA partida (habilidades Turbo
+    // y Chica Rush, y pausa de ViejaEnLaGolden): el control de juego
+    // legítimo los descuenta de la duración para no marcar como trampa
+    // una partida que se ha parado por sus habilidades
+    pauseMs = 0;
     savedScore = $state(false);
     gameStartAt = 0;
     gameDuration = 0;
@@ -387,6 +396,13 @@ export class GameEngine {
             return modes[S.mode].tickSpeed();
         }
 
+    // ¿El reloj está en pausa por el fondo ViejaEnLaGolden? El tiempo no
+    // corre mientras no se haya tocado la palabra actual (se reinicia con
+    // cada palabra nueva en newWord()). En Aventura no actúa ningún fondo.
+    clockHold() {
+            return eco.bgPower("viejaenlagolden") && !this.wordTyped;
+        }
+
     wordPool() {
             // Palabras que aportan los extras con lista propia (php, andaluz, cubico)
             const propias = [];
@@ -451,6 +467,17 @@ export class GameEngine {
             // imagen y pide la palabra que la nombra)
             const picked = modes[S.mode].pickWord();
             if (picked) return picked;
+            // Baile calaca (fondo Calaca): mientras dure el bonus, las
+            // palabras son de HUESOS y partes del cuerpo y se pagan a
+            // DOBLE (manda sobre el nivel; en Imágenes manda su imagen)
+            if (abilities.baileOn() && S.mode !== "imagen") {
+                const huesos = S.lang === "en" ? HUESO_WORDS.en : HUESO_WORDS.es;
+                let h;
+                do {
+                    h = huesos[Math.floor(Math.random() * huesos.length)];
+                } while (h === S.word && huesos.length > 1);
+                return eco.extraActive("espejo") ? this.mirrorWord(h) : h;
+            }
             const list = this.wordPool();
             const lvl = this.level();
             let pool;
@@ -530,12 +557,26 @@ export class GameEngine {
             this.typing.value = "";
             S.typedStr = "";
             S.prevLen = 0;
+            // Todavía no se ha tocado esta palabra: con el fondo
+            // ViejaEnLaGolden el cronómetro espera a que empiece a teclear.
+            // Se limpia también la marca de la palabra que estaba en
+            // pantalla al activarse el Baile calaca: si ha cambiado de
+            // palabra sin llegar a pagarse, esa ya no forma parte del bonus
+            this.wordTyped = false;
+            S.baileSkip = false;
             S.word = this.nextWord();
             // El modo prepara su tablero (Adivinar monta la máscara,
             // Supervivencia suelta la primera palabra apuntada)
             modes[S.mode].onNewWord();
             if (S.mode === "type" || S.mode === "aventura") {
                 this.soupPrefill();   // letras que deja Sopa de Letras
+            }
+            // Aviso del fondo ViejaEnLaGolden: mientras no se teclea,
+            // el tiempo no corre. En la primera palabra se respeta el
+            // texto de arranque (que ya explica la habilidad del fondo)
+            if (S.completed > 0 && S.state === "playing" &&
+                eco.bgPower("viejaenlagolden")) {
+                S.statusTxt = t("stPausa");
             }
             this.updateHud();
         }
@@ -566,8 +607,15 @@ export class GameEngine {
             // palabras largas (más de 7 letras) y General dobla las monedas
             const largo = S.word.length > 7;
             const triple = eco.bgPower("esteso") && largo;
+            // Baile calaca (fondo Calaca): las 15 palabras de huesos que
+            // salen mientras dura el bonus pagan DOBLE — puntos, monedas
+            // y caramelos (los caramelos van siempre junto a las monedas).
+            // La que estaba en pantalla al activarlo no lleva doble: no
+            // forma parte del bonus (baileSkip)
+            const doble = abilities.baileOn() && !S.baileSkip ? 2 : 1;
             // Multiplicadores propios del modo (ventana de "puntos x2")
-            const points = S.word.length * 10 * mult * (triple ? SCORE_BOOST : 1) * modes[S.mode].scoreMult();
+            const points = S.word.length * 10 * mult * (triple ? SCORE_BOOST : 1)
+                * doble * modes[S.mode].scoreMult();
             S.score += points;
             fx.showPoints(points);
             // Monedas al estilo experiencia: la racha multiplica lo que ganas.
@@ -575,6 +623,7 @@ export class GameEngine {
             // (x1 al principio y hasta x5 con la racha larga).
             const coinGain = mult *
                 (triple ? SCORE_BOOST : 1) *
+                doble *
                 (eco.bgPower("franco") ? 2 : 1) *
                 // Multiplicador propio del modo (ventana de "monedas dobles")
                 modes[S.mode].coinMult() *
@@ -592,6 +641,10 @@ export class GameEngine {
                 S.timeLeft += 1;
                 fx.float("+1s", "time");
             }
+            // Baile calaca: esta palabra ya se ha pagado con su doble,
+            // así que ahora resta de las 15 del bonus (al llegar a 0 se
+            // apaga solo y avisa)
+            abilities.wordDone();
         }
 
     completeWord() {
@@ -639,6 +692,9 @@ export class GameEngine {
             // Cada partida empieza con la ventana del logro Speedrunner vacía
             this.srAt = 0;
             this.srWords = 0;
+            // …y sin tiempo congelado acumulado ni palabra ya tecleada
+            this.pauseMs = 0;
+            this.wordTyped = false;
 
             if (S.shopOpen) { // la tienda se cierra al empezar
                 S.shopOpen = false;
@@ -709,6 +765,17 @@ export class GameEngine {
             // Las habilidades Turbo y Chica Rush congelan el reloj mientras
             // duran (en Supervivencia eso congela también las palabras)
             if (abilities.frozen(now)) {
+                this.pauseMs += now - this.lastTick;   // se descuenta del control legítimo
+                this.lastTick = now;
+                this.updateHud();
+                return;
+            }
+            // Fondo ViejaEnLaGolden: el tiempo está CONGELADO hasta que
+            // empieces a teclear la palabra. En cuanto pones la primera
+            // letra corre otra vez, y al escribirla entera se vuelve a
+            // parar hasta que empieces con la siguiente.
+            if (this.clockHold()) {
+                this.pauseMs += now - this.lastTick;
                 this.lastTick = now;
                 this.updateHud();
                 return;
@@ -738,9 +805,13 @@ export class GameEngine {
             clearInterval(this.timerId);
             // Duración real de la partida: si alguien congeló el cronómetro
             // para alargarla y sumar puntos, esto lo delata. Las paradas del
-            // modo Aventura (elegir ventaja) no se cuentan como tiempo jugado.
+            // modo Aventura (elegir ventaja) no se cuentan como tiempo jugado,
+            // NI las congelaciones legítimas de las habilidades (Turbo,
+            // Chica Rush y la pausa del fondo ViejaEnLaGolden): lo que
+            // importa aquí es lo que se ha estado JUGANDO de verdad.
             this.gameDuration = this.gameStartAt > 0
-                ? Math.max(0, (Date.now() - this.gameStartAt - modes[S.mode].pausedMs()) / 1000)
+                ? Math.max(0, (Date.now() - this.gameStartAt
+                    - modes[S.mode].pausedMs() - this.pauseMs / 1000) / 1000)
                 : this.gameTime();
             S.state = "over";
             // Cada modo retira lo suyo (el tablero de Supervivencia, la
@@ -1209,6 +1280,10 @@ this.verifyInput = document.getElementById("verifyInput");
             acc.inputEvents++;
             if (e && e.isTrusted) acc.trustedInput++;
 
+            // El fondo ViejaEnLaGolden ya puede correr el reloj: se ha
+            // empezado a teclear la palabra (se reinicia con la siguiente)
+            this.wordTyped = true;
+
             // Cada modo procesa la entrada a su manera (Adivinar letra
             // a letra, Supervivencia contra la palabra apuntada…)
             modes[S.mode].input();
@@ -1222,6 +1297,9 @@ this.verifyInput = document.getElementById("verifyInput");
             }
             if (e.isTrusted) acc.trustedKeys++;
             if (!e.repeat) acc.keyStamps.push(performance.now()); // el auto-repetido no cuenta
+            // Una letra tecleada arranca el reloj del fondo
+            // ViejaEnLaGolden (sin ese fondo puesto no pinta nada)
+            if (e.key && e.key.length === 1) this.wordTyped = true;
             // Efecto de tecleo comprado en la tienda: estalla con cada letra
             if (!e.repeat && !S.perkOpen && e.key && e.key.length === 1 && !/\s/.test(e.key)) {
                 fx.fxBurst();

@@ -229,6 +229,14 @@ export const I18N = {
         stAbUsed: "La habilidad de este fondo ya se ha usado en esta partida.",
         chicaTime: "🎂 ¡Cupcake! +1 segundo",
         chicaCandy: "🍬 ¡Cupcake! +1 caramelo",
+        abBaile: "🦴 Baile calaca",
+        abChatarra: "🔧 Chatarra = XP extra",
+        abPausa: "⏳ El tiempo espera a que teclees",
+        stBaile: "¡🦴 BAILE CALACA! Bailan esqueletos por toda la pantalla y las siguientes 15 palabras son de HUESOS y partes del cuerpo, con DOBLE de puntos, monedas y caramelos.",
+        baileEnd: "🦴 Se acabó el Baile calaca: palabras normales otra vez.",
+        stPausa: "⏳ Abuela mirándote: el cronómetro está PARADO hasta que empieces a teclear la palabra.",
+        scrapGet: "🔧 ¡Chatarra de Lethal Company reciclada! Experiencia extra.",
+        scrapCandy: "🔧 ¡Chatarra reciclada! +1 caramelo",
         footer: "&copy; 2026 Minijuegos Web · Game: Teclear"
     },
     en: {
@@ -458,6 +466,14 @@ export const I18N = {
         stAbUsed: "This background's ability has already been used this match.",
         chicaTime: "🎂 Cupcake! +1 second",
         chicaCandy: "🍬 Cupcake! +1 candy",
+        abBaile: "🦴 Bone dance",
+        abChatarra: "🔧 Scrap = extra XP",
+        abPausa: "⏳ Time waits for your typing",
+        stBaile: "🦴 BONE DANCE! Skeletons are dancing all over the screen and the next 15 words are BONES and body parts, with DOUBLE points, coins and candies.",
+        baileEnd: "🦴 Bone dance is over: normal words again.",
+        stPausa: "⏳ Granny is watching: the clock is PAUSED until you start typing the word.",
+        scrapGet: "🔧 Lethal Company scrap recycled! Extra experience.",
+        scrapCandy: "🔧 Scrap recycled! +1 candy",
         footer: "&copy; 2026 Web Mini-Games · Game: Teclear"
     }
 };

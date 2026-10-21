@@ -22,6 +22,20 @@ export const CHICA_SPAWN = 650;    // ms entre un cupcake y el siguiente
 export const CHICA_LIFE = 2600;    // ms que espera cada cupcake a ser tocado
 export const CHICA_MAX = 9;        // cupcakes vivos a la vez (no saturar la capa)
 export const CHICA_CHANCE = 0.25;  // probabilidad de que el cupcake dé +1 s
+// Baile calaca (fondo Calaca, tienda de evento de Halloween): mientras
+// dura, salen esqueletos bailando y las N siguientes palabras son de
+// HUESOS y partes del cuerpo, con DOBLE de puntos, monedas y caramelos.
+export const BAIL_WORDS = 15;      // palabras con bonus de huesos
+export const BAIL_BURST = 7;       // esqueletos del primer golpe
+export const BAIL_SPAWN = 1400;    // ms entre un esqueleto y el siguiente
+export const BAIL_MAX = 10;        // esqueletos bailando a la vez (tope)
+export const BAIL_LIFE = 6500;     // ms que baila cada esqueleto
+// Chatarra (fondo Company, tienda de evento): trozos de chatarra que
+// aparecen durante la partida y que, al tocarlos, dan experiencia extra
+export const SCRAP_SPAWN = 2600;   // ms entre un trozo y el siguiente
+export const SCRAP_MAX = 4;        // trozos en pantalla a la vez (tope)
+export const SCRAP_LIFE = 5000;    // ms que espera cada trozo a ser tocado
+export const SCRAP_XP = 6;         // experiencia que regala cada trozo
 
 // ---------- Modo Aventura ----------
 // Segundos con los que se empieza: cada palabra escrita suma más

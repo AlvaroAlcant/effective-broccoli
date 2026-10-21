@@ -7,6 +7,7 @@ import { S } from '../state.svelte.js';
 import { t } from '../services/i18n.js';
 import { fx } from '../services/fx.js';
 import { eco } from '../services/economy.js';
+import { abilities } from '../services/abilities.js';
 import {
     SUP_LIVES, SUP_TIME, SUP_TIME_MIN, SUP_TIME_STEP, SUP_SPEED_STEP,
     SUP_SPEED_MAX, SUP_XP_WORD, SUP_MAX_WORDS, SUP_GRACE, SUP_RAMP,
@@ -182,6 +183,13 @@ export class SurvivalMode extends GameMode {
     aim(it) {
         if (!it) return;
         const typing = this.engine.typing;
+        // Apuntando a OTRA palabra: el fondo ViejaEnLaGolden vuelve a
+        // parar el reloj hasta que se empiece a teclear la nueva, y la
+        // anterior ya no cuenta para el bonus del Baile calaca
+        if (it !== this.target) {
+            this.engine.wordTyped = false;
+            S.baileSkip = false;
+        }
         this.target = it;
         S.word = it.w;                     // las recompensas trabajan sobre `word`
         S.prevLen = it.typed;
@@ -230,8 +238,9 @@ export class SurvivalMode extends GameMode {
     complete() {
         const it = this.target;
         if (!it) return;
-        // El modo Encantado solo paga CARAMELOS (ni monedas ni experiencia)
-        if (this.enc) this.encReward();
+        // El modo Encantado solo paga CARAMELOS (ni monedas ni experiencia):
+        // se anota la palabra para el Baile calaca, que dobla lo que se paga
+        if (this.enc) { this.encReward(); abilities.wordDone(); }
         else this.engine.pagaPalabra();   // recompensas, racha y logros
         this.remove(it);
         this.fillBoard();
@@ -253,8 +262,12 @@ export class SurvivalMode extends GameMode {
         S.completed++;
         S.streak++;
         S.score += 10;
-        eco.giveCandy(ENC_CANDY_HIT);     // +1 caramelos por letra
-        fx.showCandy(ENC_CANDY_HIT);
+        // Baile calaca (fondo Calaca): con el bonus activo, esta palabra
+        // de huesos paga el DOBLE de caramelos (la que estaba en pantalla
+        // al activarlo no forma parte del bonus)
+        const doble = abilities.baileOn() && !S.baileSkip ? 2 : 1;
+        eco.giveCandy(ENC_CANDY_HIT * doble);
+        fx.showCandy(ENC_CANDY_HIT * doble);
         S.statusTxt = t("encHit");
     }
 

@@ -27,6 +27,9 @@ export class GameState {
     turboUsed = $state(false);
     chicaUntil = $state(0);      // …y el del Chica Rush
     chicaUsed = $state(false);
+    baileUsed = $state(false);   // Baile calaca (fondo Calaca): 1 por partida
+    baileLeft = $state(0);       // palabras que quedan con el bonus de huesos
+    baileSkip = $state(false);   // la palabra en pantalla al activarlo NO cuenta
     caramelos = $state(storage.getInt("teclear.caramelos", 0));
     candyRun = $state(0);
     supVariant = $state("clasico");

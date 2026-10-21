@@ -4,15 +4,21 @@
 // su tienda de evento. Arrancar/cerrar un evento = tocar SOLO esta tabla;
 // el EventService la recorre sola.
 import imgFredi from '#lib/img/fredi.gif';
+import imgKeleto from '#lib/img/keleto.gif';
+import imgCompany from '#lib/img/company.gif';
+import imgGranny from '#lib/img/granny-dance.gif';
 
 export const EVENTS = {
     // El evento de Halloween empieza el 8 de octubre y termina el 3 de
     // noviembre a las 12:00 (todos los años). Mientras dure, el logo y el
-    // menú se visten de Halloween y se abre la TIENDA DE EVENTO con tres
-    // artículos exclusivos: el fondo Five Nigths (fredi.gif, 1987
-    // monedas), el efecto de tecleo Sangre (666 monedas) y el modo de
-    // juego Truco o trato (2040 monedas). Cuando el evento termina, la
-    // tienda de evento se cierra, pero lo comprado se queda para siempre.
+    // menú se visten de Halloween y se abre la TIENDA DE EVENTO, con
+    // artículos exclusivos que se pagan en CARAMELOS: los fondos Five
+    // Nigths (1987), Calaca (666), Company (1200) y ViejaEnLaGolden
+    // (500), el efecto de tecleo Sangre (666) y el modo de juego Truco o
+    // trato (2040). Cuando el evento termina, la tienda de evento se
+    // cierra, pero lo comprado se queda para siempre.
+    // Cada fondo trae su habilidad: Chica Rush, Baile calaca, Chatarra
+    // (pasiva) y Tiempo congelado (pasiva).
     //
     // Los items se declaran AQUÍ, completos — la propiedad `event` se
     // estampa sola al componerlos en economy.js. Añadir un artículo de
@@ -33,6 +39,45 @@ export const EVENTS = {
                 powEs: "«Chica Rush»: 20 s con el tiempo congelado cazando cupcakes (+1 s o un caramelo).",
                 powEn: "“Chica Rush”: 20 s of frozen time catching cupcakes (+1 s or a candy).",
                 img: imgFredi, icon: "📼"
+            },
+            {   // Fondo Calaca (keleto.gif): una calaca bailarina. Su
+                // habilidad es el «Baile calaca»: al dispararla salen
+                // esqueletos bailando por la pantalla y las siguientes
+                // 15 palabras son de HUESOS con DOBLE de puntos, monedas
+                // y caramelos (una sola vez por partida).
+                kind: "bg",
+                id: "calaca", price: 666,
+                es: "Calaca", en: "Skull",
+                descEs: "Habilidad «Baile calaca»: aparecen esqueletos bailando por toda la pantalla y las siguientes 15 palabras son de huesos y partes del cuerpo, con DOBLE de puntos, monedas y caramelos (una sola vez por partida). Solo durante el evento de Halloween.",
+                descEn: "“Bone dance” ability: skeletons start dancing all over the screen and the next 15 words are bones and body parts, with DOUBLE points, coins and candies (once per match). Halloween event only.",
+                powEs: "«Baile calaca»: 15 palabras de huesos con DOBLE de puntos, monedas y caramelos y esqueletos bailando (1 vez por partida).",
+                powEn: "“Bone dance”: 15 bone words with DOUBLE points, coins and candies while skeletons dance (once per match).",
+                img: imgKeleto, icon: "💀"
+            },
+            {   // Fondo Company (company.gif): Lethal Company. No tiene
+                // tecla: es pasiva —durante la partida van apareciendo
+                // trozos de chatarra y, al tocarlos, dan experiencia extra.
+                kind: "bg",
+                id: "company", price: 1200,
+                es: "Company", en: "Company",
+                descEs: "Habilidad pasiva «Chatarra»: durante la partida van apareciendo trozos de chatarra de Lethal Company por la pantalla; al tocarlos te dan experiencia extra. Solo durante el evento de Halloween.",
+                descEn: "Passive “Scrap” ability: pieces of Lethal Company scrap keep popping up during the match and tapping them grants you extra experience. Halloween event only.",
+                powEs: "«Chatarra»: trozos de chatarra por la pantalla que dan experiencia extra al tocarlos.",
+                powEn: "“Scrap”: Lethal Company pieces on screen give you extra experience when tapped.",
+                img: imgCompany, icon: "🔧"
+            },
+            {   // Fondo ViejaEnLaGolden (granny-dance.gif): la abuela
+                // bailando. Pasiva: el cronómetro está CONGELADO hasta
+                // que empiezas a teclear la palabra; al terminarla se
+                // vuelve a congelar hasta que empieces con la siguiente.
+                kind: "bg",
+                id: "viejaenlagolden", price: 500,
+                es: "ViejaEnLaGolden", en: "Golden Granny",
+                descEs: "Habilidad pasiva «Tiempo congelado»: el cronómetro no avanza mientras no tecleas; cada vez que sale una palabra se queda parado hasta que la empiezas, y al escribirla entera se vuelve a congelar hasta la siguiente. Solo durante el evento de Halloween.",
+                descEn: "Passive “Frozen time” ability: the clock does not run while you are not typing; every time a word appears it stops until you start typing it, and once it is completed it freezes again until the next one. Halloween event only.",
+                powEs: "«Tiempo congelado»: el reloj espera a que teclees y se para entre palabras.",
+                powEn: "“Frozen time”: the clock waits for your typing and pauses between words.",
+                img: imgGranny, icon: "🧓"
             },
             {   // Efecto Sangre: gotas que salpican y gotean con cada letra
                 kind: "fx",

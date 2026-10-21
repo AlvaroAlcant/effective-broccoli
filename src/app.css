@@ -108,7 +108,10 @@
             display: none;
         }
         body:has(.logo-wrap).veyon-on.bg-franco,
-        body:has(.logo-wrap).veyon-on.bg-esteso {
+        body:has(.logo-wrap).veyon-on.bg-esteso,
+        body:has(.logo-wrap).veyon-on.bg-calaca,
+        body:has(.logo-wrap).veyon-on.bg-company,
+        body:has(.logo-wrap).veyon-on.bg-viejaenlagolden {
             background-color: var(--bg);
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
@@ -326,6 +329,52 @@
                 radial-gradient(900px 420px at 50% -10%, rgba(255, 117, 24, .14), transparent 65%),
                 linear-gradient(rgba(5, 7, 12, .74), rgba(5, 7, 12, .80)),
                 url("./lib/img/fredi.gif");
+            background-size: auto, cover, cover;
+            background-position: center, center, center;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-attachment: fixed, fixed, fixed;
+        }
+
+        /* ---------- Fondo "Calaca" (tienda de evento de Halloween) ----------
+           La calaca de keleto.gif sobre fondo morado, con capa oscura
+           encima para que el texto siga leyéndose. Su habilidad es el
+           «Baile calaca». */
+        body:has(.logo-wrap).bg-calaca {
+            background-color: #0a0610;
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(168, 85, 247, .20), transparent 65%),
+                linear-gradient(rgba(8, 5, 12, .76), rgba(8, 5, 12, .86)),
+                url("./lib/img/keleto.gif");
+            background-size: auto, cover, cover;
+            background-position: center, center, center;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-attachment: fixed, fixed, fixed;
+        }
+
+        /* ---------- Fondo "Company" (tienda de evento de Halloween) ----------
+           El resplandor verdoso de Lethal Company sobre company.gif. Su
+           habilidad es la chatarra: trozos que dan experiencia extra. */
+        body:has(.logo-wrap).bg-company {
+            background-color: #07090a;
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(126, 231, 13, .16), transparent 65%),
+                linear-gradient(rgba(4, 6, 7, .78), rgba(4, 6, 7, .86)),
+                url("./lib/img/company.gif");
+            background-size: auto, cover, cover;
+            background-position: center, center, center;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-attachment: fixed, fixed, fixed;
+        }
+
+        /* ---------- Fondo "ViejaEnLaGolden" (tienda de evento) ----------
+           La abuela bailando (granny-dance.gif) con tono dorado. Su
+           habilidad mantiene el cronómetro parado entre palabras. */
+        body:has(.logo-wrap).bg-viejaenlagolden {
+            background-color: #0d0a05;
+            background-image:
+                radial-gradient(900px 420px at 50% -10%, rgba(255, 215, 106, .18), transparent 65%),
+                linear-gradient(rgba(10, 8, 4, .76), rgba(10, 8, 4, .86)),
+                url("./lib/img/granny-dance.gif");
             background-size: auto, cover, cover;
             background-position: center, center, center;
             background-repeat: no-repeat, no-repeat, no-repeat;
@@ -1418,6 +1467,97 @@
             to { transform: scale(1.7); opacity: 0; }
         }
 
+        /* Baile calaca (fondo Calaca): esqueletos que bailan por toda la
+           pantalla mientras dura el bonus de las 15 palabras. Son
+           decorativos: la capa no recibe clics, así que no estorban para
+           escribir. */
+        .baile-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 56;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .baile-sk {
+            position: absolute;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .55));
+            user-select: none;
+            -webkit-user-drag: none;
+            /* El desfase de baile lo pone cada esqueleto con --d (en línea) */
+            animation: baile-in .3s ease-out both,
+                       baile-dance .7s var(--d, 0s) ease-in-out infinite alternate;
+        }
+        /* El que termina su tiempo se va con la animación de fuera */
+        .baile-sk.out {
+            animation: baile-out .4s ease-in forwards;
+        }
+        @keyframes baile-in {
+            from { transform: scale(.3) rotate(-18deg); opacity: 0; }
+            to   { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        @keyframes baile-dance {
+            from { transform: translateY(0) rotate(-9deg); }
+            to   { transform: translateY(-16px) rotate(9deg); }
+        }
+        @keyframes baile-out {
+            to { transform: translateY(26px) scale(.55); opacity: 0; }
+        }
+
+        /* Chatarra (fondo Company): trozos de Lethal Company que salen
+           durante la partida y se tocan con el ratón o el dedo, igual
+           que los cupcakes del Chica Rush. Cada trozo muestra un recorte
+           distinto del GIF (object-position en línea). */
+        .scrap-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 55;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .scrap {
+            position: absolute;
+            width: 74px;
+            height: 74px;
+            padding: 0;
+            overflow: hidden;
+            border: 2px solid rgba(255, 214, 10, .5);
+            border-radius: 12px;
+            background: #12100a;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, .55);
+            animation: scrap-in .2s ease-out both,
+                       scrap-sway 1.4s ease-in-out infinite alternate;
+        }
+        .scrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .scrap:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+        }
+        /* El que se ha tocado se va inflándose */
+        .scrap.out {
+            pointer-events: none;
+            animation: scrap-out .3s ease-in forwards;
+        }
+        @keyframes scrap-in {
+            from { transform: scale(.3); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+        @keyframes scrap-sway {
+            from { transform: rotate(-6deg) translateY(0); }
+            to   { transform: rotate(6deg) translateY(-6px); }
+        }
+        @keyframes scrap-out {
+            to { transform: scale(1.6); opacity: 0; }
+        }
+
         /* ---------- Tarjetas: resultados, tienda, ranking, perfil e inventario ---------- */
         .results,
         .shop,
@@ -2478,6 +2618,8 @@
             .cupcake,
             .cupcake img,
             .turbo-fx,
+            .baile-sk,
+            .scrap,
             .ability-btn.on {
                 animation: none !important;
             }
