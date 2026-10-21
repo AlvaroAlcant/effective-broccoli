@@ -1,6 +1,7 @@
     <!-- ===================== Menú principal =====================
          Ordenado de lo más importante a lo auxiliar:
-         1· Modo de juego · 2· Idioma · 3· Fondo · 4· Progreso · 5· Cuenta -->
+         1· Modo de juego · 2· Idioma · 3· Fondo · 4· Progreso
+         5· Controles · 6· Cuenta -->
     <div class="selectors">
         <!-- 1 · Cómo se juega (con sus variantes al lado) -->
         <div class="sel-row">
@@ -36,7 +37,13 @@
             <button class="chip-btn" id="btnRanking">🏆 Ranking</button>
             <button class="chip-btn" id="btnLogros">🏅 Logros</button>
         </div>
-        <!-- 5 · Cuenta de jugador y herramientas del profe -->
+        <!-- 5 · Controles: la tecla reservada de la habilidad del fondo -->
+        <div class="sel-row">
+            <span class="sel-label" id="ctrlLabel">🎮 Controles</span>
+            <button class="chip-btn" id="btnAbilityKey" type="button">⚡ Habilidad: F1</button>
+            <span class="sel-hint" id="ctrlHint">Púlsala durante la partida para activar el poder del fondo que lleves puesto.</span>
+        </div>
+        <!-- 6 · Cuenta de jugador y herramientas del profe -->
         <div class="sel-row">
             <span class="sel-label" id="userLabel">👤 Cuenta y ajustes</span>
             <button class="chip-btn" id="btnRegister">👤 Registrar</button>

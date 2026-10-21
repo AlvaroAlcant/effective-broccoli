@@ -24,6 +24,10 @@
 
         <p id="status">Modo relájado: sin presión, teclea a tu ritma… ¡hasta que empiezas!</p>
 
+        <!-- Habilidad del fondo equipado: se dispara con la tecla
+             reservada de «Controles» (o con este botón, para el táctil) -->
+        <button class="ability-btn hidden" id="abilityBtn" type="button">⚡ Habilidad</button>
+
         <button class="main-btn" id="startBtn">Jugar</button>
     </div>
 

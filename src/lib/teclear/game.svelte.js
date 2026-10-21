@@ -2,6 +2,7 @@ import imgFranco from '#lib/img/Francisco_Franco_1930.jpg';
 import imgElprico from '#lib/img/Elprico.png';
 import imgEsteso from '#lib/img/esteso.jpg';
 import imgFredi from '#lib/img/fredi.gif';
+import imgCupcake from '#lib/img/cupcake.png';
 import imgVeyonPlaceholder from '#lib/img/repuesto.svg';
 import imgVeyonFavicon from '#lib/img/repuesto-icono.svg';
 import imgLogo from '#lib/img/estesoTeclea.png';
@@ -28,6 +29,19 @@ export function initTeclear() {
         const BONUS_TIME_ELPRICO = 15;
         // Letras que la habilidad del fondo Sopa de Letras deja ya puestas
         const SOUP_GIVEN = 2;
+
+        // ---------- Habilidades ACTIVAS de los fondos ----------
+        // Se disparan con la tecla reservada del apartado «Controles» (o con
+        // el botón de la habilidad). Turbo (Circuito) y Chica Rush (Five
+        // Nigths) solo se pueden usar UNA VEZ por partida; Hacker es pasiva
+        // y no se activa: se aplica sola con cada palabra escrita.
+        const TURBO_MS = 10000;     // duración del modo Turbo (milisegundos)
+        const TURBO_MAX = 4;        // letras de las palabras durante el Turbo
+        const CHICA_MS = 20000;     // duración del Chica Rush
+        const CHICA_SPAWN = 650;    // ms entre un cupcake y el siguiente
+        const CHICA_LIFE = 2600;    // ms que espera cada cupcake a ser tocado
+        const CHICA_MAX = 9;        // cupcakes vivos a la vez (no saturar la capa)
+        const CHICA_CHANCE = 0.25;  // probabilidad de que el cupcake dé +1 s
 
         // ---------- Modo Aventura ----------
         // Segundos con los que se empieza: cada palabra escrita suma más
@@ -302,30 +316,36 @@ export function initTeclear() {
             {
                 // No se compra con monedas: es la RECOMPENSA del logro
                 // "Speedrunner" (price null = no está a la venta, ach = solo
-                // se gana jugando). Pura estética: coches disparados.
-                id: "carreras", price: null, ach: true, decor: true,
+                // se gana jugando). Coches disparados + habilidad Turbo.
+                id: "carreras", price: null, ach: true,
                 es: "Circuito", en: "Race Track",
-                descEs: "Coches que cruzan la pantalla a toda velocidad. ¡Recompensa del logro «Speedrunner»!",
-                descEn: "Cars crossing the screen at full speed. Reward of the “Speedrunner” achievement!",
+                descEs: "Habilidad «Turbo»: 10 segundos con el cronómetro congelado y palabras muy cortas, una sola vez por partida. Con coches cruzando la pantalla. ¡Recompensa del logro «Speedrunner»!",
+                descEn: "“Turbo” ability: 10 seconds with the clock frozen and very short words, once per match. Cars cross the screen. Reward of the “Speedrunner” achievement!",
+                powEs: "«Turbo»: 10 s con el tiempo congelado y palabras muy cortas (1 vez por partida).",
+                powEn: "“Turbo”: 10 s with the clock frozen and very short words (once per match).",
                 img: "", icon: "🏁"
             },
             {
                 // Igual que Circuito, pero con la lluvia binaria de Matrix
-                id: "hacker", price: null, ach: true, decor: true,
+                id: "hacker", price: null, ach: true,
                 es: "Hacker", en: "Hacker",
-                descEs: "Números binarios verdes cambiando sobre fondo negro. ¡Recompensa del logro «Hacker»!",
-                descEn: "Changing green binary digits on a black background. Reward of the “Hacker” achievement!",
+                descEs: "Habilidad pasiva: +1 segundo en el cronómetro por cada palabra escrita. Con números binarios verdes cambiando sobre fondo negro. ¡Recompensa del logro «Hacker»!",
+                descEn: "Passive ability: +1 second on the clock for every word you type. Changing green binary digits on a black background. Reward of the “Hacker” achievement!",
+                powEs: "+1 segundo en el cronómetro por cada palabra escrita.",
+                powEn: "+1 second on the clock for every word you type.",
                 img: "", icon: "💻"
             },
             {
                 // Tienda de EVENTO (Halloween): el fondo Five Nigths con el
                 // GIF de Fredi mirando fijamente. Solo está a la venta
                 // mientras dura el evento (8 de octubre – 3 de noviembre); una vez
-                // comprado se queda para siempre.
-                id: "fivenights", price: 1987, event: true, decor: true,
+                // comprado se queda para siempre. Su habilidad es el Chica Rush.
+                id: "fivenights", price: 1987, event: true,
                 es: "Five Nigths", en: "Five Nigths",
-                descEs: "Fondo Five Nigths con Fredi mirándote fijamente desde la oscuridad. ¡Puro terror! Solo durante el evento de Halloween.",
-                descEn: "A Five Nigths background with Fredi staring at you from the darkness. Pure horror! Halloween event only.",
+                descEs: "Habilidad «Chica Rush»: el tiempo se congela durante 20 segundos sin poder escribir y aparecen cupcakes sin parar; toca uno y tienes un 25 % de ganar 1 segundo y un 75 % de ganarte un caramelo (una sola vez por partida). ¡Fredi te mira desde la oscuridad! Solo durante el evento de Halloween.",
+                descEn: "“Chica Rush” ability: time freezes for 20 seconds while you cannot type and cupcakes keep popping up; tap one for a 25% chance of +1 second or a 75% chance of a candy (once per match). Freddy is staring at you from the dark! Halloween event only.",
+                powEs: "«Chica Rush»: 20 s con el tiempo congelado cazando cupcakes (+1 s o un caramelo).",
+                powEn: "“Chica Rush”: 20 s of frozen time catching cupcakes (+1 s or a candy).",
                 img: imgFredi, icon: "📼"
             }
         ];
@@ -1014,6 +1034,23 @@ export function initTeclear() {
                 accRankNo: "🔒 Para guardar en el ranking necesitas un perfil: pulsa «👤 Registrar».",
                 accNoSession: "🔒 No has iniciado sesión: no hay nada que guardar todavía.",
                 accXpGain: "Experiencia ganada",
+                // ---- Controles y habilidades de los fondos ----
+                ctrlLabel: "🎮 Controles",
+                ctrlKey: "Habilidad",
+                ctrlKeyWait: "Pulsa una tecla… (ESC cancela)",
+                ctrlHint: "Tecla reservada: púlsala durante la partida para usar el poder del fondo que lleves puesto.",
+                keySpace: "Espacio",
+                keyEnter: "Intro",
+                abTurbo: "🏁 Turbo",
+                abChica: "🐔 Chica Rush",
+                abHacker: "💾 +1 s por palabra",
+                abUsed: "usada",
+                stTurbo: "¡🏁 TURBO! El cronómetro se congela y salen palabras muy cortas durante 10 segundos.",
+                stChica: "¡🐔 CHICA RUSH! 20 segundos sin escribir: toca los cupcakes, uno de cada 4 te da +1 s y los demás te dan caramelos.",
+                stChicaEnd: "🐔 Se acabó el Chica Rush: la partida sigue con normalidad.",
+                stAbUsed: "La habilidad de este fondo ya se ha usado en esta partida.",
+                chicaTime: "🎂 ¡Cupcake! +1 segundo",
+                chicaCandy: "🍬 ¡Cupcake! +1 caramelo",
                 footer: "&copy; 2026 Minijuegos Web · Game: Teclear"
             },
             en: {
@@ -1228,6 +1265,23 @@ export function initTeclear() {
                 accRankNo: "🔒 You need a profile to save to the leaderboard: press “👤 Register”.",
                 accNoSession: "🔒 You are not logged in: there is nothing to save yet.",
                 accXpGain: "Experience earned",
+                // ---- Controls and background abilities ----
+                ctrlLabel: "🎮 Controls",
+                ctrlKey: "Ability",
+                ctrlKeyWait: "Press a key… (ESC to cancel)",
+                ctrlHint: "Reserved key: press it during a match to trigger the power of the background you are wearing.",
+                keySpace: "Space",
+                keyEnter: "Enter",
+                abTurbo: "🏁 Turbo",
+                abChica: "🐔 Chica Rush",
+                abHacker: "💾 +1 s per word",
+                abUsed: "used",
+                stTurbo: "🏁 TURBO! The clock freezes and very short words appear for 10 seconds.",
+                stChica: "🐔 CHICA RUSH! 20 seconds without typing: tap the cupcakes — 1 in 4 gives you +1 s and the rest give you candies.",
+                stChicaEnd: "🐔 Chica Rush is over: the match goes on as usual.",
+                stAbUsed: "This background's ability has already been used this match.",
+                chicaTime: "🎂 Cupcake! +1 second",
+                chicaCandy: "🍬 Cupcake! +1 candy",
                 footer: "&copy; 2026 Web Mini-Games · Game: Teclear"
             }
         };
@@ -1241,6 +1295,16 @@ export function initTeclear() {
         let encTyped = 0;            // letras acertadas en la partida Encantada
         let mode = $state("type");       // type | guess | imagen | aventura | supervivencia
         let bg = $state("dark");         // dark | franco | elprico | esteso
+        // Habilidades activas de los fondos: la tecla reservada (Controles)
+        // y la ventana que queda de cada habilidad. «Used» no se reinicia
+        // al cambiar de fondo: es UNA vez por partida, lo que se cambia es
+        // el fondo.
+        let abilityKey = $state(getSetting("abilityKey") || "F1");
+        let bindingKey = false;      // ¿esperando a que se pulse la tecla?
+        let turboUntil = $state(0);  // instante en el que acaba el Turbo (0 = apagado)
+        let turboUsed = $state(false);
+        let chicaUntil = $state(0);  // …y el del Chica Rush
+        let chicaUsed = $state(false);
         let veyon = $state(getSetting("veyon"));  // Modo Veyon: oculta logo y fondos «General»/«Ia» (activo por defecto)
         // Imagen de repuesto que sustituye a las de «General» e «Ia»
         // mientras el Modo Veyon está activo (tienda y selector de fondos)
@@ -1526,12 +1590,18 @@ export function initTeclear() {
         const btnBgDark = document.getElementById("btnBgDark");
         const btnBgFranco = document.getElementById("btnBgFranco");
         const btnVeyon = document.getElementById("btnVeyon");
+        // Fila «Controles»: la tecla reservada de la habilidad del fondo
+        const btnAbilityKey = document.getElementById("btnAbilityKey");
+        const ctrlLabel = document.getElementById("ctrlLabel");
+        const ctrlHint = document.getElementById("ctrlHint");
+        // Botón de la habilidad, junto al campo de escritura
+        const abilityBtn = document.getElementById("abilityBtn");
         const advBar = document.getElementById("advBar");
         const perkVeil = document.getElementById("perkVeil");
         const perkGrid = document.getElementById("perkGrid");
         const perkHint = document.getElementById("perkHint");
         const selBtns = [btnEs, btnEn, btnMurciano, btnType, modeSelect, supSelect, btnGuess, btnImagen, btnAventura, btnSup,
-            btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon];
+            btnShop, btnRanking, btnLogros, btnRegister, btnLogin, btnVeyon, btnAbilityKey];
         // Celdas con datos del perfil (etiqueta + valor)
         const accCells = [
             ["accKCoins", "accVCoins", "kCoins"],
@@ -1623,6 +1693,10 @@ export function initTeclear() {
                 localStorage.setItem("teclear.nombre", name);
             } catch (e) { /* sin almacenamiento disponible */ }
             updateCoins();   // el rol (Administrador) depende del nombre
+            // Los logros son de CADA jugador: si cambia el nombre de este
+            // equipo (o se entra en una cuenta), se pasa a la partida de
+            // logros de quien acaba de tomar el mando.
+            reloadAch();
         }
 
         function loadLocalRanking(tab) {
@@ -2467,7 +2541,7 @@ export function initTeclear() {
                 saveProfilesLocal(upsertProfile(loadProfilesLocal(), record));
                 accSession = { id: id, n: name };
                 saveSession(accSession);
-                savePlayerName(name);
+                savePlayerName(name);   // carga también SUS logros
                 if (accPass) accPass.value = "";
                 if (accPass2) accPass2.value = "";
                 finishAccount({ ok: true, key: "accCreated" });
@@ -2480,7 +2554,7 @@ export function initTeclear() {
                 if (err && err.ok) {   // cuenta creada solo en este dispositivo
                     accSession = { id: id, n: name };
                     saveSession(accSession);
-                    savePlayerName(name);
+                    savePlayerName(name);   // carga también SUS logros
                     if (accPass) accPass.value = "";
                     if (accPass2) accPass2.value = "";
                     finishAccount({ ok: true, key: err.key });
@@ -2511,6 +2585,9 @@ export function initTeclear() {
                 saveProfilesLocal(upsertProfile(stage.users, u));
                 accSession = { id: u.id, n: u.n };
                 saveSession(accSession);
+                // Los logros se cambian ANTES de los datos de la cuenta (y lo
+                // hace savePlayerName): así applyData solo premia con lo que
+                // ha ganado ESTE perfil.
                 savePlayerName(u.n);
                 applyData(u.data);
                 if (accPass) accPass.value = "";
@@ -2532,6 +2609,7 @@ export function initTeclear() {
             return saveProfile().then(() => {
                 accSession = null;
                 saveSession(null);
+                reloadAch();    // se vuelven los logros del jugador de este equipo
                 setAccMsg("accLoggedOut", false);
                 renderAccount();
                 renderRanking();
@@ -3739,9 +3817,28 @@ export function initTeclear() {
         // Cada logro lleva su propio progreso (guardado en localStorage).
         // Al completarlo se entrega su recompensa: un efecto de tecleo que
         // no está a la venta en la tienda, solo se gana jugando.
+        // Cada quien guarda SUS logros: la cuenta si hay sesión abierta y,
+        // sin sesión, el nombre de este equipo. Es el mismo identificador que
+        // usa el ranking, así que «Pedro» de invitado y «Pedro» con su cuenta
+        // son la misma partida. Así el progreso deja de ser un único dato
+        // compartido por todos los perfiles del navegador.
+        function achProfileKey() {
+            const n = nameKey(accSession ? accSession.n : loadPlayerName());
+            return "teclear.logros." + (n || "invitado");
+        }
+
         function achLoad() {
             try {
-                const raw = JSON.parse(localStorage.getItem("teclear.logros") || "null");
+                const key = achProfileKey();
+                let raw = JSON.parse(localStorage.getItem(key) || "null");
+                // Migración: antes había UNA sola partida de logros para todo
+                // el equipo. Ese guardado viejo se queda con quien esté
+                // jugando en este primer arranque; las cuentas que se abran
+                // a partir de ahora empiezan de cero.
+                if (!raw && !localStorage.getItem("teclear.logros.migrado")) {
+                    raw = JSON.parse(localStorage.getItem("teclear.logros") || "null");
+                    if (raw) localStorage.setItem("teclear.logros.migrado", "1");
+                }
                 if (raw && typeof raw === "object") achData = raw;
             } catch (e) { /* sin almacenamiento disponible */ }
 
@@ -3755,6 +3852,13 @@ export function initTeclear() {
                 limpio[a.id] = { p: hecho ? a.goal : p, done: hecho };
             });
             achData = limpio;
+
+            // El Administrador (Alvaro) lo tiene TODO hecho: es el profe y
+            // necesita poder probarlo todo sin jugarlo. Como se aplica al
+            // cargar, cualquier logro que se añada más adelante también le
+            // sale completado, y solo en SU cuenta.
+            if (esAdmin()) ACHIEVEMENTS.forEach(a => { achData[a.id] = { p: a.goal, done: true }; });
+
             achSave();
             // Un logro completado que hubiera perdido su recompensa la recupera
             ACHIEVEMENTS.forEach(a => {
@@ -3764,8 +3868,16 @@ export function initTeclear() {
 
         function achSave() {
             try {
-                localStorage.setItem("teclear.logros", JSON.stringify(achData));
+                localStorage.setItem(achProfileKey(), JSON.stringify(achData));
             } catch (e) { /* sin almacenamiento disponible */ }
+        }
+
+        // Al entrar o salir de una cuenta se cambia de partida de logros:
+        // se recarga el progreso del perfil de turno y se refresca el panel
+        // si está abierto.
+        function reloadAch() {
+            achLoad();
+            if (logrosOpen) renderLogros();
         }
 
         // Nombre de la recompensa, en el idioma vigente
@@ -4302,6 +4414,8 @@ export function initTeclear() {
             if (shopOpen) renderShop();
             applyHalloween();   // temática y tienda de evento (solo en Halloween)
             updateRankWho();   // quién firma la puntuación también cambia de idioma
+            renderControls();  // fila «Controles»: la tecla de la habilidad
+            renderAbility();   // …y el botón de la habilidad de la partida
             // Durante la partida no se cambia nada: los botones están bloqueados
         }
 
@@ -5215,8 +5329,10 @@ export function initTeclear() {
             const list = wordPool();
             const lvl = level();
             let pool;
-            // Ventaja "camino corto" del modo Aventura: palabras cortas
-            if (mode === "aventura" && advShort > 0) {
+            // Modo Turbo del fondo Circuito: mientras dura, palabras MUY cortas
+            if (performance.now() < turboUntil) {
+                pool = list.filter(w => w.length <= TURBO_MAX);
+            } else if (mode === "aventura" && advShort > 0) {
                 advShort--;
                 pool = list.filter(w => w.length <= 5);
             } else if (lvl <= 1) pool = list.filter(w => w.length <= 5);
@@ -5265,10 +5381,236 @@ export function initTeclear() {
         // Texto de la habilidad del fondo equipado (vacío si no tiene ninguna)
         function bgPowerDesc() {
             const b = BACKGROUNDS.find(x => x.id === bg);
-            // Los fondos de decoración (Circuito, Hacker) no aportan nada:
-            // son puro adorno ganado con un logro
-            if (!b || b.decor || b.id === "dark") return "";
-            return uiLang() === "es" ? b.descEs : b.descEn;
+            if (!b || b.id === "dark") return "";
+            // En la partida se usa la versión corta (powEs/powEn) cuando el
+            // fondo la trae: la de la tienda se explica más larga
+            const es = uiLang() === "es";
+            return es ? (b.powEs || b.descEs) : (b.powEn || b.descEn);
+        }
+
+        // ---------- Habilidad ACTIVA del fondo equipado ----------
+        // Solo Circuito (Turbo) y Five Nigths (Chica Rush) se encienden con
+        // la tecla reservada; Hacker es pasiva y el resto no tienen.
+        function abilityId() {
+            if (bgPower("carreras")) return "turbo";
+            if (bgPower("fivenights")) return "chica";
+            return "";
+        }
+
+        // ¿Lista para dispararse? Una sola vez por partida y sin ventana abierta
+        function abilityReady() {
+            const id = abilityId();
+            if (!id) return false;
+            const ahora = performance.now();
+            return id === "turbo"
+                ? !turboUsed && ahora >= turboUntil
+                : !chicaUsed && ahora >= chicaUntil;
+        }
+
+        // Nombre visible de la tecla configurada («KeyR» sale como «R»)
+        function keyLabel(code) {
+            if (!code) return "";
+            if (code === "Space") return t("keySpace");
+            if (code === "Enter") return t("keyEnter");
+            if (code.indexOf("Key") === 0) return code.slice(3);
+            if (code.indexOf("Digit") === 0) return code.slice(5);
+            return code;
+        }
+
+        // Fila «Controles» del menú: la tecla reservada de la habilidad
+        function renderControls() {
+            if (ctrlLabel) ctrlLabel.textContent = t("ctrlLabel");
+            if (ctrlHint) ctrlHint.textContent = t("ctrlHint");
+            if (!btnAbilityKey) return;
+            btnAbilityKey.textContent = bindingKey
+                ? "⌨️ " + t("ctrlKeyWait")
+                : "⚡ " + t("ctrlKey") + ": " + keyLabel(abilityKey);
+            btnAbilityKey.classList.toggle("active", bindingKey);
+        }
+
+        // Botón de la habilidad, junto al campo de escritura: oculto si el
+        // fondo equipado no tiene ninguna activa, y con su estado (lista,
+        // corriendo con su cuenta atrás, o usada) si la tiene
+        function renderAbility() {
+            if (!abilityBtn) return;
+            const id = abilityId();
+            const hacker = bgPower("hacker");
+            const ver = state === "playing" && (id || hacker);
+            abilityBtn.classList.toggle("hidden", !ver);
+            if (!ver) return;
+            const ahora = performance.now();
+            let txt, activa = false, usada = false, lista = false;
+            if (id === "turbo") {
+                activa = ahora < turboUntil;
+                usada = turboUsed && !activa;
+                lista = !activa && !usada;
+                txt = t("abTurbo") + (activa
+                    ? " · " + Math.ceil((turboUntil - ahora) / 1000) + " s"
+                    : usada ? " ✓ " + t("abUsed") : " · " + keyLabel(abilityKey));
+            } else if (id === "chica") {
+                activa = ahora < chicaUntil;
+                usada = chicaUsed && !activa;
+                lista = !activa && !usada;
+                txt = t("abChica") + (activa
+                    ? " · " + Math.ceil((chicaUntil - ahora) / 1000) + " s"
+                    : usada ? " ✓ " + t("abUsed") : " · " + keyLabel(abilityKey));
+            } else {
+                txt = t("abHacker");   // pasiva: no se activa con tecla
+            }
+            if (abilityBtn.textContent !== txt) abilityBtn.textContent = txt;
+            abilityBtn.disabled = !lista;
+            abilityBtn.classList.toggle("on", activa);
+            abilityBtn.classList.toggle("used", usada);
+        }
+
+        // Capas fijas de las habilidades: las líneas de velocidad del Turbo
+        // y los cupcakes del Chica Rush. Se crean una vez y se encienden y
+        // se apagan con su habilidad.
+        const turboFx = document.createElement("div");
+        turboFx.className = "turbo-fx";
+        turboFx.setAttribute("aria-hidden", "true");
+        document.body.appendChild(turboFx);
+
+        const cupcakeLayer = document.createElement("div");
+        cupcakeLayer.className = "cupcake-layer";
+        document.body.appendChild(cupcakeLayer);
+
+        let chicaTimer = 0;     // intervalo que va soltando cupcakes
+        let chicaEndTimer = 0;  // timeout que pone fin al Chica Rush
+        let cupcakes = [];      // cupcakes vivos en la capa: [{ el, vida }]
+
+        // Dispara la habilidad del fondo: la tecla reservada y el botón de
+        // la partida llaman a esta misma función
+        function useAbility() {
+            if (state !== "playing" || !abilityReady()) return false;
+            const ahora = performance.now();
+            if (abilityId() === "turbo") {
+                // Turbo (Circuito): 10 s con el reloj congelado y palabras
+                // muy cortas. Una sola vez por partida.
+                turboUsed = true;
+                turboUntil = ahora + TURBO_MS;
+                turboFx.style.display = "block";
+                document.body.classList.add("turbo-on");
+                status.textContent = t("stTurbo");
+            } else {
+                // Chica Rush (Five Nigths): 20 s con el reloj congelado y
+                // sin poder escribir, cazando cupcakes. Una sola vez por partida.
+                chicaUsed = true;
+                chicaUntil = ahora + CHICA_MS;
+                document.body.classList.add("chica-on");
+                chicaClear();
+                chicaSpawn();     // el primero sale ya
+                chicaTimer = setInterval(chicaSpawn, CHICA_SPAWN);
+                chicaEndTimer = setTimeout(chicaEnd, CHICA_MS);
+                typing.value = "";   // mientras dura no se escribe nada
+                status.textContent = t("stChica");
+            }
+            typing.focus();   // el foco vuelve al campo de escritura
+            renderAbility();
+            updateHud();
+            return true;
+        }
+
+        // El Turbo se apaga solo cuando pasa su ventana de 10 segundos
+        function turboStop() {
+            turboUntil = 0;
+            turboFx.style.display = "none";
+            document.body.classList.remove("turbo-on");
+            renderAbility();
+        }
+
+        // Fin del Chica Rush (tiempo cumplido): la partida sigue igual que
+        // antes, con el foco devuelto al campo de escritura
+        function chicaEnd() {
+            chicaStop();
+            if (state === "playing") {
+                typing.focus();
+                status.textContent = t("stChicaEnd");
+            }
+            updateHud();
+        }
+
+        // Se retira el Chica Rush sin pasar por el aviso de fin: corta los
+        // temporizadores, la capa de cupcakes y la clase del cuerpo
+        function chicaStop() {
+            if (chicaTimer) clearInterval(chicaTimer);
+            if (chicaEndTimer) clearTimeout(chicaEndTimer);
+            chicaTimer = 0;
+            chicaEndTimer = 0;
+            chicaUntil = 0;
+            document.body.classList.remove("chica-on");
+            chicaClear();
+            renderAbility();
+        }
+
+        // Suelta un cupcake en una posición al azar de la pantalla: vive
+        // CHICA_LIFE milisegundos y mientras tanto se puede tocar
+        function chicaSpawn() {
+            if (state !== "playing" || chicaUntil <= performance.now()) return;
+            if (cupcakes.length >= CHICA_MAX) return;
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "cupcake";
+            b.setAttribute("aria-label", "cupcake");
+            const img = document.createElement("img");
+            img.src = imgCupcake;
+            img.alt = "";
+            b.appendChild(img);
+            // Un poco por encima de la mitad: la parte de abajo es del
+            // campo de escritura y de los botones
+            const m = 12, size = 62;
+            b.style.left = Math.round(m + Math.random() *
+                Math.max(1, window.innerWidth - size - m * 2)) + "px";
+            b.style.top = Math.round(m + Math.random() *
+                Math.max(1, window.innerHeight * 0.62 - size)) + "px";
+            const c = { el: b, vida: 0 };
+            c.vida = setTimeout(() => chicaDrop(c, false), CHICA_LIFE);
+            b.addEventListener("click", () => chicaTouch(c));
+            cupcakes.push(c);
+            cupcakeLayer.appendChild(b);
+        }
+
+        // Se retira un cupcake: tocado se va con su animación de fuera,
+        // caducado simplemente desaparece
+        function chicaDrop(c, hit) {
+            const i = cupcakes.indexOf(c);
+            if (i < 0) return;
+            cupcakes.splice(i, 1);
+            clearTimeout(c.vida);
+            if (hit) {
+                c.el.disabled = true;
+                c.el.classList.add("out");
+                setTimeout(() => c.el.remove(), 300);
+            } else {
+                c.el.remove();
+            }
+        }
+
+        // Tocar un cupcake: 25 % de un segundo para el cronómetro y 75 % de
+        // un caramelo para la hucha del evento
+        function chicaTouch(c) {
+            if (state !== "playing" || chicaUntil <= performance.now()) return;
+            chicaDrop(c, true);
+            if (Math.random() < CHICA_CHANCE) {
+                timeLeft += 1;
+                showSeconds(1);
+                status.textContent = t("chicaTime");
+            } else {
+                giveCandy(1);
+                showCandy(1);
+                status.textContent = t("chicaCandy");
+            }
+            updateHud();
+            typing.focus();   // el foco vuelve al campo de escritura
+        }
+
+        // Se van todos los cupcakes de golpe (fin del modo o de la partida)
+        function chicaClear() {
+            for (const c of cupcakes) {
+                clearTimeout(c.vida);
+                c.el.remove();
+            }
+            cupcakes = [];
         }
 
         // Modo adivinar: descubre algunas letras de la palabra en cuanto sale
@@ -5330,6 +5672,10 @@ export function initTeclear() {
             // Este es el sitio donde se refleja el marcador de todos los
             // modos, así que aquí se comprueba la meta de 10.000 puntos.
             achBest("hacker", score);
+            // Cuenta atrás y estado de la habilidad del fondo (varía en cada
+            // tick: es lo que marca los segundos que queda de Turbo o de
+            // Chica Rush)
+            renderAbility();
         }
 
         // Dibuja las letras de la palabra (con el cursor y lo ya tecleado)
@@ -5993,6 +6339,13 @@ export function initTeclear() {
             if (mode === "supervivencia") showXp(SUP_XP_WORD + Math.floor(points / 10));
             // Modo Aventura: cada palabra regala segundos al cronómetro
             if (mode === "aventura") gainTime(timePerWord());
+            // Fondo Hacker: habilidad pasiva, cada palabra escrita regala
+            // un segundo al cronómetro (en Supervivencia el reloj es el de
+            // la palabra, así que ahí no suma)
+            if (bgPower("hacker") && mode !== "supervivencia") {
+                timeLeft += 1;
+                showSeconds(1);
+            }
         }
 
         function completeWord() {
@@ -6026,6 +6379,16 @@ export function initTeclear() {
             ttXpLoss = 0;   // experiencia robada por fallos (Truco o trato)
             encTyped = 0;   // letras acertadas del modo Encantado (si se juega)
             candyRun = 0;   // caramelos ganados en esta partida
+            // Si se estaba a punto de reasignar la tecla de la habilidad,
+            // se cancela: en plena partida no se tocan los controles
+            bindingKey = false;
+            renderControls();
+            // Habilidades de los fondos: cada partida empieza con la suya
+            // lista —Turbo y Chica Rush solo valen UNA vez por partida—
+            turboUsed = false;
+            chicaUsed = false;
+            turboStop();
+            chicaStop();
             // El modo Aventura se juega contra un cronómetro propio: 50 s
             // En Supervivencia el reloj es el de la palabra apuntada
             timeLeft = mode === "aventura" ? ADV_TIME :
@@ -6148,6 +6511,15 @@ export function initTeclear() {
                 updateHud();
                 return;
             }
+            // El Turbo del fondo Circuito se apaga solo al pasar sus 10 s
+            if (turboUntil && now >= turboUntil) turboStop();
+            // Las habilidades Turbo y Chica Rush congelan el reloj mientras
+            // duran (en Supervivencia eso congela también las palabras)
+            if (now < turboUntil || now < chicaUntil) {
+                lastTick = now;
+                updateHud();
+                return;
+            }
             // En Supervivencia todas las palabras bajan a la vez: la que
             // llegue hasta el fondo del tablero se cae (una vida menos) hasta
             // acabar la partida
@@ -6216,6 +6588,9 @@ export function initTeclear() {
             if (perkOpen && pausedAt > 0) pausedTotal += Date.now() - pausedAt;
             perkOpen = false;
             pausedAt = 0;
+            // Si se acaba la partida con una habilidad encendida, se corta
+            turboStop();
+            chicaStop();
             if (perkVeil) perkVeil.classList.add("hidden");
             renderAdvBar();
             typing.disabled = true;
@@ -6428,7 +6803,8 @@ export function initTeclear() {
         // Se anota cada evento de escritura para comprobar al final de la partida
         // que ha sido una persona quien ha escrito (ver checkAutoPlay)
         typing.addEventListener("input", function (e) {
-            if (state !== "playing" || perkOpen) {
+            // Chica Rush: mientras dura no se puede escribir
+            if (state !== "playing" || perkOpen || performance.now() < chicaUntil) {
                 typing.value = "";
                 return;
             }
@@ -6452,6 +6828,11 @@ export function initTeclear() {
         // Teclas reales de la partida: marca de tiempo entre pulsaciones
         typing.addEventListener("keydown", function (e) {
             if (state !== "playing") return;
+            // Chica Rush: mientras dura no se teclea ni una letra
+            if (performance.now() < chicaUntil) {
+                e.preventDefault();
+                return;
+            }
             if (e.isTrusted) trustedKeys++;
             if (!e.repeat) keyStamps.push(performance.now()); // el auto-repetido no cuenta
             // Efecto de tecleo comprado en la tienda: estalla con cada letra
@@ -6488,6 +6869,20 @@ export function initTeclear() {
                 (destino.tagName === "INPUT" || destino.tagName === "TEXTAREA" ||
                  destino.tagName === "SELECT" || destino.isContentEditable === true);
 
+            // Tecla reservada de la habilidad del fondo (fila «Controles»):
+            // solo se intercepta si hay habilidad DISPONIBLE, así que con
+            // otro fondo —o mientras corre— la tecla sigue siendo una tecla
+            // normal. Si ya se gastó, se avisa sin comerse la tecla.
+            if (state === "playing" && !e.repeat && e.code === abilityKey && abilityId()) {
+                if (abilityReady()) {
+                    e.preventDefault();
+                    useAbility();
+                    return;
+                }
+                const abierta = performance.now() <
+                    (abilityId() === "turbo" ? turboUntil : chicaUntil);
+                if (!abierta) status.textContent = t("stAbUsed");
+            }
             if (state === "playing") {
                 // En plena partida la barra nunca se introduce: las palabras no llevan espacios
                 if (e.code === "Space") e.preventDefault();
@@ -6500,6 +6895,37 @@ export function initTeclear() {
         });
 
         startBtn.addEventListener("click", startGame);
+
+        // ---------- Controles: la tecla reservada de la habilidad ----------
+        // El botón de la partida hace lo mismo que la tecla (para táctil)
+        if (abilityBtn) abilityBtn.addEventListener("click", useAbility);
+
+        // La fila «Controles» del menú pone la tecla a la escucha
+        if (btnAbilityKey) {
+            btnAbilityKey.addEventListener("click", function () {
+                bindingKey = !bindingKey;
+                renderControls();
+            });
+        }
+
+        // Se captura en la fase de captura para que la tecla elegida no
+        // llegue a ningún otro sitio: ni escribe en el campo, ni dispara
+        // nada más. ESC cancela y se queda la que había.
+        document.addEventListener("keydown", function (e) {
+            if (!bindingKey) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.repeat) return;
+            if (e.code === "Escape") {
+                bindingKey = false;
+            } else {
+                abilityKey = e.code;
+                setSetting("abilityKey", abilityKey);
+                bindingKey = false;
+                renderAbility();
+            }
+            renderControls();
+        }, true);
 
         // ---------- Frases del logo: cada toque muestra una distinta ----------
         const LOGO_PHRASES = [
@@ -6637,9 +7063,12 @@ export function initTeclear() {
             if (sv === "encantado" || sv === "clasico") supVariant = sv;
         } catch (e) { /* sin almacenamiento disponible */ }
         if (supVariant === "encantado" && !halloweenOn()) supVariant = "clasico";
+        // La sesión se restaura ANTES de cargar los logros: la partida de
+        // logros depende de quién esté jugando (y el Administrador, de su
+        // cuenta).
+        accSession = loadSession();   // si hubo sesión la vez anterior, se restaura
         achLoad();          // progreso de los logros + recompensas ganadas
         loadProfileStats();
-        accSession = loadSession();   // si hubo sesión la vez anterior, se restaura
         try {
             const savedBg = localStorage.getItem("teclear.fondo");
             if (savedBg && BACKGROUNDS.some(b => b.id === savedBg) && ownedBgs.includes(savedBg)) {
