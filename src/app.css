@@ -108,10 +108,7 @@
             display: none;
         }
         body:has(.logo-wrap).veyon-on.bg-franco,
-        body:has(.logo-wrap).veyon-on.bg-esteso,
-        body:has(.logo-wrap).veyon-on.bg-calaca,
-        body:has(.logo-wrap).veyon-on.bg-company,
-        body:has(.logo-wrap).veyon-on.bg-viejaenlagolden {
+        body:has(.logo-wrap).veyon-on.bg-esteso {
             background-color: var(--bg);
             background-image:
                 radial-gradient(900px 420px at 50% -10%, rgba(20, 184, 166, .18), transparent 65%),
