@@ -3,6 +3,7 @@
 // servicios (fx/eco/prog/acc/ranking) y view-models para la vista.
 // engine.mount() se llama una vez desde +page.svelte al montar la página.
 import imgLogo from '#lib/img/estesoTeclea.png';
+import { tick } from 'svelte';
 import { getSetting, setSetting } from './settings.js';
 import { S } from './state.svelte.js';
 import { storage } from './storage.js';
@@ -711,6 +712,18 @@ export class GameEngine {
             modes[S.mode].onWordComplete();
         }
 
+    // ---------- Enfoque del campo de tecleo ----------
+    // El input está "disabled" mientras la partida no corre, y Svelte le
+    // quita el disabled al PINTAR el estado. Un focus() llamado en el
+    // mismo bloque síncrono llega antes que ese render y no hace nada
+    // (sobre un campo deshabilitado el foco se ignora), así que hay que
+    // esperar al tick: así se puede escribir nada más pulsar «Jugar» o
+    // elegir ventaja en Aventura, sin tener que hacer clic en el campo.
+    async focusTyping() {
+            await tick();
+            if (this.typing) this.typing.focus();
+        }
+
     startGame() {
             if (S.state === "playing") return;
 
@@ -782,7 +795,9 @@ export class GameEngine {
 
             this.typing.value = "";
             S.typedStr = "";
-            this.typing.focus();
+            // El foco llega tras el render (el input acaba de dejar de
+            // estar deshabilitado): ver engine.focusTyping()
+            this.focusTyping();
             S.statusTxt =
                 S.mode === "imagen" ? t("statusPlayI") :
                 S.mode === "guess" ? t("statusPlayG") :

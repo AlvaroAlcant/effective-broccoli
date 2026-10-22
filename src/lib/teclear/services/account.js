@@ -567,7 +567,10 @@ export class AccountService {
 
         return this.profilesStage().then(stage => {
             const u = this.findProfile(stage.users, name);
-            if (!u) throw { key: "accNoUser", offline: stage.offline };
+            // Sin conexión y sin copia local de esta cuenta no se puede
+            // saber si existe: se avisa de que es un problema de red y
+            // no de que el nombre no esté registrado
+            if (!u) throw { key: stage.offline ? "accOffline" : "accNoUser", offline: stage.offline };
             if (identity.derivePass(pass, u.salt) !== u.hash) throw { key: "accBadPass" };
             // Se queda la copia local de esta cuenta para poder entrar sin internet
             this.saveProfilesLocal(this.upsertProfile(stage.users, u));

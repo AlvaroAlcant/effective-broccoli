@@ -252,7 +252,9 @@ export class AdventureMode extends GameMode {
             this.openPerkChoice();          // se sortean tres ventajas más
             S.statusTxt = t("perkSecond") + nombre;
         } else {
-            this.engine.typing.focus();
+            // El foco espera al render (el input acaba de quitarse el
+            // disabled al cerrar la parada): ver engine.focusTyping()
+            this.engine.focusTyping();
             S.statusTxt = t("perkChosen") + nombre;
         }
         this.engine.updateHud();   // refresca el tiempo y los efectos activos
