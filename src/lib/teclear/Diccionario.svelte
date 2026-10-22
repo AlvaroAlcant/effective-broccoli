@@ -1,5 +1,11 @@
 <script>
 	import { engine } from './engine.svelte.js';
+
+	// Colección de ventajas de aventura (agrupadas por rareza) y cuántas
+	// llevas de todas las que hay
+	const coleccion = $derived(engine.dicPerks);
+	const perksHave = $derived(coleccion.reduce((n, r) => n + r.perks.filter(p => p.tenida).length, 0));
+	const perksAll = $derived(coleccion.reduce((n, r) => n + r.perks.length, 0));
 </script>
 
     <!-- Diccionario: todas las palabras que has escrito, agrupadas por la
@@ -44,4 +50,27 @@
                 {/if}
             </div>
         {/each}
+
+        <!-- Ventajas de aventura: colección por rareza. No dan dinero ni
+             recompensa, sirven para ver las que hay y coleccionarlas todas -->
+        <div class="dic-grupo">
+            <div class="dic-grupo-head">
+                <strong>🎁 {engine.t('dicPerksTitle')}</strong>
+                <span class="dic-grupo-num">{perksHave} / {perksAll}</span>
+            </div>
+            <p class="shop-hint">{engine.t('dicPerksHint')}</p>
+            {#each coleccion as r (r.id)}
+                <div class="dic-rar">
+                    <span class="dic-rar-label dic-rar-{r.clase}">{r.nombre}</span>
+                    <div class="dic-words">
+                        {#each r.perks as p (p.id)}
+                            <!-- La ventaja ya elegida recupera el color de su rareza;
+                                 la que falta queda apagada -->
+                            <span class="dic-perk {p.tenida ? 'tenida dic-rar-' + r.clase : 'falta'}"
+                                  title={p.desc}>{p.icon} {p.nombre}</span>
+                        {/each}
+                    </div>
+                </div>
+            {/each}
+        </div>
     </section>

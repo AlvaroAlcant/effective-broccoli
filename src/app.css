@@ -2428,6 +2428,51 @@
             outline: 2px solid var(--gold);
             outline-offset: 2px;
         }
+        /* Ventajas de aventura coleccionadas: agrupadas por rareza. Las
+           que ya te has llevado llevan el color de su rareza y las que
+           faltan quedan apagadas para que se vea la colección entera */
+        .dic-rar {
+            margin-top: 12px;
+        }
+        .dic-rar-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+        }
+        .dic-perk {
+            padding: 5px 11px;
+            border-radius: 999px;
+            border: 1px solid var(--line-soft);
+            background: var(--surface-2);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.3;
+            opacity: .42;
+            filter: grayscale(1);
+            transition: opacity .18s, filter .18s, border-color .18s, background-color .18s;
+        }
+        /* Ya te has llevado esta ventaja: recupera el color de su rareza */
+        .dic-perk.tenida {
+            opacity: 1;
+            filter: none;
+        }
+        .dic-rar-c { color: #9aa4b2; }
+        .dic-rar-pc { color: #4ade80; }
+        .dic-rar-r { color: #60a5fa; }
+        .dic-rar-e { color: #c084fc; }
+        .dic-rar-l { color: var(--gold); }
+        .dic-perk.tenida.dic-rar-c { border-color: #9aa4b2; }
+        .dic-perk.tenida.dic-rar-pc { border-color: #4ade80; }
+        .dic-perk.tenida.dic-rar-r { border-color: #60a5fa; }
+        .dic-perk.tenida.dic-rar-e { border-color: #c084fc; }
+        .dic-perk.tenida.dic-rar-l {
+            border-color: var(--gold);
+            background: #1c1a10;
+        }
 
         /* ---------- Inventario: todo lo comprado y todo lo ganado ----------
            Organizado en SECCIONES igual que la tienda: un título y una

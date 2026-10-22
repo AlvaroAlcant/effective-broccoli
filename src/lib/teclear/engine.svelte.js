@@ -221,6 +221,13 @@ export class GameEngine {
                 return dic.pendientes();
             }
 
+    // Ventajas de aventura coleccionadas, agrupadas por rareza (también
+    // con el panel cerrado no se gasta en recalcular)
+    get dicPerks() {
+                if (!S.dicOpen) return [];
+                return modes.aventura.perkCollection();
+            }
+
     get myId() { return identity.currentPlayerId(); }
 
     get rankDate() { return ranking.rankDate; }

@@ -26,6 +26,7 @@ export class DictionaryService {
         const raw = storage.getJSON("teclear.diccionario", null);
         const limpio = {};
         DIC_GROUPS.forEach(g => { limpio[g.id] = {}; });
+        limpio.ventajas = {};   // ventajas de aventura coleccionadas
         if (raw && typeof raw === "object") {
             DIC_GROUPS.forEach(g => {
                 const src = raw[g.id];
@@ -35,6 +36,15 @@ export class DictionaryService {
                     limpio[g.id][w] = src[w] ? 1 : 0;
                 }
             });
+            // Las ventajas coleccionadas no son palabras: se guardan a
+            // parte, en su propia clave ("ventajas")
+            const v = raw.ventajas;
+            if (v && typeof v === "object") {
+                for (const id in v) {
+                    if (typeof id !== "string" || !id || id.length > 40) continue;
+                    limpio.ventajas[id] = 1;
+                }
+            }
         }
         S.dicData = limpio;
         this.save();
@@ -111,6 +121,26 @@ export class DictionaryService {
         this.save();
         eco.giveCoins(DIC_COIN);
         return DIC_COIN;
+    }
+
+    // ---------- Ventajas de aventura ----------
+    // Colección de ventajas: las que te has elegido en una partida de
+    // aventura se apuntan aquí para siempre. No dan dinero ni ninguna
+    // recompensa: sirven para ver las que hay y coleccionarlas todas.
+    // Conviven con los grupos de palabras en los datos (clave "ventajas")
+    // pero no son un grupo: no se cobran ni cuentan como palabras.
+    perkElegida(id) {
+        if (typeof id !== "string" || !id) return false;
+        const tabla = S.dicData.ventajas || (S.dicData.ventajas = {});
+        if (Object.prototype.hasOwnProperty.call(tabla, id)) return false;  // ya la tenías
+        tabla[id] = 1;
+        this.save();
+        return true;
+    }
+
+    perkTenida(id) {
+        const tabla = S.dicData.ventajas;
+        return !!(tabla && Object.prototype.hasOwnProperty.call(tabla, id));
     }
 
     // ---------- Panel ----------

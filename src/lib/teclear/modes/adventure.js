@@ -5,6 +5,7 @@ import { S } from '../state.svelte.js';
 import { t, uiLang } from '../services/i18n.js';
 import { fx } from '../services/fx.js';
 import { eco } from '../services/economy.js';
+import { dic } from '../services/dictionary.js';
 import {
     ADV_TIME, ADV_EVERY, ADV_EVERY_MAX, ADV_SPEED_STEP, ADV_SPEED_MAX
 } from '../data/constants.js';
@@ -194,6 +195,26 @@ export class AdventureMode extends GameMode {
         return rollPerks(3, null);
     }
 
+    // ---------- Colección de ventajas ----------
+    // Las ventajas agrupadas por rareza para el diccionario: cada una
+    // lleva su icono, su nombre, su descripción y si ya te has llevado
+    // alguna vez. No dan dinero ni recompensa: sirven para ver las que
+    // hay y coleccionarlas todas.
+    perkCollection() {
+        const en = uiLang() === "en";
+        return ADV_RARITY_ORDER.map(r => ({
+            id: r,
+            clase: ADV_RARITY_CLASS[r],
+            nombre: t("rar" + r.charAt(0).toUpperCase() + r.slice(1)),
+            perks: ADVENTURE_PERKS.filter(p => p.rarity === r).map(p => ({
+                id: p.id, icon: p.icon,
+                nombre: en ? p.en : p.es,
+                desc: en ? p.descEn : p.descEs,
+                tenida: dic.perkTenida(p.id)
+            }))
+        }));
+    }
+
     // Abre la parada de la aventura: mientras el jugador elige, el reloj
     // no corre y la entrada de texto queda bloqueada.
     openPerkChoice() {
@@ -223,6 +244,9 @@ export class AdventureMode extends GameMode {
             this.pausedAt = 0;
         }
         p.apply(this);
+        // Diccionario: la ventaja elegida se apunta a la colección para
+        // siempre (no da dinero: solo sirve para coleccionarlas todas)
+        dic.perkElegida(p.id);
         const nombre = p.icon + " " + (uiLang() === "en" ? p.en : p.es);
         if (segunda) {
             this.openPerkChoice();          // se sortean tres ventajas más
@@ -270,6 +294,11 @@ const ADV_RARITY = {
     epica: 2,       // buenísimas: salen muy pocas veces
     legendaria: 1   // increíbles: casi nunca
 };
+
+// Orden de las rarezas (de la más corriente a la más increíble) y la
+// clase CSS corta de cada una, para pintar la colección del diccionario
+const ADV_RARITY_ORDER = ["comun", "pocoComun", "rara", "epica", "legendaria"];
+const ADV_RARITY_CLASS = { comun: "c", pocoComun: "pc", rara: "r", epica: "e", legendaria: "l" };
 
 // Sorteo ponderado por rareza SIN reemplazo: saca n ventajas distintas
 // (o una sola, con n = 1) descartando cada una al salir para que no se
