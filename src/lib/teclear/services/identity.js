@@ -190,3 +190,13 @@ export function derivePass(pass, salt) {
     for (let i = 0; i < KDF_ROUNDS; i++) h = sha256hex(h);
     return h;
 }
+
+// Fórmula del KDF ANTERIOR a la v2.0 (commit a7141d4, 21/10/2026). Las
+// cuentas creadas antes de esa fecha guardan su resumen con esta cadena,
+// así que solo sirve para reconocerlas y migrarlas a la actual: sin ella
+// esas contraseñas darían siempre «incorrecta» en cualquier equipo.
+export function derivePassLegacy(pass, salt) {
+    let h = salt;
+    for (let i = 0; i < KDF_ROUNDS; i++) h = sha256hex(salt + "|" + i + "|" + pass + "|" + h);
+    return h;
+}

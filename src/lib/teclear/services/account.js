@@ -571,9 +571,20 @@ export class AccountService {
             // saber si existe: se avisa de que es un problema de red y
             // no de que el nombre no esté registrado
             if (!u) throw { key: stage.offline ? "accOffline" : "accNoUser", offline: stage.offline };
-            if (identity.derivePass(pass, u.salt) !== u.hash) throw { key: "accBadPass" };
+            // Cuentas creadas antes de la v2.0 guardan el resumen con el
+            // KDF antiguo: si con ese coincide, se acepta y se recalcula
+            // con el actual (la contraseña del alumno no cambia)
+            let migrada = false;
+            if (identity.derivePass(pass, u.salt) !== u.hash) {
+                if (identity.derivePassLegacy(pass, u.salt) !== u.hash) throw { key: "accBadPass" };
+                u.hash = identity.derivePass(pass, u.salt);
+                migrada = true;
+            }
             // Se queda la copia local de esta cuenta para poder entrar sin internet
             this.saveProfilesLocal(this.upsertProfile(stage.users, u));
+            // El resumen nuevo se sube a la nube sin esperar: si no se
+            // puede, el próximo guardado de partida lo subirá igualmente
+            if (migrada && !stage.offline) this.pushProfiles(stage.users).catch(() => {});
             S.accSession = { id: u.id, n: u.n };
             this.saveSession(S.accSession);
             identity.savePlayerName(u.n);
