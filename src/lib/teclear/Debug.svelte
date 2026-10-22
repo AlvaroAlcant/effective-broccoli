@@ -118,6 +118,7 @@
 					<button onclick={() => dbg.dbgFunds()} title="Saldo suficiente para comprar todo">💸 Fondos</button>
 					<button onclick={() => dbg.dbgBuyAll()} title="Compra todo por el camino real">🛒 Comprar todo</button>
 					<button onclick={() => dbg.dbgGrantAll()} title="Regala todo sin pasar por caja">🎁 Regalar</button>
+					<button onclick={() => dbg.dbgPerks()} title="Abre una parada de la aventura para ver ventajas y rarezas">🎲 Ventajas</button>
 				</div>
 			</section>
 		</aside>

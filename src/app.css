@@ -1270,6 +1270,38 @@
             color: var(--muted);
             line-height: 1.35;
         }
+        /* Etiqueta de rareza de la ventaja: su color cuenta cuántas veces
+           puede salir al sortear (lo mismo que el borde de la tarjeta) */
+        .perk-rarity {
+            font-style: normal;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            padding: 2px 9px;
+            border-radius: 999px;
+            border: 1px solid currentColor;
+            color: var(--muted);
+        }
+        .perk-opt.rarity-c .perk-rarity { color: #9aa4b2; }
+        .perk-opt.rarity-pc .perk-rarity { color: #4ade80; }
+        .perk-opt.rarity-r .perk-rarity { color: #60a5fa; }
+        .perk-opt.rarity-e .perk-rarity { color: #c084fc; }
+        .perk-opt.rarity-e { border-color: rgba(192, 132, 252, .55); }
+        .perk-opt.rarity-l .perk-rarity {
+            color: var(--gold);
+            animation: rarGlow 1.5s ease-in-out infinite alternate;
+        }
+        /* La legendaria brilla: borde y fondo dorados */
+        .perk-opt.rarity-l {
+            border-color: rgba(255, 215, 106, .65);
+            background: linear-gradient(180deg, rgba(255, 215, 106, .12), var(--surface-2));
+        }
+        .perk-opt.rarity-l:hover { border-color: var(--gold); }
+        @keyframes rarGlow {
+            from { box-shadow: 0 0 0 rgba(255, 215, 106, 0); }
+            to { box-shadow: 0 0 12px rgba(255, 215, 106, .55); }
+        }
         /* Aviso de segundos ganados: en celeste para distinguirlo de los puntos */
         .points.time {
             color: #7dd3fc;
@@ -1561,7 +1593,8 @@
         .ranking,
         .perfil,
         .logros,
-        .inventario {
+        .inventario,
+        .diccionario {
             margin-top: 20px;
             padding: 20px;
             text-align: center;
@@ -1575,7 +1608,8 @@
         .ranking.hidden,
         .perfil.hidden,
         .logros.hidden,
-        .inventario.hidden {
+        .inventario.hidden,
+        .diccionario.hidden {
             display: none;
         }
         .results h2,
@@ -1583,7 +1617,8 @@
         .ranking h2,
         .perfil h2,
         .logros h2,
-        .inventario h2 {
+        .inventario h2,
+        .diccionario h2 {
             margin: 0 0 6px;
             font-size: 20px;
             color: var(--accent);
@@ -2329,6 +2364,71 @@
             100% { opacity: 0; transform: translate(-50%, -20px) scale(.95); }
         }
 
+        /* ---------- Diccionario: todas las palabras que has escrito ----------
+           Cada sección es una LISTA de palabras (normal, murciana, la de un
+           modo extra…): va apareciendo al desbloquear su contenido. Las
+           palabras nuevas están en dorado y se cobran pulsándolas. */
+        .dic-pending,
+        .dic-msg {
+            color: var(--gold);
+            font-weight: 700;
+        }
+        .dic-vacio {
+            font-style: italic;
+        }
+        .dic-grupo {
+            margin-top: 18px;
+            text-align: left;
+        }
+        .dic-grupo-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--line-soft);
+        }
+        .dic-grupo-head strong {
+            font-size: 15px;
+        }
+        .dic-grupo-num {
+            font-size: 12px;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .dic-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .dic-word {
+            padding: 5px 11px;
+            border-radius: 999px;
+            border: 1px solid var(--line-soft);
+            background: var(--surface-2);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.3;
+            transition: transform .16s, border-color .16s, background-color .16s;
+        }
+        /* Palabra NUEVA: todavía sin cobrar sus monedas, brilla en dorado */
+        .dic-word.dic-new {
+            border-color: var(--gold);
+            background: #1c1a10;
+            color: var(--gold);
+            cursor: pointer;
+        }
+        .dic-word.dic-new:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 215, 106, .14);
+        }
+        .dic-word.dic-new:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 2px;
+        }
+
         /* ---------- Inventario: todo lo comprado y todo lo ganado ----------
            Organizado en SECCIONES igual que la tienda: un título y una
            rejilla por categoría (más la de evento mientras dura Halloween).
@@ -2589,7 +2689,8 @@
             .ranking,
             .perfil,
             .logros,
-            .inventario {
+            .inventario,
+            .diccionario {
                 padding: 16px;
             }
             .pf-field input {

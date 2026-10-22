@@ -72,8 +72,11 @@ export class GameState {
     shopOpen = $state(false);
     rankOpen = $state(false);
     logrosOpen = $state(false);
+    dicOpen = $state(false);     // panel del Diccionario de palabras
     invOpen = $state(false);
     achData = $state({});
+    dicData = $state({});        // diccionario: { grupo: { palabra: 0|1 } }
+    dicMsgTxt = $state("");      // aviso de la última palabra cobrada
     rankBusy = $state(false);
     rankFocus = $state("normal");
     verifyCode = $state("");

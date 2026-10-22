@@ -8,6 +8,8 @@
 	const supDanger = it => (1 - it.y) * it.span <= 4;
 	const blastDelay = (bv, it) =>
 		((it.typed - 1 - (it.shotFrom || 0)) * bv.shotGap + bv.shotMs) + 'ms';
+	// Nombre traducido de la rareza de una ventaja: "comun" → "rarComun"
+	const rarTxt = r => engine.t('rar' + (r ? r[0].toUpperCase() + r.slice(1) : 'Comun'));
 </script>
 
     <div class="stage" id="stage">
@@ -84,10 +86,15 @@
             <p class="perk-hint" id="perkHint">{engine.t('perkHint')}</p>
             <div class="perk-grid" id="perkGrid">
                 {#each engine.state.perkOpts as p}
-                    <button type="button" class="perk-opt" onclick={() => engine.actions.choosePerk(p)}>
+                    <button type="button" class="perk-opt" class:rarity-c={p.rarity === 'comun'}
+                            class:rarity-pc={p.rarity === 'pocoComun'} class:rarity-r={p.rarity === 'rara'}
+                            class:rarity-e={p.rarity === 'epica'} class:rarity-l={p.rarity === 'legendaria'}
+                            onclick={() => engine.actions.choosePerk(p)}>
                         <span class="perk-icon">{p.icon}</span>
                         <strong>{engine.uiEn ? p.en : p.es}</strong>
                         <span>{engine.uiEn ? p.descEn : p.descEs}</span>
+                        <!-- Etiqueta de rareza: dice cuántas veces puede salir -->
+                        <em class="perk-rarity">{rarTxt(p.rarity)}</em>
                     </button>
                 {/each}
             </div>

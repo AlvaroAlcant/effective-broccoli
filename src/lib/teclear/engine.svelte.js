@@ -15,6 +15,7 @@ import { ranking } from './services/ranking.svelte.js';
 import { acc } from './services/account.js';
 import { modes } from './modes/index.js';
 import { abilities } from './services/abilities.js';
+import { dic } from './services/dictionary.js';
 import {
     GAME_TIME, MAX_MISSES, SPEEDRUN_MS, BONUS_TIME_ELPRICO, SOUP_GIVEN,
     TURBO_MAX, SUP_LIVES, SUP_XP_WORD,
@@ -203,6 +204,23 @@ export class GameEngine {
 
     get rank() { return ranking.rankData; }
 
+    // Diccionario de palabras: secciones con lo que llevas escrito. Con
+    // el panel cerrado no se recalcula nada, que para eso está el estado
+    get dicSections() {
+                if (!S.dicOpen) return [];
+                return dic.sections();
+            }
+
+    get dicTotal() {
+                if (!S.dicOpen) return 0;
+                return dic.totalPalabras();
+            }
+
+    get dicPending() {
+                if (!S.dicOpen) return 0;
+                return dic.pendientes();
+            }
+
     get myId() { return identity.currentPlayerId(); }
 
     get rankDate() { return ranking.rankDate; }
@@ -314,6 +332,34 @@ export class GameEngine {
     closeInvOnPlay() {
             if (!S.invOpen) return;
             S.invOpen = false;
+        }
+
+    // ---------- Diccionario ----------
+    // Panel con las palabras que llevas escritas. Se abre desde la fila
+    // «Progreso» del menú y se cierra al empezar una partida, igual que
+    // el inventario y los logros.
+    toggleDic() {
+            if (S.state === "playing") return;
+            S.dicOpen = !S.dicOpen;
+            if (S.dicOpen) {
+                S.dicMsgTxt = "";   // aviso de la palabra cobrada anterior
+                if (this.diccionario && this.diccionario.scrollIntoView) {
+                    this.diccionario.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+        }
+
+    closeDicOnPlay() {
+            if (!S.dicOpen) return;
+            S.dicOpen = false;
+        }
+
+    // Cobra las 5 monedas de una palabra del diccionario: solo la
+    // primera vez que se pulsa, repetirla ya no da más dinero
+    dicClaim(grupo, palabra) {
+            if (S.state === "playing") return;
+            const n = dic.claim(grupo, palabra);
+            S.dicMsgTxt = n > 0 ? t("dicGot") + n + " 🪙" : t("dicNoMore");
         }
 
     applyLang() {
@@ -645,6 +691,9 @@ export class GameEngine {
             // así que ahora resta de las 15 del bonus (al llegar a 0 se
             // apaga solo y avisa)
             abilities.wordDone();
+            // Diccionario: la palabra escrita se guarda para siempre (si
+            // no existía ya) y sus 5 monedas se cobran desde el panel
+            dic.add(S.word);
         }
 
     completeWord() {
@@ -701,6 +750,7 @@ export class GameEngine {
             }
             this.closeLogrosOnPlay();   // el panel de logros también
             this.closeInvOnPlay();      // el panel de inventario también
+            this.closeDicOnPlay();      // y el del diccionario también
             acc.closeAccountOnPlay();   // el panel de perfil también
 
             S.resOpen = false;
@@ -1182,6 +1232,14 @@ export class GameEngine {
             this.dbgGrantAll();   // cubre los artículos de logro
         }
 
+    // Depuración: abre una parada de la aventura para ver el sorteo de
+    // ventajas (y las rarezas) sin esperar a que toquen. El reloj queda
+    // en pausa, igual que en una parada de verdad
+    dbgPerks() {
+            if (!acc.esAdmin() || S.state !== "playing") return;
+            modes.aventura.openPerkChoice();
+        }
+
     // ---------- Acciones para la vista (engine.actions.x) ----------
     actions = {
             setLang: this.setLang.bind(this),
@@ -1193,6 +1251,8 @@ export class GameEngine {
             toggleShop: this.toggleShop.bind(this),
             toggleInv: this.toggleInv.bind(this),
             toggleLogros: this.toggleLogros.bind(this),
+            toggleDic: this.toggleDic.bind(this),
+            dicClaim: (g, w) => this.dicClaim(g, w),
             toggleRanking: () => this.toggleRanking(),
             toggleAccount: m => acc.toggleAccount(m),
             closeAccount: () => acc.closeAccount(),
@@ -1224,6 +1284,7 @@ export class GameEngine {
             dbgGrantAll: () => { if (acc.esAdmin()) this.dbgGrantAll(); },
             dbgFunds: () => { if (acc.esAdmin()) this.dbgFunds(); },
             dbgBuyAll: () => { if (acc.esAdmin()) this.dbgBuyAll(); },
+            dbgPerks: () => this.dbgPerks(),
             dbgEvent: id => { if (!acc.esAdmin()) return; id ? events.test(id) : events.clearTest(); },
         };
 
@@ -1234,6 +1295,7 @@ this.board = document.getElementById("board");
 this.typing = document.getElementById("typing");
 this.logros = document.getElementById("logros");
 this.inventario = document.getElementById("inventario");
+this.diccionario = document.getElementById("diccionario");
 this.perfil = document.getElementById("perfil");
 this.accName = document.getElementById("accName");
 this.accPass = document.getElementById("accPass");
@@ -1363,6 +1425,8 @@ this.logoBtn = document.getElementById("logoBtn");
         }
         S.accSession = acc.loadSession();
         prog.achLoad();
+        // El diccionario de palabras se carga con lo que lleves escrito
+        dic.load();
         prog.loadProfileStats();
         // El Administrador con SU sesión abierta lo tiene todo hecho:
         // puede probar las recompensas de los logros sin ganarlas

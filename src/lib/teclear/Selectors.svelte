@@ -59,6 +59,8 @@
                     onclick={() => engine.actions.toggleRanking()}>{engine.t('btnRanking')}</button>
             <button class="chip-btn" class:active={engine.state.logrosOpen}
                     onclick={() => engine.actions.toggleLogros()}>{engine.t('btnLogros')}</button>
+            <button class="chip-btn" class:active={engine.state.dicOpen}
+                    onclick={() => engine.actions.toggleDic()}>{engine.t('btnDic')}</button>
         </div>
         <!-- 4 · Controles: la tecla reservada de la habilidad del fondo -->
         <div class="sel-row">
