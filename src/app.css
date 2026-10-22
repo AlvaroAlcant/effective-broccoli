@@ -2705,35 +2705,50 @@
             --game-color: #ece3c8;
             --game-shadow: 2px 3px 0 rgba(20, 12, 4, .85), 0 0 12px rgba(236, 227, 200, .25);
         }
-        /* Grietas: en el tablero cada letra lleva su veta oscura (una
-           raya que la parte), y la vista previa la lleva puesta sola */
-        body:has(.logo-wrap).ff-huesos .board span:not(.ok):not(.bad):not(.blank):not(.cursor),
-        .shop-card.ff-huesos .font-preview,
-        .inv-thumb.ff-huesos.font-preview {
-            background-image: linear-gradient(104deg,
-                transparent 46%, rgba(38, 24, 8, .8) 47%, transparent 50%);
-            background-size: 130% 130%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: var(--game-color);
+        /* Grietas: el degradado lleva DENTRO el color del hueso y la veta
+           oscura, recortado al texto (si no, el color opaco tapaba la
+           grieta); la sombra de fosa la pone un filtro, que sí sigue el
+           relleno recortado. Sin este soporte las letras quedarían
+           invisibles, así que solo se aplica donde funciona (igual que
+           el estilo Shinyy) */
+        @supports (-webkit-background-clip: text) or (background-clip: text) {
+            body:has(.logo-wrap).ff-huesos .board span:not(.ok):not(.bad):not(.blank):not(.cursor),
+            .shop-card.ff-huesos .font-preview,
+            .inv-thumb.ff-huesos.font-preview {
+                background-image: linear-gradient(104deg,
+                    #efe7d0 0 45%, #2a1a0a 46.5% 48.5%, #e6dcc0 50% 100%);
+                background-size: 100% 100%;
+                background-color: transparent;
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                -webkit-text-fill-color: transparent;
+                text-shadow: none;
+                filter: drop-shadow(2px 3px 0 rgba(20, 12, 4, .85));
+            }
         }
 
-        /* Ink Machine: tinta negra que gotea de cada letra, con contorno
-           claro para que siga asomando sobre el fondo oscuro */
+        /* Ink Machine: tinta negra que gotea de cada letra. El contorno
+           claro es lo único que la hace asomar sobre el fondo oscuro (y
+           sobre las tarjetas de la tienda), así que va grueso y por los
+           ocho puntos cardinales: sin él, la tinta "no aparece" */
         .ff-inkmachine {
             --game-font: "Nosifer", "Impact", cursive;
             --game-weight: normal;
             --game-color: #0d0d10;
-            --game-shadow: -1px 0 0 #ded6c0, 1px 0 0 #ded6c0,
-                           0 -1px 0 #ded6c0, 0 1px 0 #ded6c0,
-                           0 2px 3px rgba(0, 0, 0, .6);
+            --game-shadow: -1.4px 0 0 #ded6c0, 1.4px 0 0 #ded6c0,
+                           0 -1.4px 0 #ded6c0, 0 1.4px 0 #ded6c0,
+                           -1.1px -1.1px 0 #ded6c0, 1.1px -1.1px 0 #ded6c0,
+                           -1.1px 1.1px 0 #ded6c0, 1.1px 1.1px 0 #ded6c0,
+                           0 3px 5px rgba(0, 0, 0, .65);
         }
         body:has(.logo-wrap).ff-inkmachine #typing {
             /* El input no admite contorno por texto: va con borde de tinta */
             border-color: rgba(222, 214, 192, .5);
         }
-        /* La gota que cuelga de cada letra: nace, se alarga y se cae,
-           con su charco en el suelo */
+        /* La gota que cuelga de cada letra (dentro de su cajita, justo
+           bajo la línea de base): nace, se alarga y se cae. Se desfasa
+           de tres en tres para que no goteen todas a la vez */
         body:has(.logo-wrap).ff-inkmachine .board span:not(.ok):not(.bad):not(.blank):not(.cursor) {
             position: relative;
         }
@@ -2741,7 +2756,7 @@
             content: "";
             position: absolute;
             left: 52%;
-            bottom: -2px;
+            bottom: 0.7em;
             width: 3px;
             height: 6px;
             border-radius: 40% 40% 60% 60%;
@@ -2749,6 +2764,12 @@
             box-shadow: 0 0 0 1px rgba(222, 214, 192, .5);
             transform-origin: top center;
             animation: inkGota 3.1s ease-in infinite;
+        }
+        body:has(.logo-wrap).ff-inkmachine .board span:nth-child(3n+1):not(.ok):not(.bad):not(.blank):not(.cursor)::after {
+            animation-delay: -1s;
+        }
+        body:has(.logo-wrap).ff-inkmachine .board span:nth-child(3n+2):not(.ok):not(.bad):not(.blank):not(.cursor)::after {
+            animation-delay: -2.1s;
         }
         @keyframes inkGota {
             0%, 45%  { transform: translate(0, 0) scaleY(.5); opacity: 0; }
@@ -2788,36 +2809,41 @@
         body:has(.logo-wrap).ff-maldito .board span:not(.ok):not(.bad):not(.blank):not(.cursor) {
             position: relative;
         }
+        /* El ojo se posa DENTRO de la letra (sobre la carne): con
+           line-height 1.6 y padding 7px, el centro de la caja queda a
+           ~0.8em, que es donde está el cuerpo de la letra */
         body:has(.logo-wrap).ff-maldito .board span:not(.ok):not(.bad):not(.blank):not(.cursor)::before {
             content: "";
             position: absolute;
-            top: -0.34em;
-            left: 56%;
-            width: 8px;
-            height: 8px;
+            top: 0.85em;
+            left: 54%;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             background: radial-gradient(circle at 50% 52%, #170608 0 32%, #f3e7cf 34% 100%);
             box-shadow: 0 0 0 1px rgba(40, 5, 8, .9);
             animation: malditoOjo 2.7s ease-in-out infinite alternate;
         }
         @keyframes malditoOjo {
-            0%   { transform: translateX(-2.5px); }
-            50%  { transform: translateX(2px) translateY(1px); }
-            100% { transform: translateX(3px); }
+            0%   { transform: translateX(-1.5px); }
+            50%  { transform: translateX(1px) translateY(.5px); }
+            100% { transform: translateX(2px); }
         }
-        body:has(.logo-wrap).ff-maldito .board span:not(.ok):not(.bad):not(.blank):not(.cursor)::after {
+        /* La cicatriz de puntos va CORTA y hacia abajo, y solo en una de
+           cada tres letras: cruzando todas a media altura parecían tachados */
+        body:has(.logo-wrap).ff-maldito .board span:nth-child(3n):not(.ok):not(.bad):not(.blank):not(.cursor)::after {
             content: "";
             position: absolute;
-            top: 38%;
-            left: 8%;
-            width: 62%;
-            height: 5px;
-            transform: rotate(-14deg);
+            top: 56%;
+            left: 16%;
+            width: 42%;
+            height: 4px;
+            transform: rotate(-24deg);
             background: repeating-linear-gradient(90deg,
-                #571018 0 4px, transparent 4px 7px);
+                #571018 0 3px, transparent 3px 6px);
             box-shadow: 0 1px 0 rgba(255, 170, 175, .35);
         }
-        /* Vista previa y miniatura: un ojo que asoma sobre la «Aa» */
+        /* Vista previa y miniatura: el ojo asoma sobre la «Aa» */
         .shop-card.ff-maldito .font-preview,
         .inv-thumb.ff-maldito.font-preview {
             position: relative;
@@ -2826,8 +2852,8 @@
         .inv-thumb.ff-maldito.font-preview::before {
             content: "";
             position: absolute;
-            top: 24%;
-            left: calc(50% + 14px);
+            top: 40%;
+            left: calc(50% + 9px);
             width: 9px;
             height: 9px;
             border-radius: 50%;
