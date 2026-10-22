@@ -171,8 +171,17 @@ export class GameEngine {
     get shopFxs() { return eco.shopCards("fx"); }
 
     // La tienda de evento lista lo que declara el registro del evento
-    // activo (data/events.js): fondo + efecto + extra, en caramelos
+    // activo (data/events.js), agrupado por sección como la normal:
+    // fondos, letras, extras (modos) y efectos, todo en caramelos
     get shopEvents() { return eco.eventCards(); }
+
+    get shopEventFonts() { return eco.eventCards("font"); }
+
+    get shopEventBgs() { return eco.eventCards("bg"); }
+
+    get shopEventExtras() { return eco.eventCards("extra"); }
+
+    get shopEventFxs() { return eco.eventCards("fx"); }
 
     get invSections() {
                 const items = eco.invItems();

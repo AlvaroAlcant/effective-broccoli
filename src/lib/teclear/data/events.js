@@ -102,6 +102,47 @@ export const EVENTS = {
                 msgOn: "shopEquippedTrucoMsg",
                 msgOff: "shopDeactivatedTrucoMsg"
             },
+            // ---------- Letras de Halloween ----------
+            // Estilos de letra exclusivos del evento, que se pagan en
+            // caramelos. Se compran aquí (a diferencia de la tienda
+            // normal, que solo compra) y quedan guardados para siempre:
+            // después se equipan desde el Inventario, como el resto.
+            {   // Letras pixeladas de 8 bits, como una arcade de feria
+                kind: "font",
+                id: "pixelhwn", price: 240,
+                cls: "ff-pixelhwn",
+                font: '"Press Start 2P", Consolas, "Courier New", monospace',
+                es: "Pixel", en: "Pixel",
+                descEs: "Letras pixeladas de 8 bits con brillo de neón naranja y violeta, como una recreativa de feria embrujada.",
+                descEn: "8-bit pixel letters with orange and violet neon glow, like a haunted fairground arcade."
+            },
+            {   // Letras de huesos rotos: blancas y agrietadas
+                kind: "font",
+                id: "huesos", price: 360,
+                cls: "ff-huesos",
+                font: '"Creepster", "Impact", cursive',
+                es: "Huesos", en: "Bones",
+                descEs: "Letras hechas de huesos rotos: blancas como la cal, agrietadas y con sombra de fosa.",
+                descEn: "Letters carved from broken bones: chalk-white, cracked, with a grave shadow."
+            },
+            {   // Ink Machine: tinta negra que gotea de cada letra
+                kind: "font",
+                id: "inkmachine", price: 460,
+                cls: "ff-inkmachine",
+                font: '"Nosifer", "Impact", cursive',
+                es: "Ink Machine", en: "Ink Machine",
+                descEs: "Letras de tinta negra que gotean sin parar, con un contorno claro para que sigan asomando en la oscuridad.",
+                descEn: "Black ink letters that never stop dripping, with a pale outline so they still show in the dark."
+            },
+            {   // Maldito: carne con ojos que se mueven y cicatrices
+                kind: "font",
+                id: "maldito", price: 666,
+                cls: "ff-maldito",
+                font: '"Butcherman", "Impact", cursive',
+                es: "Maldito", en: "Cursed",
+                descEs: "Letras de carne viva con ojos que te siguen mirando y cicatrices cosidas. No parpadean: tú sí.",
+                descEn: "Letters of living flesh with eyes that follow you and stitched scars. They don't blink: you do."
+            },
         ],
         start: { month: 9, day: 8 },     // octubre (meses de 0 a 11)
         end:   { month: 10, day: 3, hour: 12 },  // 3 de noviembre, 12:00

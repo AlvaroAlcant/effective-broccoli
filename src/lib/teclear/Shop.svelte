@@ -9,6 +9,21 @@
 	const btnDis = it => !!(it.equipped || it.on || it.own || it.ach);
 	const btnCant = it => !it.own && (it.ach || it.cant);
 	const btnTitle = it => it.own && !it.equipped && !it.on ? engine.t('shopInInvHint') : null;
+
+	// La tienda de evento se organiza IGUAL que la normal (letras, fondos,
+	// modos y efectos) y solo enseña las secciones con artículos: cada
+	// sección se puede quedar vacía según el evento activo.
+	const evSecs = () => ([
+		{ key: 'font', title: engine.t('shopFontsTitle'), items: engine.shopEventFonts },
+		{ key: 'bg', title: engine.t('shopBgsTitle'), items: engine.shopEventBgs },
+		{ key: 'extra', title: engine.t('shopExtrasTitle'), items: engine.shopEventExtras },
+		{ key: 'fx', title: engine.t('shopFxTitle'), items: engine.shopEventFxs }
+	]).filter(s => s.items.length > 0);
+
+	// Las letras de evento llevan su clase de estilo (ff-…) en la tarjeta
+	// para que la vista previa «Aa» se pinte con el mismo efecto que en el
+	// tablero; el resto de artículos no llevan clase
+	const evCls = it => (it.kind === 'font' && it.cls) ? it.cls : '';
 </script>
 
     <section class="shop" id="shop" class:hidden={!engine.state.shopOpen}>
@@ -18,39 +33,46 @@
         </div>
         <p class="shop-hint">{engine.t('shopHint')}</p>
 
-        <!-- Tienda de evento: arriba del todo mientras dura Halloween -->
+        <!-- Tienda de evento: arriba del todo mientras dura Halloween.
+             Se pinta con las MISMAS secciones que la tienda normal -->
         {#if engine.state.halloween}
             <h3 class="shop-sub event-sub">{engine.t('shopEventTitle')}</h3>
             <!-- Saldo de la moneda del evento: los artículos de arriba se pagan en caramelos -->
             <p class="shop-hint event-cash">{engine.t('eventCashTxt')} <strong>{engine.candyTxt}</strong></p>
-            <div class="shop-grid event-grid">
-                {#each engine.shopEvents as it (it.id)}
-                    <div class="shop-card event-card"
-                         class:card-fx={it.kind === 'fx'}
-                         class:card-truco={it.kind === 'extra'}
-                         class:equipped={it.equipped}
-                         class:fx-on={it.kind === 'fx' && it.on}
-                         class:extra-on={it.kind === 'extra' && it.on}
-                         class:card-fx-sangre={it.kind === 'fx' && it.id === 'sangre'}
-                         style:--fx-c={it.kind === 'fx' ? it.color : null}>
-                        {#if it.kind === 'bg'}
-                            <div class="shop-preview event-thumb"
-                                 style:background-image="url('{it.img}')"></div>
-                        {:else}
-                            <div class="shop-preview">{it.icon}</div>
-                        {/if}
-                        <div class="shop-name">{it.name}</div>
-                        <div class="shop-price">{it.own ? '✓ ' + engine.t('shopOwned') : '🍬 ' + it.price}</div>
-                        <div class="shop-desc">{it.desc}</div>
-                        <button class="chip-btn shop-btn" disabled={it.own}
-                                class:cant={!it.own && it.cant}
-                                title={it.own ? engine.t('shopInInvHint') : null}
-                                onclick={() => engine.actions.buyItem(it.kind, it.id)}>
-                            {it.own ? engine.t('shopInInv') : engine.t('shopBuy')}
-                        </button>
-                    </div>
-                {/each}
-            </div>
+            {#each evSecs() as sec (sec.key)}
+                <h4 class="shop-sub event-sec">{sec.title}</h4>
+                <div class="shop-grid event-grid">
+                    {#each sec.items as it (it.id)}
+                        <div class="shop-card event-card {evCls(it)}"
+                             class:card-font={it.kind === 'font'}
+                             class:card-fx={it.kind === 'fx'}
+                             class:card-truco={it.kind === 'extra'}
+                             class:equipped={it.equipped}
+                             class:fx-on={it.kind === 'fx' && it.on}
+                             class:extra-on={it.kind === 'extra' && it.on}
+                             class:card-fx-sangre={it.kind === 'fx' && it.id === 'sangre'}
+                             style:--fx-c={it.kind === 'fx' ? it.color : null}>
+                            {#if it.kind === 'bg'}
+                                <div class="shop-preview event-thumb"
+                                     style:background-image="url('{it.img}')"></div>
+                            {:else if it.kind === 'font'}
+                                <div class="shop-preview font-preview">Aa</div>
+                            {:else}
+                                <div class="shop-preview">{it.icon}</div>
+                            {/if}
+                            <div class="shop-name">{it.name}</div>
+                            <div class="shop-price">{it.own ? '✓ ' + engine.t('shopOwned') : '🍬 ' + it.price}</div>
+                            <div class="shop-desc">{it.desc}</div>
+                            <button class="chip-btn shop-btn" disabled={it.own}
+                                    class:cant={!it.own && it.cant}
+                                    title={it.own ? engine.t('shopInInvHint') : null}
+                                    onclick={() => engine.actions.buyItem(it.kind, it.id)}>
+                                {it.own ? engine.t('shopInInv') : engine.t('shopBuy')}
+                            </button>
+                        </div>
+                    {/each}
+                </div>
+            {/each}
         {/if}
 
         <h3 class="shop-sub">{engine.t('shopFontsTitle')}</h3>

@@ -243,10 +243,13 @@ export class EconomyService {
         S.shopMsgTxt = t(item.msgBuy || KINDS[kind].buyMsg);
     }
 
-    // Tarjetas de una sección de la tienda, con su estado actual
+    // Tarjetas de una sección de la tienda, con su estado actual.
+    // Dentro de cada categoría los artículos van de MENOR a MAYOR precio;
+    // los de logro (sin precio) cierran la fila.
     shopCards(kind) {
         const K = KINDS[kind];
         const en = uiLang() === "en";
+        const precio = it => (it.price == null ? Infinity : it.price);
         return K.list
             .filter(it => !it.event || (it.event !== events.activeId() && this.owns(kind, it.id)))
             .map(it => ({
@@ -261,29 +264,36 @@ export class EconomyService {
                 on: this.itemOn(kind, it.id),
                 own: this.owns(kind, it.id), ach: !!it.ach,
                 price: it.price, cant: S.coins < it.price
-            }));
+            }))
+            .sort((a, b) => precio(a) - precio(b));
     }
 
     // Las tarjetas de la tienda de evento (se pagan en caramelos):
-    // el evento activo ya declara sus items completos en `def.items`
-    eventCards() {
+    // el evento activo ya declara sus items completos en `def.items`.
+    // Igual que en la tienda normal, cada categoría se ordena de menor
+    // a mayor precio.
+    eventCards(kind) {
         const def = events.active;
         if (!def || !def.items) return [];
         const en = uiLang() === "en";
-        return def.items.map(it => {
-            const kind = it.kind;
-            return {
-                kind, id: it.id,
-                icon: it.icon || KINDS[kind].icon,
-                name: en ? it.en : it.es,
-                desc: en ? it.descEn : it.descEs,
-                img: it.img, color: it.color,
-                equipped: this.itemOn(kind, it.id),
-                on: this.itemOn(kind, it.id),
-                own: this.owns(kind, it.id), price: it.price,
-                cant: S.caramelos < it.price
-            };
-        });
+        return def.items
+            .filter(it => !kind || it.kind === kind)
+            .map(it => {
+                const k = it.kind;
+                return {
+                    kind: k, id: it.id,
+                    cls: it.cls, font: it.font,
+                    icon: it.icon || KINDS[k].icon,
+                    name: en ? it.en : it.es,
+                    desc: en ? it.descEn : it.descEs,
+                    img: it.img, color: it.color,
+                    equipped: this.itemOn(k, it.id),
+                    on: this.itemOn(k, it.id),
+                    own: this.owns(k, it.id), price: it.price,
+                    cant: S.caramelos < it.price
+                };
+            })
+            .sort((a, b) => a.price - b.price);
     }
 
     // ---------- Estilos de fuente ----------
