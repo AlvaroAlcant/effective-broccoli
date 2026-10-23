@@ -2568,8 +2568,14 @@
             display: none;
         }
 
-        /* ---------- Estilos de letra comprados ---------- */
-        body:has(.logo-wrap) {
+        /* ---------- Estilos de letra comprados ----------
+        Los valores por defecto van dentro de :where(...) para que su
+        especificidad sea 0. Si no, `body:has(.logo-wrap)` (0-1-1, porque
+        :has() suma la especificidad de su argumento) ganaba a `.ff-*`
+        (0-1-0) en el propio body y TODOS los estilos se quedaban con el
+        gris y la Consolas por defecto en el tablero y en el campo (en la
+        tienda no se notaba porque ahí la clase está en la tarjeta). */
+        body:has(:where(.logo-wrap)) {
             --game-font: Consolas, "Courier New", monospace;
             --game-weight: normal;
             --game-style: normal;
@@ -2742,8 +2748,15 @@
                            -1.1px 1.1px 0 #ded6c0, 1.1px 1.1px 0 #ded6c0,
                            0 3px 5px rgba(0, 0, 0, .65);
         }
+        /* Tamaño adaptado: Nosifer mide 0.92em de media (casi tanto como
+           Press Start 2P). A 22px la letra llena la cajita de 38px igual
+           que el resto de estilos; a 32px ensancharía cada hueco un 25% */
+        body:has(.logo-wrap).ff-inkmachine .board { font-size: 22px; }
         body:has(.logo-wrap).ff-inkmachine #typing {
-            /* El input no admite contorno por texto: va con borde de tinta */
+            font-size: 20px;
+            /* El input no admite degradado recortado al texto, pero el
+               contorno crema por text-shadow (var --game-shadow) sí le
+               llega: la tinta se lee igual que en el tablero */
             border-color: rgba(222, 214, 192, .5);
         }
         /* La gota que cuelga de cada letra (dentro de su cajita, justo
