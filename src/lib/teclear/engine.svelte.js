@@ -23,7 +23,7 @@ import {
     RANK_URL, RANK_ADV_URL, NAMES_URL, RESETS_URL, RANK_MAX, NAMES_MAX,
     RANK_TIMEOUT, NAME_MAX, MAX_SCORE, MAX_WORDS, PTS_PER_WORD, SCORE_BOOST,
     SEAL_SALT, PROFILES_URL, PASS_MIN, KDF_ROUNDS,
-    PIZERIA_BATTERY, PIZERIA_BATTERY_DRAIN, PIZERIA_SPAWN, PIZERIA_CATCH
+    PIZERIA_BATTERY, PIZERIA_BATTERY_DRAIN, PIZERIA_SPAWN, PIZERIA_CATCH, PIZERIA_ANIMATS
 } from './data/constants.js';
 import {
     WORDS, MURCIANO_WORDS, PICANTE, PHP_WORDS, ANDALUZ_WORDS,
@@ -77,8 +77,8 @@ export class GameEngine {
     // ---------- Modo «Pizeria simulator» (evento de Halloween) ----------
     // Pasillo oscuro estilo FNAF con linterna: sin cronómetro, la única
     // forma de perder es que el animatrónico alcance. El ratón es la linterna.
-    pizLantern = false;     // linterna encendida (el ratón la enciende/apaga con clic)
-    pizBattery = PIZERIA_BATTERY; // batería de la linterna (0-100)
+    pizLantern = $state(false);     // linterna encendida (el ratón la enciende/apaga con clic)
+    pizBattery = $state(PIZERIA_BATTERY); // batería de la linterna (0-100)
     pizAnima = null;        // animatrónico en pantalla: { el, catchAt } | null
     pizSpawnT = 0;          // instante en el que puede salir el siguiente animatrónico
 
@@ -132,6 +132,9 @@ export class GameEngine {
     // única forma de perder es el animatrónico del pasillo FNAF
     get pizRun() { return S.mode === "type" && eco.extraActive("pizeria"); }
 
+    // La batería de la linterna va baja (el HUD la marca en rojo)
+    get pizLow() { return this.pizBattery <= 25; }
+
     // ---------- Modo «Pizeria simulator» (evento: pasillo FNAF) ----------
 
     // Reinicia el modo al empezar partida: linterna apagada, batería
@@ -140,7 +143,9 @@ export class GameEngine {
         this.pizLantern = false;
         this.pizBattery = PIZERIA_BATTERY;
         this.pizSpawnT = performance.now() + PIZERIA_SPAWN;
+        S.pizCaught = false;
         this.pizDespawn();
+        this.pizFx();
     }
 
     // El ratón ES la linterna: un clic la enciende/apaga. Mientras está
@@ -150,7 +155,18 @@ export class GameEngine {
         if (S.state !== "playing" || !this.pizRun) return;
         this.pizLantern = !this.pizLantern;
         S.statusTxt = this.pizLantern ? t("stPizeriaOn") : t("stPizeriaOff");
+        this.pizFx();
         this.pizTick(performance.now(), 100);
+    }
+
+    // Capas visuales del modo: haz de la linterna y aviso rojo del
+    // animatrónico (se sincronizan con las clases del <body>)
+    pizFx() {
+        const b = document.body;
+        if (!b) return;
+        const on = this.pizRun && S.state === "playing";
+        b.classList.toggle("piz-lit", on && this.pizLantern);
+        b.classList.toggle("piz-alert", on && !!this.pizAnima);
     }
 
     // Avanza el modo: batería, animatrónico y su condición de derrota
@@ -172,6 +188,7 @@ export class GameEngine {
             if (this.pizLantern) {
                 // ¡Alumbrado! el animatrónico se aleja con su animación
                 this.pizDespawn();
+                S.statusTxt = t("stPizeriaSafe");
             } else if (now > this.pizAnima.catchAt) {
                 // No le alumbramos a tiempo: el animatrónico te alcanza
                 this.pizCatch();
@@ -189,12 +206,15 @@ export class GameEngine {
         el.className = "piz-anim";
         el.setAttribute("aria-hidden", "true");
         el.textContent = PIZERIA_ANIMATS[Math.floor(Math.random() * PIZERIA_ANIMATS.length)];
-        el.style.fontSize = Math.round(38 + Math.random() * 16) + "px";
-        el.style.left = Math.round(10 + Math.random() * 55) + "%";
-        el.style.top = Math.round(14 + Math.random() * 26) + "%";
+        el.style.fontSize = Math.round(58 + Math.random() * 26) + "px";
+        // Asoma por los lados del pasillo (fuera del tablero en escritorio)
+        el.style.left = Math.round(Math.random() < 0.5 ? 3 + Math.random() * 12 : 82 + Math.random() * 12) + "%";
+        el.style.top = Math.round(34 + Math.random() * 24) + "%";
         this.pizAnima = { el, catchAt: performance.now() + PIZERIA_CATCH };
         document.body.appendChild(el);
         this.pizSpawnT = performance.now() + PIZERIA_SPAWN;
+        S.statusTxt = t("stPizeriaAnima");
+        this.pizFx();
     }
 
     // El animatrónico alcanzó: fin de la partida (la única derrota del modo)
@@ -203,14 +223,18 @@ export class GameEngine {
         if (a && a.el) { try { a.el.remove(); } catch (e) { /* ya fuera */ } }
         this.pizAnima = null;
         this.pizLantern = false;
-        S.statusTxt = t("stPizeriaCatch");
+        S.pizCaught = true;   // los resultados lo explican en su título
         this.endGame();
+        // El motivo de la derrota se queda visible tras el fin de partida
+        S.statusTxt = t("stPizeriaCatch");
+        this.pizFx();
     }
 
     // Se retira el animatrónico (alumbrado, fin de partida o reset)
     pizDespawn() {
         if (this.pizAnima) { try { this.pizAnima.el?.remove(); } catch (e) { /* ya fuera */ } }
         this.pizAnima = null;
+        this.pizFx();
     }
 
     get typingDis() { return S.state !== "playing" || S.perkOpen; }
@@ -481,9 +505,14 @@ export class GameEngine {
             // propio del modo (sin habilidad)
             const sinFondos = S.mode === "aventura";
             eco.all("bg").forEach(b => {
-                document.body.classList.toggle("bg-" + b.id, !sinFondos && S.bg === b.id);
+                // El pasillo FNAF del modo Pizeria manda sobre el fondo elegido
+                document.body.classList.toggle("bg-" + b.id, !sinFondos && !this.pizRun && S.bg === b.id);
             });
             document.body.classList.toggle("bg-aventura", sinFondos);
+            // El modo «Pizeria simulator» trae su propio fondo: el pasillo
+            // oscuro al estilo FNAF, con la linterna y los animatrónicos
+            document.body.classList.toggle("bg-fnaf", !sinFondos && this.pizRun);
+            this.pizFx();   // haz de linterna y aviso rojo del animatrónico
             fx.syncLetterSoup(!sinFondos && S.bg === "sopa");   // letras rebotando solo con ese fondo
             fx.syncHacker(!sinFondos && S.bg === "hacker");     // binario verde solo con ese fondo
 
@@ -569,6 +598,11 @@ export class GameEngine {
             // Modo Truco o trato (evento de Halloween): palabras terroríficas
             if (eco.extraActive("truco")) {
                 propias.push(S.lang === "en" ? HALLOWEEN_WORDS.en : HALLOWEEN_WORDS.es);
+            }
+            // Modo «Pizeria simulator» (evento de Halloween): palabras de
+            // los animatrónicos del Five Nights at Freddy's
+            if (eco.extraActive("pizeria")) {
+                propias.push(S.lang === "en" ? FNAF_WORDS.en : FNAF_WORDS.es);
             }
 
             let pool;
@@ -843,7 +877,6 @@ export class GameEngine {
             S.candyRun = 0;   // caramelos ganados en esta partida
             // Habilidades de los fondos: cada partida empieza con la suya
             // lista —Turbo y Chica Rush solo valen UNA vez por partida—
-            // lista —Turbo y Chica Rush solo valen UNA vez por partida—
             abilities.reset();
             // Modo «Pizeria simulator» (evento): linterna apagada, batería
             // llena y sin animatrónico en pantalla
@@ -915,6 +948,9 @@ export class GameEngine {
             // Modo Truco o trato (evento de Halloween): se avisan sus reglas
             // (doble de monedas, pero doble castigo por tecla fallada)
             if (eco.extraActive("truco")) S.statusTxt = t("statusTruco");
+            // Modo «Pizeria simulator» (evento): sus reglas mandan sobre los
+            // avisos previos (sin cronómetro, la única derrota es el animatrónico)
+            if (this.pizRun) S.statusTxt = t("statusPizeria");
             // Aviso de la habilidad que aporta el fondo equipado
             // (en Aventura no actúa ningún fondo: el modo lleva el suyo)
             const poder = eco.bgPowerDesc();
@@ -990,6 +1026,10 @@ export class GameEngine {
 
     endGame() {
             clearInterval(this.timerId);
+            // Modo «Pizeria simulator» (evento): se retira el animatrónico
+            // y se apaga la linterna al terminar la partida
+            this.pizDespawn();
+            this.pizLantern = false;
             // Duración real de la partida: si alguien congeló el cronómetro
             // para alargarla y sumar puntos, esto lo delata. Las paradas del
             // modo Aventura (elegir ventaja) no se cuentan como tiempo jugado,
@@ -1001,6 +1041,7 @@ export class GameEngine {
                     - modes[S.mode].pausedMs() - this.pauseMs / 1000) / 1000)
                 : this.gameTime();
             S.state = "over";
+            this.pizFx();   // apaga el haz y el aviso rojo del pasillo
             // Cada modo retira lo suyo (el tablero de Supervivencia, la
             // pantalla grande, las ventanas de ventajas…)
             modes[S.mode].exit();
@@ -1548,6 +1589,28 @@ this.verifyInput = document.getElementById("verifyInput");
                 e.preventDefault();
                 this.startGame();
             }
+        });
+        // Ratón del modo «Pizeria simulator» (evento): el cursor ES la
+        // linterna que se enciende/apaga con un clic. Se ignora sobre los
+        // controles de la partida para no liarla al pulsar botones.
+        document.addEventListener("click", (e) => {
+            if (S.state !== "playing" || !this.pizRun) return;
+            const el = e.target;
+            if (el && el.closest && el.closest(
+                "button, input, textarea, select, a, [role='dialog'], [role='button']," +
+                " #shop, #rank, #logros, #inv, #dic, #perfil, #acc, #perkVeil, #results," +
+                " #controls, #misses, #advBar, #abilityBtn, #startBtn, #quitBtn, #typing"
+            )) return;
+            // El haz de la linterna nace donde está el cursor
+            document.body.style.setProperty("--piz-x", e.clientX + "px");
+            document.body.style.setProperty("--piz-y", e.clientY + "px");
+            this.pizToggleLantern();
+        });
+        // Con la linterna encendida, el haz sigue al ratón
+        document.addEventListener("mousemove", (e) => {
+            if (!this.pizLantern) return;
+            document.body.style.setProperty("--piz-x", e.clientX + "px");
+            document.body.style.setProperty("--piz-y", e.clientY + "px");
         });
 this.logoBtn = document.getElementById("logoBtn");
         eco.loadShop();

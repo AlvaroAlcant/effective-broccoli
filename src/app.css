@@ -378,6 +378,81 @@
             background-attachment: fixed, fixed, fixed;
         }
 
+        /* ---------- Fondo «Pasillo FNAF» (modo «Pizeria simulator», evento) ----------
+           El pasillo oscuro al estilo Five Nights: paredes en fuga, techo con
+           fluorescentes tenues, suelo brillante, puerta al fondo con la luz
+           roja de emergencia y viñeta. Solo se ve con ese modo activo. */
+        body:has(.logo-wrap).bg-fnaf {
+            background-color: #05050a;
+            background-image:
+                /* viñeta: el pasillo se pierde en la oscuridad */
+                radial-gradient(ellipse 820px 560px at 50% 44%, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, .45) 74%, rgba(0, 0, 0, .78) 100%),
+                /* puerta del fondo con la luz roja de emergencia */
+                radial-gradient(70px 120px at 50% 45%, rgba(255, 64, 64, .34), rgba(255, 64, 64, .10) 55%, transparent 76%),
+                /* fluorescente del techo (al fondo) */
+                radial-gradient(260px 90px at 50% 22%, rgba(198, 224, 255, .12), transparent 72%),
+                /* fluorescente del techo (cerca) */
+                radial-gradient(420px 130px at 50% -6%, rgba(170, 205, 255, .12), transparent 72%),
+                /* pared izquierda / derecha en perspectiva */
+                linear-gradient(96deg, #07070c 0%, #13141d 15%, #0a0a11 30%, rgba(0, 0, 0, 0) 48%),
+                linear-gradient(264deg, #07070c 0%, #13141d 15%, #0a0a11 30%, rgba(0, 0, 0, 0) 48%),
+                /* suelo */
+                linear-gradient(0deg, #05050a 0%, #0b0b13 15%, rgba(0, 0, 0, 0) 44%),
+                /* techo */
+                linear-gradient(180deg, #040409 0%, #0b0b13 13%, rgba(0, 0, 0, 0) 36%),
+                /* base */
+                linear-gradient(180deg, #0c0b16 0%, #09080f 55%, #05050a 100%);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* El haz de la linterna (el ratón) ilumina el pasillo */
+        body:has(.logo-wrap).bg-fnaf.piz-lit::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            pointer-events: none;
+            background: radial-gradient(240px 240px at var(--piz-x, 50%) var(--piz-y, 45%),
+                rgba(255, 246, 210, .16), rgba(255, 236, 170, .06) 46%, transparent 72%);
+        }
+
+        /* Aviso rojo: hay un animatrónico en el pasillo */
+        body:has(.logo-wrap).bg-fnaf.piz-alert::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 39;
+            pointer-events: none;
+            background: radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(255, 24, 64, .22) 100%);
+            animation: piz-alert .85s ease-in-out infinite alternate;
+        }
+        @keyframes piz-alert {
+            from { opacity: .5; }
+            to { opacity: 1; }
+        }
+
+        /* ---------- Animatrónicos del modo «Pizeria simulator» ----------
+           Criatura que asoma por los lados del pasillo oscuro con los ojos
+           rojos. La linterna (el ratón) los alumbra con un clic y se alejan;
+           si tardas en alumbrar o la batería se queda sin luz, te alcanzan. */
+        .piz-anim {
+            position: fixed;
+            z-index: 42;
+            line-height: 1;
+            pointer-events: none;
+            text-shadow: 0 0 12px rgba(255, 45, 85, .9);
+            filter: drop-shadow(0 0 16px rgba(255, 45, 85, .78))
+                    drop-shadow(0 0 42px rgba(255, 0, 60, .38));
+            animation: piz-bob 1.1s ease-in-out infinite alternate;
+        }
+        @keyframes piz-bob {
+            from { transform: translateY(-6px) scale(.98); }
+            to { transform: translateY(6px) scale(1.03); }
+        }
+
         /* ---------- Evento de Halloween ----------
            Mientras dure el evento (8 de octubre – 3 de noviembre a las 12:00)
            el logo y el menú se visten de Halloween: naranja y morado,
@@ -3011,12 +3086,16 @@
             .fx-candy,
             .fx-p.firefly,
             .fx-p.necro,
+            .piz-anim,
             .cupcake,
             .cupcake img,
             .turbo-fx,
             .baile-sk,
             .scrap,
             .ability-btn.on {
+                animation: none !important;
+            }
+            body:has(.logo-wrap).bg-fnaf.piz-alert::after {
                 animation: none !important;
             }
         }

@@ -86,7 +86,7 @@ export class EconomyService {
             S.equipped = "clasico";
             S.ownedBgs = ["dark"];
             S.ownedExtras = [];
-            S.extraOn = { picante: false, caos: false, php: false, espejo: false, andaluz: false, azar: false, cubico: false };
+            S.extraOn = { picante: false, caos: false, php: false, espejo: false, andaluz: false, azar: false, cubico: false, pizeria: false };
             S.ownedFx = [];
             S.fxEquipped = "";
             this.resetExtraRun();
@@ -360,6 +360,7 @@ export class EconomyService {
         }
         this.saveShop();
         this.applyExtras();
+        this.applyLang();   // el modo puede traer su propio fondo (Pizeria)
         const x = KINDS.extra.list.find(e => e.id === id);
         if (x) this.invSay(t(on ? x.msgOn : x.msgOff));
     }
@@ -371,6 +372,7 @@ export class EconomyService {
         KINDS.extra.list.forEach(x => S.extraOn[x.id] = (x.id === id));
         this.saveShop();
         this.applyExtras();
+        this.applyLang();   // el modo puede traer su propio fondo (Pizeria)
         const x = KINDS.extra.list.find(e => e.id === id);
         S.shopMsgTxt = x ? t(x.msgOn) : t("modeClassicMsg");
     }

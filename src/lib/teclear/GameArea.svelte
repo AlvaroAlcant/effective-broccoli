@@ -123,7 +123,8 @@
     </div>
 
     <div class="results" class:hidden={!engine.state.resOpen} id="results">
-        <h2>{engine.state.mode === 'supervivencia' ? engine.t('rTitleLives') : engine.t('rTitle')}</h2>
+        <h2>{engine.state.pizCaught ? engine.t('rTitlePiz')
+             : (engine.state.mode === 'supervivencia' ? engine.t('rTitleLives') : engine.t('rTitle'))}</h2>
         <ul>
             <li><span>{engine.t('rkScore')}</span><strong>{res.score ?? 0}</strong></li>
             <li><span>{engine.t('rkWords')}</span><strong>{res.words ?? 0}</strong></li>

@@ -221,15 +221,20 @@ export const HUESO_WORDS = {
 // ---------- Palabras del modo Pizeria simulator (evento de Halloween) ----------
 // Voces y criaturas del Five Nights at Freddy's: nombres de animatrónicos
 // y términos del juego. Se escriben sin acentos para que las palabras se
-// puedan teclear en todos los teclados.
+// puedan teclear en todos los teclados. Hay palabras cortas (nivel 1) y
+// largas (niveles altos) para que el pozo no se quede vacío.
 export const FNAF_WORDS = {
     es: [
-        "freddy", "bonnie", "chica", "foxy", "golden", "phantom", "mangle",
-        "springtrap", "funtime", "endoskeleton", "withered", "burntrap", "glamour"
+        "foxy", "dark", "bone", "mask", "fear", "bite", "pizza", "night",
+        "guard", "ghost", "robot", "chica", "freddy", "bonnie", "golden",
+        "phantom", "mangle", "puppet", "shadow", "springtrap", "funtime",
+        "endoskeleton", "withered", "burntrap", "glamrock", "pizzeria"
     ],
     en: [
-        "freddy", "bonnie", "chica", "foxy", "golden", "phantom", "mangle",
-        "springtrap", "funtime", "endoskeleton", "withered", "burntrap", "glamour"
+        "foxy", "dark", "bone", "mask", "fear", "bite", "pizza", "night",
+        "guard", "ghost", "robot", "chica", "freddy", "bonnie", "golden",
+        "phantom", "mangle", "puppet", "shadow", "springtrap", "funtime",
+        "endoskeleton", "withered", "burntrap", "glamrock", "pizzeria"
     ]
 };
 

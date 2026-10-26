@@ -65,11 +65,13 @@ export class GameState {
             espejo: false,
             andaluz: false,
             azar: false,
-            cubico: false
+            cubico: false,
+            pizeria: false
         });
     ownedFx = $state([]);
     fxEquipped = $state("");
     shopOpen = $state(false);
+    pizCaught = $state(false);   // última derrota: la causó el animatrónico (Pizeria)
     rankOpen = $state(false);
     logrosOpen = $state(false);
     dicOpen = $state(false);     // panel del Diccionario de palabras
