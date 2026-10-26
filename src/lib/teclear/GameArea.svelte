@@ -12,6 +12,19 @@
 	const rarTxt = r => engine.t('rar' + (r ? r[0].toUpperCase() + r.slice(1) : 'Comun'));
 </script>
 
+    <!-- Batería de la linterna del modo Pizeria: en el lateral derecho,
+         siempre a la vista y sin tapar el tablero -->
+    {#if engine.pizRun && engine.state.state !== 'over'}
+        <aside class="piz-batt" class:low={engine.pizLow} class:on={engine.pizLantern}
+               aria-label={engine.t('kLantern')}>
+            <span class="piz-batt-ico" aria-hidden="true">🔦</span>
+            <div class="piz-batt-track" aria-hidden="true">
+                <i style={`height:${Math.max(0, Math.min(100, Math.ceil(engine.pizBattery)))}%`}></i>
+            </div>
+            <strong>{Math.max(0, Math.ceil(engine.pizBattery))}%</strong>
+        </aside>
+    {/if}
+
     <div class="stage" id="stage">
         <div class="board" id="board">
             {#if bv.kind === 'sup'}

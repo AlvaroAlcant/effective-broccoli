@@ -44,7 +44,6 @@ export const PIZERIA_BATTERY = 100;    // batería de la linterna al empezar (0-
 export const PIZERIA_BATTERY_DRAIN = 10; // % que gasta la linterna por segundo encendida
 export const PIZERIA_SPAWN = 6000;     // ms entre el fin de un animatrónico y el del siguiente
 export const PIZERIA_CATCH = 5000;    // ms que tiene el animatrónico para ser alumbrado
-export const PIZERIA_ANIMATS = ["🧸", "🦇", "🐔", "🦊", "👻", "🤖"];  // criaturas del pasillo
 
 // ---------- Modo Aventura ----------
 // Segundos con los que se empieza: cada palabra escrita suma más

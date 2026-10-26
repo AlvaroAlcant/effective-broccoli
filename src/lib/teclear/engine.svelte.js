@@ -3,6 +3,7 @@
 // servicios (fx/eco/prog/acc/ranking) y view-models para la vista.
 // engine.mount() se llama una vez desde +page.svelte al montar la página.
 import imgLogo from '#lib/img/estesoTeclea.png';
+import imgRoj from '#lib/img/roj.jpg';
 import { tick } from 'svelte';
 import { getSetting, setSetting } from './settings.js';
 import { S } from './state.svelte.js';
@@ -23,7 +24,7 @@ import {
     RANK_URL, RANK_ADV_URL, NAMES_URL, RESETS_URL, RANK_MAX, NAMES_MAX,
     RANK_TIMEOUT, NAME_MAX, MAX_SCORE, MAX_WORDS, PTS_PER_WORD, SCORE_BOOST,
     SEAL_SALT, PROFILES_URL, PASS_MIN, KDF_ROUNDS,
-    PIZERIA_BATTERY, PIZERIA_BATTERY_DRAIN, PIZERIA_SPAWN, PIZERIA_CATCH, PIZERIA_ANIMATS
+    PIZERIA_BATTERY, PIZERIA_BATTERY_DRAIN, PIZERIA_SPAWN, PIZERIA_CATCH
 } from './data/constants.js';
 import {
     WORDS, MURCIANO_WORDS, PICANTE, PHP_WORDS, ANDALUZ_WORDS,
@@ -202,14 +203,16 @@ export class GameEngine {
     // Suelta un animatrónico en una posición del pasillo oscuro
     pizSpawn() {
         if (S.state !== "playing" || this.pizAnima) return;
-        const el = document.createElement("div");
+        const el = document.createElement("img");
         el.className = "piz-anim";
+        el.src = imgRoj;
+        el.alt = "";
         el.setAttribute("aria-hidden", "true");
-        el.textContent = PIZERIA_ANIMATS[Math.floor(Math.random() * PIZERIA_ANIMATS.length)];
-        el.style.fontSize = Math.round(58 + Math.random() * 26) + "px";
-        // Asoma por los lados del pasillo (fuera del tablero en escritorio)
-        el.style.left = Math.round(Math.random() < 0.5 ? 3 + Math.random() * 12 : 82 + Math.random() * 12) + "%";
-        el.style.top = Math.round(34 + Math.random() * 24) + "%";
+        el.setAttribute("draggable", "false");
+        // Asoma por los lados del pasillo, con tamaño de persona
+        el.style.height = Math.round(170 + Math.random() * 100) + "px";
+        el.style.left = Math.round(Math.random() < 0.5 ? 2 + Math.random() * 10 : 82 + Math.random() * 8) + "%";
+        el.style.top = Math.round(28 + Math.random() * 26) + "%";
         this.pizAnima = { el, catchAt: performance.now() + PIZERIA_CATCH };
         document.body.appendChild(el);
         this.pizSpawnT = performance.now() + PIZERIA_SPAWN;
@@ -1590,6 +1593,9 @@ this.verifyInput = document.getElementById("verifyInput");
                 this.startGame();
             }
         });
+        // Precarga la imagen del animatrónico de Pizeria para que salga
+        // al instante en cuanto le toca (si no, el primer spawn parpadea)
+        try { const pre = new Image(); pre.src = imgRoj; } catch (e) { /* sin imagen */ }
         // Ratón del modo «Pizeria simulator» (evento): el cursor ES la
         // linterna que se enciende/apaga con un clic. Se ignora sobre los
         // controles de la partida para no liarla al pulsar botones.
