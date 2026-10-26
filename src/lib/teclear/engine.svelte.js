@@ -127,6 +127,93 @@ export class GameEngine {
 
     get playing() { return S.state === "playing"; }
 
+    // ¿La partida actual es del modo «Pizeria simulator» (evento)?
+    // Es una variante del modo Tecleo: su regla es sin cronómetro y la
+    // única forma de perder es el animatrónico del pasillo FNAF
+    get pizRun() { return S.mode === "type" && eco.extraActive("pizeria"); }
+
+    // ---------- Modo «Pizeria simulator» (evento: pasillo FNAF) ----------
+
+    // Reinicia el modo al empezar partida: linterna apagada, batería
+    // llena y sin animatrónico en pantalla
+    pizReset() {
+        this.pizLantern = false;
+        this.pizBattery = PIZERIA_BATTERY;
+        this.pizSpawnT = performance.now() + PIZERIA_SPAWN;
+        this.pizDespawn();
+    }
+
+    // El ratón ES la linterna: un clic la enciende/apaga. Mientras está
+    // encendida se gasta la batería y el animatrónico en pantalla se
+    // alumbra (y desaparece). Sin batería la linterna se apaga sola.
+    pizToggleLantern() {
+        if (S.state !== "playing" || !this.pizRun) return;
+        this.pizLantern = !this.pizLantern;
+        S.statusTxt = this.pizLantern ? t("stPizeriaOn") : t("stPizeriaOff");
+        this.pizTick(performance.now(), 100);
+    }
+
+    // Avanza el modo: batería, animatrónico y su condición de derrota
+    pizTick(now, dt) {
+        if (S.state !== "playing") return;
+        if (this.pizLantern) {
+            this.pizBattery = Math.max(0, this.pizBattery - dt / 1000 * PIZERIA_BATTERY_DRAIN);
+            if (this.pizBattery <= 0) {
+                this.pizBattery = 0;
+                this.pizLantern = false;
+                if (this.pizAnima) {   // sin batería: el animatrónico la alcanza
+                    S.statusTxt = t("stPizeriaBattery");
+                    this.pizCatch();
+                    return;
+                }
+            }
+        }
+        if (this.pizAnima) {
+            if (this.pizLantern) {
+                // ¡Alumbrado! el animatrónico se aleja con su animación
+                this.pizDespawn();
+            } else if (now > this.pizAnima.catchAt) {
+                // No le alumbramos a tiempo: el animatrónico te alcanza
+                this.pizCatch();
+            }
+            return;
+        }
+        // El siguiente animatrónico puede salir cuando el anterior se fue
+        if (now >= this.pizSpawnT) this.pizSpawn();
+    }
+
+    // Suelta un animatrónico en una posición del pasillo oscuro
+    pizSpawn() {
+        if (S.state !== "playing" || this.pizAnima) return;
+        const el = document.createElement("div");
+        el.className = "piz-anim";
+        el.setAttribute("aria-hidden", "true");
+        el.textContent = PIZERIA_ANIMATS[Math.floor(Math.random() * PIZERIA_ANIMATS.length)];
+        el.style.fontSize = Math.round(38 + Math.random() * 16) + "px";
+        el.style.left = Math.round(10 + Math.random() * 55) + "%";
+        el.style.top = Math.round(14 + Math.random() * 26) + "%";
+        this.pizAnima = { el, catchAt: performance.now() + PIZERIA_CATCH };
+        document.body.appendChild(el);
+        this.pizSpawnT = performance.now() + PIZERIA_SPAWN;
+    }
+
+    // El animatrónico alcanzó: fin de la partida (la única derrota del modo)
+    pizCatch() {
+        const a = this.pizAnima;
+        if (a && a.el) { try { a.el.remove(); } catch (e) { /* ya fuera */ } }
+        this.pizAnima = null;
+        this.pizLantern = false;
+        S.statusTxt = t("stPizeriaCatch");
+        this.endGame();
+    }
+
+    // Se retira el animatrónico (alumbrado, fin de partida o reset)
+    pizDespawn() {
+        if (this.pizAnima) { try { this.pizAnima.el?.remove(); } catch (e) { /* ya fuera */ } }
+        this.pizAnima = null;
+    }
+
+    get typingDis() { return S.state !== "playing" || S.perkOpen; }
     get typingDis() { return S.state !== "playing" || S.perkOpen; }
 
     get esAdmin() { return acc.esAdmin(); }
@@ -757,7 +844,11 @@ export class GameEngine {
             S.candyRun = 0;   // caramelos ganados en esta partida
             // Habilidades de los fondos: cada partida empieza con la suya
             // lista —Turbo y Chica Rush solo valen UNA vez por partida—
+            // lista —Turbo y Chica Rush solo valen UNA vez por partida—
             abilities.reset();
+            // Modo «Pizeria simulator» (evento): linterna apagada, batería
+            // llena y sin animatrónico en pantalla
+            this.pizReset();
             // Cada modo arranca su parte (vidas, tablero, clase del body…)
             modes[S.mode].enter();
             // El modo Aventura se juega contra un cronómetro propio: 50 s
@@ -873,6 +964,14 @@ export class GameEngine {
             // mueve su campo, Aventura su congelación y su salvavidas)
             const dt = now - this.lastTick;
             if (modes[S.mode].tick(now, dt)) {
+                this.lastTick = now;
+                return;
+            }
+            // Modo «Pizeria simulator» (evento): sin cronómetro — la única
+            // forma de perder es que el animatrónico alcance. El modo se
+            // reserva el pulso para la linterna, la batería y el animatrónico
+            if (this.pizRun) {
+                this.pizTick(now, dt);
                 this.lastTick = now;
                 return;
             }
