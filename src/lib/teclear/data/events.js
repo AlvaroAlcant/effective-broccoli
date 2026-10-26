@@ -138,6 +138,20 @@ export const EVENTS = {
                 msgOn: "shopEquippedTrucoMsg",
                 msgOff: "shopDeactivatedTrucoMsg"
             },
+            {
+                // Extra «Pizeria simulator» (evento: 6000 🍬): el pasillo
+                // oscuro al estilo FNAF con la linterna. Sin cronómetro: la
+                // única forma de perder es que el animatrónico alcance
+                kind: "extra",
+                id: "pizeria", price: 6000,
+                icon: "🍕",
+                es: "Pizeria Simulator", en: "Pizza Simulator",
+                descEs: "Pasillo oscuro estilo FNAF con linterna: sin cronómetro y la única forma de perder es que el animatrónico te alcance. Enciende la linterna con un clic y alumbra a los animatrónicos antes de que te pillen. 🍬🤖",
+                descEn: "Dark FNAF-style hallway with a lantern: no timer and the only way to lose is the animatronic catching you. Click to light the lantern and shine it at the animatronics before they catch you. 🍬🤖",
+                msgBuy: "shopBoughtPizeria",
+                msgOn: "shopEquippedPizeriaMsg",
+                msgOff: "shopDeactivatedPizeriaMsg"
+            },
             // ---------- Letras de Halloween ----------
             // Estilos de letra exclusivos del evento, que se pagan en
             // caramelos. Se compran aquí (a diferencia de la tienda

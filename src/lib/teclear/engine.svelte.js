@@ -22,11 +22,12 @@ import {
     TURBO_MAX, SUP_LIVES, SUP_XP_WORD,
     RANK_URL, RANK_ADV_URL, NAMES_URL, RESETS_URL, RANK_MAX, NAMES_MAX,
     RANK_TIMEOUT, NAME_MAX, MAX_SCORE, MAX_WORDS, PTS_PER_WORD, SCORE_BOOST,
-    SEAL_SALT, PROFILES_URL, PASS_MIN, KDF_ROUNDS
+    SEAL_SALT, PROFILES_URL, PASS_MIN, KDF_ROUNDS,
+    PIZERIA_BATTERY, PIZERIA_BATTERY_DRAIN, PIZERIA_SPAWN, PIZERIA_CATCH
 } from './data/constants.js';
 import {
     WORDS, MURCIANO_WORDS, PICANTE, PHP_WORDS, ANDALUZ_WORDS,
-    MINECRAFT_WORDS, HALLOWEEN_WORDS, HUESO_WORDS
+    MINECRAFT_WORDS, HALLOWEEN_WORDS, HUESO_WORDS, FNAF_WORDS
 } from './data/words.js';
 import { TT_TIME_PENALTY, TT_XP_PENALTY } from './data/events.js';
 import { events } from './services/events.svelte.js';
@@ -73,6 +74,13 @@ export class GameEngine {
     dbgTime = null;         // duración fijada desde la depuración estando en el menú
     logoLast = -1;
     logoHide = 0;
+    // ---------- Modo «Pizeria simulator» (evento de Halloween) ----------
+    // Pasillo oscuro estilo FNAF con linterna: sin cronómetro, la única
+    // forma de perder es que el animatrónico alcance. El ratón es la linterna.
+    pizLantern = false;     // linterna encendida (el ratón la enciende/apaga con clic)
+    pizBattery = PIZERIA_BATTERY; // batería de la linterna (0-100)
+    pizAnima = null;        // animatrónico en pantalla: { el, catchAt } | null
+    pizSpawnT = 0;          // instante en el que puede salir el siguiente animatrónico
 
     // ---------- Elementos del DOM (se enlazan en mount) ----------
     stage;

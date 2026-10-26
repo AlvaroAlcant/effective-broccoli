@@ -37,6 +37,15 @@ export const SCRAP_MAX = 4;        // trozos en pantalla a la vez (tope)
 export const SCRAP_LIFE = 5000;    // ms que espera cada trozo a ser tocado
 export const SCRAP_XP = 6;         // experiencia que regala cada trozo
 
+// ---------- Modo «Pizeria simulator» (evento de Halloween) ----------
+// Pasillo oscuro al estilo FNAF con linterna: sin cronómetro (la única
+// forma de perder es que el animatrónico alcance) y el ratón es la linterna.
+export const PIZERIA_BATTERY = 100;    // batería de la linterna al empezar (0-100)
+export const PIZERIA_BATTERY_DRAIN = 25; // % que gasta la linterna por segundo encendida
+export const PIZERIA_SPAWN = 6000;     // ms entre el fin de un animatrónico y el del siguiente
+export const PIZERIA_CATCH = 5000;    // ms que tiene el animatrónico para ser alumbrado
+export const PIZERIA_ANIMATS = ["🧸", "🦇", "🐔", "🦊", "👻", "🤖"];  // criaturas del pasillo
+
 // ---------- Modo Aventura ----------
 // Segundos con los que se empieza: cada palabra escrita suma más
 export const ADV_TIME = 50;

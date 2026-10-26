@@ -218,6 +218,21 @@ export const HUESO_WORDS = {
     ]
 };
 
+// ---------- Palabras del modo Pizeria simulator (evento de Halloween) ----------
+// Voces y criaturas del Five Nights at Freddy's: nombres de animatrónicos
+// y términos del juego. Se escriben sin acentos para que las palabras se
+// puedan teclear en todos los teclados.
+export const FNAF_WORDS = {
+    es: [
+        "freddy", "bonnie", "chica", "foxy", "golden", "phantom", "mangle",
+        "springtrap", "funtime", "endoskeleton", "withered", "burntrap", "glamour"
+    ],
+    en: [
+        "freddy", "bonnie", "chica", "foxy", "golden", "phantom", "mangle",
+        "springtrap", "funtime", "endoskeleton", "withered", "burntrap", "glamour"
+    ]
+};
+
 // ---------- Palabras del modo Truco o trato (evento de Halloween) ----------
 // Vocabulario terrorífico del evento de Halloween: calabazas,
 // fantasmas y criaturas de la noche. Se escribe sin acentos para
