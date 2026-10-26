@@ -214,7 +214,6 @@ export class GameEngine {
     }
 
     get typingDis() { return S.state !== "playing" || S.perkOpen; }
-    get typingDis() { return S.state !== "playing" || S.perkOpen; }
 
     get esAdmin() { return acc.esAdmin(); }
 
