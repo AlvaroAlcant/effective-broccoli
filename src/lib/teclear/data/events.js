@@ -103,14 +103,14 @@ export const EVENTS = {
                 shape: "firefly", size: 13, life: 2400
             },
             {   // Efecto Necromancia (evento: 3330 🍬): con el 50 % de
-                // probabilidad por letra, un muñeco pixelado (o un esqueleto)
-                // sale de la letra y corre en horizontal hasta el borde
+                // probabilidad por letra, el zombi pixelado (zombi.gif) sale
+                // de la letra y corre hacia un lado hasta salir de la pantalla
                 kind: "fx",
                 id: "necromancia", price: 3330,
-                icon: "💀", color: "#c9b18c",
+                icon: "💀", color: "#c9b18c", art: "zombi",
                 es: "Necromancia", en: "Necromancy",
-                descEs: "Con cada letra tecleada hay un 50 % de que un muñeco pixelado o un esqueleto salga de ella y corra hasta el límite de la pantalla.",
-                descEn: "With every letter you type there's a 50% chance a pixel zombie or a skeleton crawls out of it and runs to the screen edge.",
+                descEs: "Con cada letra tecleada hay un 50 % de que un zombi pixelado salga de ella y corra hacia un lado de la pantalla hasta desaparecer por el borde.",
+                descEn: "With every letter you type there's a 50% chance a pixel zombie crawls out of it and runs off one side of the screen.",
                 colors: ["#c9b18c", "#8b5a2b", "#6b4423", "#a08a6a"],
                 glyph: "🧟", chance: 0.5, size: 26, life: 1600
             },

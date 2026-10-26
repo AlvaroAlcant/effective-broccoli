@@ -1,5 +1,6 @@
 <script>
 	import { engine } from './engine.svelte.js';
+	import imgZombi from '#lib/img/zombi.gif';
 
 	const priceTxt = it => it.own ? '✓ ' + engine.t('shopOwned')
 		: (it.ach ? engine.t('shopAchPrice') : '🪙 ' + it.price);
@@ -57,6 +58,8 @@
                                      style:background-image="url('{it.img}')"></div>
                             {:else if it.kind === 'font'}
                                 <div class="shop-preview font-preview">Aa</div>
+                            {:else if it.kind === 'fx' && it.art === 'zombi'}
+                                <div class="shop-preview"><img class="zombi-art" src={imgZombi} alt="" /></div>
                             {:else}
                                 <div class="shop-preview">{it.icon}</div>
                             {/if}
@@ -129,7 +132,7 @@
                 <div class="shop-card card-fx card-fx-{f.id}" class:fx-on={f.on}
                      style:--fx-c={f.color}>
                     <div class="shop-preview fx-preview">
-                        {#if f.art === 'flame'}<i class="flame-art" aria-hidden="true"></i>{:else}{f.icon}{/if}
+                        {#if f.art === 'flame'}<i class="flame-art" aria-hidden="true"></i>{:else if f.art === 'zombi'}<img class="zombi-art" src={imgZombi} alt="" />{:else}{f.icon}{/if}
                     </div>
                     <div class="shop-name">{f.name}</div>
                     <div class="shop-price">{priceTxt(f)}</div>

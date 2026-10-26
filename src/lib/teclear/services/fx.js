@@ -4,6 +4,7 @@
 // Todo el estado vive en la instancia; los elementos de DOM y las
 // dependencias del juego se inyectan con bind() al arrancar.
 import { S } from '../state.svelte.js';
+import imgZombi from '#lib/img/zombi.gif';
 
 export class EffectsService {
     // Dependencias inyectadas (elementos + consultas al juego)
@@ -270,23 +271,35 @@ export class EffectsService {
     }
 
     // ---------- Necromancia (evento de Halloween: 3330) ----------
-    // Con el 50 % de probabilidad por letra: un muñeco pixelado (o el
-    // esqueleto) sale de la letra y corre en horizontal hasta el borde
+    // Con el 50 % de probabilidad por letra: el zombi pixelado (archivo
+    // zombi.gif) sale de la letra y corre hacia un lado u otro hasta
+    // desaparecer por el borde de la pantalla
     fxNecromancia() {
         const fx = this.getActiveFx();
         if (!fx) return;
         if (Math.random() > (fx.chance ?? 0.5)) return;
         const a = this.fxAnchor();
-        const el = document.createElement("i");
+        const w = window.innerWidth || 1200;
+        const size = Math.round(120 + Math.random() * 40);   // el GIF es 400x400
+        // Hacia la derecha o hacia la izquierda, hasta salir del todo
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        const dist = dir > 0 ? w - a.x + size : -(a.x + size);
+        // Velocidad constante (~620 px/s): tarda más si cruza más pantalla
+        const life = Math.max(900, Math.round(Math.abs(dist) / 620 * 1000));
+        const el = document.createElement("img");
         el.className = "fx-p necro";
-        el.textContent = fx.glyph || "🧟";
-        el.style.left = Math.round(a.x - (fx.size || 26) / 2) + "px";
-        el.style.top = Math.round(a.y - (fx.size || 26) / 2) + "px";
-        el.style.setProperty("--fx-size", (fx.size || 26) + "px");
-        el.style.setProperty("--fx-dist", Math.max(80, (window.innerWidth || 1200) - a.x) + "px");
-        el.style.setProperty("--fx-life", (fx.life || 1600) + "ms");
+        el.src = imgZombi;
+        el.alt = "";
+        el.setAttribute("aria-hidden", "true");
+        el.setAttribute("draggable", "false");
+        el.style.left = Math.round(a.x - size / 2) + "px";
+        el.style.top = Math.round(a.y - size * .55) + "px";
+        el.style.setProperty("--fx-size", size + "px");
+        el.style.setProperty("--fx-dist", Math.round(dist) + "px");
+        el.style.setProperty("--fx-life", life + "ms");
+        el.style.setProperty("--fx-flip", dir < 0 ? -1 : 1);
         this.fxLayer.appendChild(el);
-        setTimeout(() => el.remove(), (fx.life || 1600) + 120);
+        setTimeout(() => el.remove(), life + 160);
     }
 
     // ---------- Fondo "Sopa de Letras": letras que rebotan ----------

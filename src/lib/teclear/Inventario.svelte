@@ -1,5 +1,6 @@
 <script>
 	import { engine } from './engine.svelte.js';
+	import imgZombi from '#lib/img/zombi.gif';
 </script>
 
     <!-- Inventario: todos los artículos comprados en la tienda y todos los
@@ -26,6 +27,7 @@
                                  style:background-image={it.tipo === 'bg' && it.img ? `url('${it.img}')` : null}>
                                 {#if it.tipo === 'font'}Aa
                                 {:else if it.art === 'flame'}<i class="flame-art" aria-hidden="true"></i>
+                                {:else if it.art === 'zombi'}<img class="zombi-art" src={imgZombi} alt="" />
                                 {:else if !(it.tipo === 'bg' && it.img)}{it.icono}{/if}
                             </div>
                             <div class="inv-name">{it.nombre}</div>

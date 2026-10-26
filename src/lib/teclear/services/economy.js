@@ -286,7 +286,7 @@ export class EconomyService {
                     icon: it.icon || KINDS[k].icon,
                     name: en ? it.en : it.es,
                     desc: en ? it.descEn : it.descEs,
-                    img: it.img, color: it.color,
+                    img: it.img, color: it.color, art: it.art,
                     equipped: this.itemOn(k, it.id),
                     on: this.itemOn(k, it.id),
                     own: this.owns(k, it.id), price: it.price,

@@ -2124,23 +2124,22 @@
             from { transform: translate(0, -12px); }
             to   { transform: translate(10px, 12px); }
         }
-        /* Muñeco (zombie/esqueleto) que sale de la letra y corre en
-           horizontal hasta el límite de la pantalla */
+        /* Zombi de la Necromancia: sale de la letra y corre hacia un lado
+           u otro (archivo zombi.gif) hasta salir por el borde */
         .fx-p.necro {
-            width: var(--fx-size, 26px);
-            height: var(--fx-size, 26px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: var(--fx-size, 26px);
-            line-height: 1;
+            width: var(--fx-size, 130px);
+            height: var(--fx-size, 130px);
+            display: block;
             background: none;
             border: 0;
-            animation: necro-run var(--fx-life, 1600ms) ease-in-out forwards;
+            object-fit: contain;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .6));
+            animation: necro-run var(--fx-life, 1600ms) linear forwards;
         }
         @keyframes necro-run {
-            from { transform: translate(0, 0); }
-            to   { transform: translate(var(--fx-dist, 0px), 0); }
+            from { transform: translate(0, 0) scaleX(var(--fx-flip, 1)); }
+            to   { transform: translate(var(--fx-dist, 0px), 0) scaleX(var(--fx-flip, 1)); }
         }
         /* Cada tarjeta de efecto lleva su color y se enciende al estar en uso */
         .shop-card.card-fx .shop-preview {
@@ -2174,6 +2173,18 @@
         @keyframes flame-sway {
             from { transform: rotate(45deg) scale(.95, .96); }
             to   { transform: rotate(45deg) scale(1.05, 1.04); }
+        }
+
+        /* Zombi de la Necromancia en la tienda y en el Inventario */
+        .zombi-art {
+            display: block;
+            width: 46px;
+            height: 46px;
+            margin: 0 auto;
+            object-fit: contain;
+            image-rendering: pixelated;
+            filter: brightness(1.3) saturate(1.08)
+                    drop-shadow(0 0 9px rgba(120, 220, 120, .35));
         }
 
         /* ---------- Ranking global y de Aventura ---------- */
