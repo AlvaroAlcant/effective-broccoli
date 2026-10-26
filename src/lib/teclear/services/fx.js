@@ -16,6 +16,8 @@ export class EffectsService {
     // Capa fija de partículas: ahí nacen las chispas y ahí mueren solas
     fxLayer = null;
     fxAlive = 0;
+    giveCandy = () => {};   // caramelos del evento que se ganan al recoger
+    candies = [];           // caramelos vivos del efecto «Chuches»: [{ el, vida }]
 
     // ---------- Fondo "Sopa de Letras" ----------
     soupCanvas = null;
@@ -36,12 +38,13 @@ export class EffectsService {
     hackCols = 0;
     hackRows = 0;
 
-    bind({ stage, board, typing, getSupTarget, getActiveFx }) {
+    bind({ stage, board, typing, getSupTarget, getActiveFx, giveCandy }) {
         this.stage = stage;
         this.board = board;
         this.typing = typing;
         if (getSupTarget) this.getSupTarget = getSupTarget;
         if (getActiveFx) this.getActiveFx = getActiveFx;
+        if (giveCandy) this.giveCandy = giveCandy;
     }
 
     // Crea la capa de partículas y engancha los listeners de ventana.
@@ -131,6 +134,12 @@ export class EffectsService {
     fxBurst() {
         const fx = this.getActiveFx();
         if (!fx || S.state !== "playing") return;
+        // Los efectos nuevos del evento arrancan desde la letra que se
+        // acaba de teclear: caramelos (Chuches), fuego fatuo (Fuego fatuo)
+        // o muñeco/esqueleto (Necromancia)
+        if (fx.id === "chuches") { this.fxChuches(); return; }
+        if (fx.id === "fuegofatuo") { this.fxFirefly(); return; }
+        if (fx.id === "necromancia") { this.fxNecromancia(); return; }
         const a = this.fxAnchor();
         const n = fx.count;
         const life = fx.life || 800;
@@ -177,6 +186,107 @@ export class EffectsService {
                 this.fxAlive--;
             })(p), life + 60);
         }
+    }
+
+    // ---------- Efecto «Chuches» (evento de Halloween: 5000 🍬) ----------
+    // Con cada letra tecleada salen caramelos del tablero (efecto) y, con
+    // la habilidad única del efecto, un caramelo de moneda de evento cae
+    // al suelo de la pantalla para recogerse (ratón o dedo → +1 🍬).
+    fxChuches() {
+        const fx = this.getActiveFx();
+        if (!fx) return;
+        const a = this.fxAnchor();
+        const n = fx.count || 2;
+        for (let i = 0; i < n; i++) {
+            this.candyDrop(a.x + Math.random() * 24 - 12, a.y + Math.random() * 24 - 12);
+        }
+        // Habilidad única del efecto: de cada letra, el 50 % de las veces un
+        // caramelo de moneda cae y se puede recoger
+        if (Math.random() < (fx.chance ?? 0.5)) this.candyDrop(a.x, a.y);
+    }
+
+    // Caramelo que cae desde (x, y) dentro de la capa de efectos y se
+    // retira solo cuando termina la animación
+    candyDrop(x, y) {
+        if (this.candies.length >= FX_MAX) return null;
+        const el = document.createElement("i");
+        el.className = "fx-candy";
+        el.textContent = "🍬";
+        el.style.left = Math.round(x) + "px";
+        el.style.top = Math.round(y) + "px";
+        el.style.setProperty("--fx-size", "20px");
+        el.style.setProperty("--fx-life", CANDY_LIFE + "ms");
+        this.fxLayer.appendChild(el);
+        const c = { el, vida: 0 };
+        c.vida = setTimeout(() => this.candyOut(c, false), CANDY_LIFE + 140);
+        el.addEventListener("animationend", () => this.candyOut(c, false));
+        el.addEventListener("pointerover", () => this.candyTouch(c, el));
+        this.candies.push(c);
+        return c;
+    }
+
+    candyOut(c, hit) {
+        const i = this.candies.indexOf(c);
+        if (i < 0) return;
+        this.candies.splice(i, 1);
+        clearTimeout(c.vida);
+        c.el.remove();
+        if (hit) {
+            if (this.giveCandy) this.giveCandy(1);
+            this.float("🍬 +1", "candy");
+        }
+    }
+
+    candyTouch(c, el) {
+        if (S.state !== "playing") return;
+        this.candyOut(c, true);
+        if (this.giveCandy) this.giveCandy(1);
+        this.float("🍬 +1", "candy");
+        if (this.typing) this.typing.focus();
+    }
+
+    // ---------- Fuego fatuo (evento de Halloween: 1800) ----------
+    // Nace en una posición aleatoria de la pantalla (lejos de la palabra)
+    // y flota un rato antes de desaparecer
+    fxFirefly() {
+        const fx = this.getActiveFx();
+        if (!fx) return;
+        const W = window.innerWidth || 1200;
+        const H = window.innerHeight || 800;
+        const b = this.board ? this.board.getBoundingClientRect() : null;
+        const t = this.typing ? this.typing.getBoundingClientRect() : null;
+        let x = 60 + Math.random() * Math.max(10, W - 120);
+        let y = 60 + Math.random() * Math.max(10, H * 0.45);
+        if (b && y > b.top && y < b.bottom && x > b.left - 30 && x < b.right + 30) y = Math.max(40, b.top - 70);
+        if (t && y > t.top && y < t.bottom && x > t.left - 30 && x < t.right + 30) y = Math.max(40, t.top - 70);
+        const el = document.createElement("i");
+        el.className = "fx-p firefly";
+        el.style.left = Math.round(x) + "px";
+        el.style.top = Math.round(y) + "px";
+        el.style.setProperty("--fx-size", (fx.size || 13) + "px");
+        el.style.setProperty("--fx-life", FIREFLY_LIFE + "ms");
+        this.fxLayer.appendChild(el);
+        setTimeout(() => el.remove(), FIREFLY_LIFE);
+    }
+
+    // ---------- Necromancia (evento de Halloween: 3330) ----------
+    // Con el 50 % de probabilidad por letra: un muñeco pixelado (o el
+    // esqueleto) sale de la letra y corre en horizontal hasta el borde
+    fxNecromancia() {
+        const fx = this.getActiveFx();
+        if (!fx) return;
+        if (Math.random() > (fx.chance ?? 0.5)) return;
+        const a = this.fxAnchor();
+        const el = document.createElement("i");
+        el.className = "fx-p necro";
+        el.textContent = fx.glyph || "🧟";
+        el.style.left = Math.round(a.x - (fx.size || 26) / 2) + "px";
+        el.style.top = Math.round(a.y - (fx.size || 26) / 2) + "px";
+        el.style.setProperty("--fx-size", (fx.size || 26) + "px");
+        el.style.setProperty("--fx-dist", Math.max(80, (window.innerWidth || 1200) - a.x) + "px");
+        el.style.setProperty("--fx-life", (fx.life || 1600) + "ms");
+        this.fxLayer.appendChild(el);
+        setTimeout(() => el.remove(), (fx.life || 1600) + 120);
     }
 
     // ---------- Fondo "Sopa de Letras": letras que rebotan ----------
@@ -433,6 +543,8 @@ export class EffectsService {
 }
 
 const FX_MAX = 140;   // partículas vivas a la vez (no saturar el DOM)
+const CANDY_LIFE = 1400;   // ms que vive el caramelo del efecto «Chuches»
+const FIREFLY_LIFE = 2400; // ms que vive el fuego fatuo del efecto "Fuego fatuo"
 const SOUP_CHARS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789";
 const SOUP_COLORS = ["#5eead4", "#14b8a6", "#ffd76a", "#f0abfc", "#3882f6", "#e8ecf4"];
 const SOUP_SPEED = 62;        // velocidad base (píxeles/segundo)

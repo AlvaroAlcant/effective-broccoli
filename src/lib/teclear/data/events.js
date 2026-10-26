@@ -90,6 +90,42 @@ export const EVENTS = {
                 glyph: "🩸", glyphEvery: 5, count: 9, power: 65, rise: 110,
                 size: 15, life: 950, shape: "drop"
             },
+            {   // Efecto Fuego fatuo (evento: 1800 🍬): un fuego azul nace
+                // con cada letra, flota por la pantalla y se apaga solo; no
+                // sale sobre la palabra para no taparla
+                kind: "fx",
+                id: "fuegofatuo", price: 1800,
+                icon: "✨", color: "#7dd3fc",
+                es: "Fuego fatuo", en: "Firefly",
+                descEs: "Con cada letra que tecleas nace un fuego fatuo azul que flota por la pantalla y se apaga solo. No sale sobre la palabra, así que nunca la tapa.",
+                descEn: "With every letter you type a blue firefly sparks, floats around and fades away. It never appears over the word so it doesn't cover it.",
+                colors: ["#7dd3fc", "#bae6fd", "#38bdf8", "#e0f2fe"],
+                shape: "firefly", size: 13, life: 2400
+            },
+            {   // Efecto Necromancia (evento: 3330 🍬): con el 50 % de
+                // probabilidad por letra, un muñeco pixelado (o un esqueleto)
+                // sale de la letra y corre en horizontal hasta el borde
+                kind: "fx",
+                id: "necromancia", price: 3330,
+                icon: "💀", color: "#c9b18c",
+                es: "Necromancia", en: "Necromancy",
+                descEs: "Con cada letra tecleada hay un 50 % de que un muñeco pixelado o un esqueleto salga de ella y corra hasta el límite de la pantalla.",
+                descEn: "With every letter you type there's a 50% chance a pixel zombie or a skeleton crawls out of it and runs to the screen edge.",
+                colors: ["#c9b18c", "#8b5a2b", "#6b4423", "#a08a6a"],
+                glyph: "🧟", chance: 0.5, size: 26, life: 1600
+            },
+            {   // Efecto Chuches (evento: 5000 🍬): caramelos que salen con cada
+                // letra y, con la habilidad única del efecto, un caramelo de
+                // moneda de evento cae al suelo para recogerse
+                kind: "fx",
+                id: "chuches", price: 5000,
+                icon: "🍬", color: "#ffb3d9",
+                es: "Chuches", en: "Chews",
+                descEs: "Con cada letra que tecleas salen caramelos; con la habilidad del efecto, un caramelo de moneda de evento cae al suelo de la pantalla y se recoge con el ratón o el dedo para sumar 🍬 (50 % de probabilidad por letra).",
+                descEn: "With every letter you type candies pop out; the effect's unique ability drops a candy of event currency to the floor to collect (+1 candy each, 50% per letter).",
+                colors: ["#ffd1e8", "#ffb3d9", "#ffc0de", "#fff0f6"],
+                glyph: "🍬", count: 2, chance: 0.5, size: 20
+            },
             {   // Extra Truco o trato: palabras terroríficas, doble de
                 // monedas y castigo doble por tecla fallada
                 kind: "extra",

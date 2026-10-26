@@ -1337,6 +1337,7 @@ this.verifyInput = document.getElementById("verifyInput");
             stage: this.stage, board: this.board, typing: this.typing,
             getSupTarget: () => modes.supervivencia.target,
             getActiveFx: () => eco.activeFx(),
+            giveCandy: () => eco.giveCandy(1),
         });
         fx.mount();
         // Habilidades de los fondos: sus capas fijas y la escucha de la

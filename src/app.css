@@ -1862,6 +1862,9 @@
         body:has(.logo-wrap).fx-magia        { --fx-c: #e879f9; --fx-glow: rgba(232, 121, 249, .45); }
         body:has(.logo-wrap).fx-explosion    { --fx-c: #8ff05a; --fx-glow: rgba(143, 240, 90, .45); }
         body:has(.logo-wrap).fx-sangre       { --fx-c: #e11d48; --fx-glow: rgba(225, 29, 72, .45); }
+        body:has(.logo-wrap).fx-fuegofatuo  { --fx-c: #7dd3fc; --fx-glow: rgba(125, 211, 252, .45); }
+        body:has(.logo-wrap).fx-necromancia { --fx-c: #c9b18c; --fx-glow: rgba(201, 177, 140, .45); }
+        body:has(.logo-wrap).fx-chuches     { --fx-c: #ffb3d9; --fx-glow: rgba(255, 179, 217, .45); }
 
         #typing {
             box-shadow: 0 0 18px var(--fx-glow, transparent);
@@ -1957,6 +1960,51 @@
                            translate(var(--fx-dx, 0px), var(--fx-dy, 0px))
                            scale(1) rotate(var(--fx-rot, 0deg));
             }
+        }
+        /* Caramelo del efecto «Chuches» (evento): cae desde la letra que se
+           tecleó y se recoge al pasar el ratón o el dedo por encima (suma 1
+           🍬 al caramelo del evento). Vive en la capa fija, fuera del tablero */
+        .fx-candy {
+            position: absolute;
+            font-size: 20px;
+            line-height: 1;
+            pointer-events: auto;
+            animation: candy-fall var(--fx-life, 1400ms) linear forwards;
+        }
+        @keyframes candy-fall {
+            from { transform: translateY(-8px); }
+            to   { transform: translateY(260px); }
+        }
+        /* Fuego fatuo (evento): parpadeo azul y flotado antes de apagarse */
+        .fx-p.firefly {
+            width: var(--fx-size, 12px);
+            height: var(--fx-size, 12px);
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 50%, #fff 0%, #7dd3fc 45%, rgba(56, 189, 248, 0) 100%);
+            box-shadow: 0 0 14px rgba(125, 211, 252, .9);
+            animation: fx-firefly var(--fx-life, 2400ms) ease-in-out infinite alternate;
+        }
+        @keyframes fx-firefly {
+            from { transform: translate(0, -12px); }
+            to   { transform: translate(10px, 12px); }
+        }
+        /* Muñeco (zombie/esqueleto) que sale de la letra y corre en
+           horizontal hasta el límite de la pantalla */
+        .fx-p.necro {
+            width: var(--fx-size, 26px);
+            height: var(--fx-size, 26px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--fx-size, 26px);
+            line-height: 1;
+            background: none;
+            border: 0;
+            animation: necro-run var(--fx-life, 1600ms) ease-in-out forwards;
+        }
+        @keyframes necro-run {
+            from { transform: translate(0, 0); }
+            to   { transform: translate(var(--fx-dist, 0px), 0); }
         }
         /* Cada tarjeta de efecto lleva su color y se enciende al estar en uso */
         .shop-card.card-fx .shop-preview {
@@ -2960,6 +3008,9 @@
             }
             /* Las animaciones NUEVAS van a «infinito»: con la duración de
                arriba parpadearían sin parar, así que se apagan del todo */
+            .fx-candy,
+            .fx-p.firefly,
+            .fx-p.necro,
             .cupcake,
             .cupcake img,
             .turbo-fx,
